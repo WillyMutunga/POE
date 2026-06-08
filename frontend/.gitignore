@@ -1,0 +1,32 @@
+# ─── Node / npm ────────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# ─── Vite build output ───────────────────────────────────────────────────────
+dist/
+dist-ssr/
+*.local
+
+# ─── Environment secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ─── IDE / OS ─────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ─── TypeScript / ESLint caches ───────────────────────────────────────────────
+*.tsbuildinfo
+.eslintcache
