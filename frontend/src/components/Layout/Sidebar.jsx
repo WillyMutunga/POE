@@ -66,23 +66,30 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 user.role === 'CDACC' ? cdaccLinks : instructorLinks;
 
   return (
-    <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto ${
+    <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-auto ${
       isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
     }`}>
-      <div className="p-6 md:p-8 flex items-center justify-between">
+      <div className="p-6 lg:p-8 flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-black text-[#0000FE] tracking-tight">POE Portal</h2>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Management System</p>
         </div>
         <button
           onClick={closeSidebar}
-          className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 md:hidden active:scale-95 transition-all"
+          className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 lg:hidden active:scale-95 transition-all"
         >
           <X size={18} />
         </button>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2 overflow-y-auto" onClick={closeSidebar}>
+      <nav 
+        className="flex-1 px-4 space-y-2 overflow-y-auto" 
+        onClick={(e) => {
+          if (e.target.closest('a')) {
+            closeSidebar();
+          }
+        }}
+      >
         {user.role === 'STUDENT' ? (
           <>
             <NavLink

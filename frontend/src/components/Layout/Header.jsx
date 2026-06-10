@@ -55,16 +55,16 @@ const Header = ({ sidebarOpen, setSidebarOpen }) => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <header className="h-20 md:h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 sm:px-6 md:px-10 sticky top-0 z-20">
-      <div className="flex items-center gap-3 flex-1 md:flex-initial mr-2">
+    <header className="h-20 lg:h-24 bg-white/80 backdrop-blur-md border-b border-slate-100 flex items-center justify-between px-4 sm:px-6 lg:px-10 sticky top-0 z-20">
+      <div className="flex items-center gap-3 flex-1 lg:flex-initial mr-2">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 md:hidden active:scale-95 transition-all"
+          className="p-2.5 rounded-xl bg-slate-50 text-slate-500 hover:bg-slate-100 lg:hidden active:scale-95 transition-all"
         >
           <Menu size={20} />
         </button>
 
-        <div className="relative w-full max-w-[160px] xs:max-w-[200px] sm:max-w-xs md:w-96">
+        <div className="relative w-full max-w-[160px] xs:max-w-[200px] sm:max-w-xs lg:w-96">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
           <input 
             type="text" 

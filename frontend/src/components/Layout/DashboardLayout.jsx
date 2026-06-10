@@ -10,7 +10,7 @@ const DashboardLayout = ({ children }) => {
       {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-30 lg:hidden transition-opacity duration-300"
           onClick={() => setSidebarOpen(false)}
         />
       )}
@@ -21,7 +21,7 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="p-4 sm:p-6 md:p-10">
+        <main className="p-4 sm:p-6 lg:p-10">
           {children}
         </main>
       </div>
