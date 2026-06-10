@@ -67,7 +67,7 @@ const AcademicStructure = () => {
     school: { name: '' },
     course: { name: '', school: '', level: 'LEVEL_6', instructor: '' },
     semester: { name: '', course: '' },
-    unit: { name: '', code: '', semester: '', instructors: [] },
+    unit: { name: '', code: '', semester: '', instructors: [], credit_hours: 45 },
     element: { name: '', unit: '' },
     bulkUnit: { course: '', data: '' }
   });
@@ -282,7 +282,7 @@ const AcademicStructure = () => {
       if (parentId) {
         if (type === 'course') setFormData({ ...formData, course: { ...formData.course, school: parentId, name: '', level: 'LEVEL_6', instructor: '' } });
         if (type === 'semester') setFormData({ ...formData, semester: { ...formData.semester, course: parentId, name: '' } });
-        if (type === 'unit') setFormData({ ...formData, unit: { ...formData.unit, semester: parentId, course: courseId || '', name: '', code: '', instructors: [] } });
+        if (type === 'unit') setFormData({ ...formData, unit: { ...formData.unit, semester: parentId, course: courseId || '', name: '', code: '', instructors: [], credit_hours: 45 } });
         if (type === 'element') setFormData({ ...formData, element: { ...formData.element, unit: parentId, name: '' } });
         if (type === 'bulkUnitUpload') setFormData({ ...formData, bulkUnit: { course: parentId, data: '' } });
       }
@@ -346,7 +346,7 @@ const AcademicStructure = () => {
       setFormData({
         ...formData,
         [type]: type === 'course' ? { name: '', school: '', level: 'LEVEL_6', instructor: '' } :
-                type === 'unit' ? { name: '', code: '', semester: '', instructors: [] } :
+                type === 'unit' ? { name: '', code: '', semester: '', instructors: [], credit_hours: 45 } :
                 type === 'element' ? { name: '', unit: '' } :
                 { name: '', [type === 'semester' ? 'course' : '']: '' }
       });
@@ -1081,6 +1081,16 @@ const AcademicStructure = () => {
               className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition-all font-bold"
               value={formData.unit.name}
               onChange={(e) => setFormData({ ...formData, unit: { ...formData.unit, name: e.target.value.toUpperCase() } })}
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-slate-500 uppercase tracking-widest ml-1">Credit Hours</label>
+            <input 
+              type="number"
+              placeholder="e.g. 45"
+              className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 transition-all font-bold"
+              value={formData.unit.credit_hours !== undefined ? formData.unit.credit_hours : 45}
+              onChange={(e) => setFormData({ ...formData, unit: { ...formData.unit, credit_hours: parseInt(e.target.value) || 0 } })}
             />
           </div>
           <div className="space-y-2">

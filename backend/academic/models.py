@@ -41,6 +41,7 @@ class Unit(models.Model):
     instructors = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='taught_units', blank=True)
     students = models.ManyToManyField(settings.AUTH_USER_MODEL, related_name='enrolled_units', blank=True)
     is_approved = models.BooleanField(default=True)
+    credit_hours = models.IntegerField(default=45)
 
     class Meta:
         unique_together = ('code', 'semester')

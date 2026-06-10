@@ -180,7 +180,7 @@ class UnitSerializer(serializers.ModelSerializer):
             'id', 'name', 'code', 'course', 'semester', 'semester_name', 
             'course_name', 'instructors', 'students', 'student_count',
             'instructors_detail', 'students_detail', 'elements', 'is_approved',
-            'registered_semester'
+            'registered_semester', 'credit_hours'
         )
         validators = [
             serializers.UniqueTogetherValidator(

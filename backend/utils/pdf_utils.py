@@ -353,8 +353,8 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     # 4. Results Grid Table
     results_data = [
         [
-            Paragraph("COURSE CODE", header_style),
-            Paragraph("COURSE TITLE", header_style),
+            Paragraph("UNIT CODE", header_style),
+            Paragraph("UNIT TITLE", header_style),
             Paragraph("ACADEMIC HOURS", header_style),
             Paragraph("GRADE", header_style)
         ]
@@ -364,7 +364,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         results_data.append([
             Paragraph(m.unit.code, normal_style),
             Paragraph(m.unit.name, normal_style),
-            Paragraph("45", normal_style),
+            Paragraph(str(getattr(m.unit, 'credit_hours', 45)), normal_style),
             Paragraph(m.grade, normal_bold_style)
         ])
 

@@ -332,20 +332,6 @@ const StudentDownloads = () => {
                         Exam Paper
                       </button>
                     )}
-                    {exam.marking_scheme && (
-                      <button
-                        onClick={() => handleDownload(exam, 'scheme')}
-                        disabled={downloading === `${exam.id}-scheme`}
-                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-[#00b074] hover:bg-[#008f5d] text-white font-bold text-xs rounded-xl transition-all disabled:opacity-60 shadow-sm shadow-green-100"
-                      >
-                        {downloading === `${exam.id}-scheme` ? (
-                          <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <Download size={14} />
-                        )}
-                        Marking Scheme
-                      </button>
-                    )}
                   </div>
                 </div>
               ))}

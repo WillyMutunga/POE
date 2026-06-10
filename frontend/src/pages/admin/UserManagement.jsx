@@ -13,6 +13,8 @@ const UserManagement = () => {
   const [courses, setCourses] = useState([]);
   const [semesters, setSemesters] = useState([]);
   const [toast, setToast] = useState(null); // { message, type, username }
+  const [studentRegistrations, setStudentRegistrations] = useState([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
 
   const showToast = (message, type = 'success', username = '') => {
     setToast({ message, type, username });
@@ -116,6 +118,45 @@ const UserManagement = () => {
     };
     init();
   }, []);
+
+  useEffect(() => {
+    if (editingUser && editingUser.role === 'STUDENT') {
+      const fetchStudentRegistrations = async () => {
+        setLoadingRegistrations(true);
+        try {
+          const response = await api.get(`/academic/unit-registrations/?student=${editingUser.id}`);
+          setStudentRegistrations(response.data);
+        } catch (error) {
+          console.error('Error fetching registrations:', error);
+        } finally {
+          setLoadingRegistrations(false);
+        }
+      };
+      fetchStudentRegistrations();
+    } else {
+      setStudentRegistrations([]);
+    }
+  }, [editingUser]);
+
+  const handleToggleRegistration = async (reg) => {
+    const isApproved = reg.status === 'APPROVED';
+    const action = isApproved ? 'reject' : 'approve';
+    const confirmMsg = isApproved 
+      ? `Are you sure you want to deactivate this student's registration for ${reg.unit_code}? This will hide the unit on their student and instructor interfaces.`
+      : `Are you sure you want to activate this student's registration for ${reg.unit_code}?`;
+
+    if (window.confirm(confirmMsg)) {
+      try {
+        await api.post(`/academic/unit-registrations/${reg.id}/${action}/`);
+        // Refresh registrations
+        const response = await api.get(`/academic/unit-registrations/?student=${editingUser.id}`);
+        setStudentRegistrations(response.data);
+      } catch (error) {
+        console.error('Error toggling registration status:', error);
+        alert(error.response?.data?.error || 'Failed to update registration status.');
+      }
+    }
+  };
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -586,6 +627,41 @@ const UserManagement = () => {
                   </div>
                 )}
 
+                {editingUser.role === 'STUDENT' && (
+                  <div className="space-y-4 pt-4 border-t border-slate-100">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registered Units ({studentRegistrations.length})</label>
+                    {loadingRegistrations ? (
+                      <div className="text-xs text-slate-400 animate-pulse font-medium">Loading registered units...</div>
+                    ) : studentRegistrations.length === 0 ? (
+                      <div className="text-xs text-slate-400 italic">No units registered.</div>
+                    ) : (
+                      <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                        {studentRegistrations.map((reg) => (
+                          <div key={reg.id} className="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100 text-xs">
+                            <div className="min-w-0 flex-1 pr-2">
+                              <p className="font-bold text-slate-700 truncate">{reg.unit_code}: {reg.unit_name}</p>
+                              <p className="text-[10px] text-slate-400 font-medium">{reg.semester_name || 'No Semester'}</p>
+                            </div>
+                            <div>
+                              <button
+                                type="button"
+                                onClick={() => handleToggleRegistration(reg)}
+                                className={`px-3 py-1.5 rounded-lg font-black uppercase tracking-wider text-[9px] transition-all shadow-sm ${
+                                  reg.status === 'APPROVED' 
+                                    ? 'bg-emerald-50 text-emerald-700 hover:bg-red-50 hover:text-red-700 border border-emerald-100 hover:border-red-100' 
+                                    : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-700 border border-slate-200 hover:border-blue-100'
+                                }`}
+                              >
+                                {reg.status === 'APPROVED' ? 'Active' : 'Inactive'}
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 <div className="flex gap-3 pt-4">
                   <button type="button" onClick={() => setEditingUser(null)} className="flex-1 px-6 py-4 bg-slate-50 text-slate-500 font-black rounded-2xl hover:bg-slate-100">Cancel</button>
                   <button type="submit" disabled={isSubmitting} className="flex-1 px-6 py-4 bg-[#0000FE] text-white font-black rounded-2xl shadow-lg hover:bg-[#0000FE] disabled:opacity-50">
@@ -705,7 +781,7 @@ const UserManagement = () => {
             <tbody className="divide-y divide-slate-50">
               {filteredUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="px-8 py-5 font-bold text-slate-800">{u.username}</td>
+                  <td className="px-8 py-5 font-bold text-slate-800">{u.full_name || u.username}</td>
                   <td className="px-8 py-5 font-mono text-xs text-slate-500">{u.registration_number || 'N/A'}</td>
                   <td className="px-8 py-5">
                     <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${roleColors[u.role] || 'bg-slate-100 text-slate-600'}`}>

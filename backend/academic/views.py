@@ -583,7 +583,13 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
                 models.Q(unit__instructors__isnull=True, unit__course__in=user.assigned_courses.all()),
                 status='PENDING'
             ).distinct()
-        return UnitRegistration.objects.all()
+        
+        # For Admin / Manager / CDACC, allow filtering by student query param
+        queryset = UnitRegistration.objects.all()
+        student_id = self.request.query_params.get('student')
+        if student_id:
+            queryset = queryset.filter(student_id=student_id)
+        return queryset
 
     @action(detail=True, methods=['post'])
     def approve(self, request, pk=None):
@@ -595,7 +601,7 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
 
         unit = registration.unit
         current_instructors = unit.instructors.all()
-        if current_instructors.exists() and instructor not in current_instructors:
+        if instructor.role not in ['ADMIN', 'MANAGER', 'DIRECTOR'] and current_instructors.exists() and instructor not in current_instructors:
             other_inst = current_instructors.first()
             return Response({
                 "error": f"This unit is already assigned to {other_inst.first_name or other_inst.username}. Only they can approve it."
@@ -605,7 +611,7 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
         registration.approved_by = instructor
         registration.save()
 
-        if instructor not in current_instructors:
+        if instructor not in current_instructors and instructor.role == 'INSTRUCTOR':
             unit.instructors.add(instructor)
 
         unit.students.add(registration.student)
@@ -631,6 +637,11 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
 
         registration.status = 'REJECTED'
         registration.save()
+        
+        # Also remove the student from unit's student list when deactivating/rejecting!
+        unit = registration.unit
+        unit.students.remove(registration.student)
+        
         return Response(self.get_serializer(registration).data)
 
     @action(detail=False, methods=['post'])
