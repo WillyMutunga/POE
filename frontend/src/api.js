@@ -1,10 +1,14 @@
 import axios from 'axios';
 
+// Define the base URL consistently
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://poe.headwaycollege.ac.ke/api';
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000/api',
+  baseURL: BASE_URL,
+  withCredentials: true,
 });
 
-// Add a request interceptor to attach the JWT token
+// Request Interceptor: Attach JWT token
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('access_token');
@@ -13,32 +17,36 @@ api.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Add a response interceptor to handle token expiration
+// Response Interceptor: Handle token refresh
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
-    
-    if (error.response.status === 401 && !originalRequest._retry) {
+
+    // Check for 401 and ensure we haven't already tried to retry
+    if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
-      
+
       if (refreshToken) {
         try {
-          const response = await axios.post(`${api.defaults.baseURL}/users/token/refresh/`, {
+          // Use the 'api' instance to refresh so baseURL is included automatically
+          const response = await api.post('/users/token/refresh/', {
             refresh: refreshToken,
           });
+
+          const newAccessToken = response.data.access;
+          localStorage.setItem('access_token', newAccessToken);
           
-          localStorage.setItem('access_token', response.data.access);
-          api.defaults.headers.common['Authorization'] = `Bearer ${response.data.access}`;
+          // Update header and retry original request
+          api.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+          originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
+          
           return api(originalRequest);
         } catch (refreshError) {
-          // Refresh token expired, logout user
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
           window.location.href = '/login';
