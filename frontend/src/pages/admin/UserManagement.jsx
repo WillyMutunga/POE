@@ -15,6 +15,10 @@ const UserManagement = () => {
   const [toast, setToast] = useState(null); // { message, type, username }
   const [studentRegistrations, setStudentRegistrations] = useState([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+  const [showAddUnit, setShowAddUnit] = useState(false);
+  const [addUnitId, setAddUnitId] = useState('');
+  const [addingSemesterId, setAddingSemesterId] = useState('');
+  const [isAddingUnit, setIsAddingUnit] = useState(false);
 
   const showToast = (message, type = 'success', username = '') => {
     setToast({ message, type, username });
@@ -155,6 +159,30 @@ const UserManagement = () => {
         console.error('Error toggling registration status:', error);
         alert(error.response?.data?.error || 'Failed to update registration status.');
       }
+    }
+  };
+
+  const handleDirectAssign = async () => {
+    if (!addUnitId) return;
+    setIsAddingUnit(true);
+    try {
+      await api.post('/academic/registrations/direct_assign/', {
+        student_id: editingUser.id,
+        unit_ids: [parseInt(addUnitId)],
+        semester_id: addingSemesterId ? parseInt(addingSemesterId) : undefined
+      });
+      // Refresh registrations
+      const response = await api.get(`/academic/registrations/?student=${editingUser.id}`);
+      setStudentRegistrations(response.data);
+      setAddUnitId('');
+      setAddingSemesterId('');
+      setShowAddUnit(false);
+      showToast('Unit registered successfully!', 'success');
+    } catch (error) {
+      console.error('Error assigning unit:', error);
+      alert(error.response?.data?.error || 'Failed to register unit.');
+    } finally {
+      setIsAddingUnit(false);
     }
   };
 
@@ -629,7 +657,53 @@ const UserManagement = () => {
 
                 {editingUser.role === 'STUDENT' && (
                   <div className="space-y-4 pt-4 border-t border-slate-100">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registered Units ({studentRegistrations.length})</label>
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Registered Units ({studentRegistrations.length})</label>
+                      <button
+                        type="button"
+                        onClick={() => { setShowAddUnit(v => !v); setAddUnitId(''); setAddingSemesterId(''); }}
+                        className="text-[9px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2.5 py-1.5 rounded-lg transition-all"
+                      >
+                        {showAddUnit ? '✕ Cancel' : '+ Add Unit'}
+                      </button>
+                    </div>
+
+                    {showAddUnit && (
+                      <div className="bg-blue-50/60 border border-blue-100 rounded-2xl p-4 space-y-3">
+                        <p className="text-[10px] font-black text-blue-700 uppercase tracking-widest">Register Student to a Unit</p>
+                        <select
+                          value={addUnitId}
+                          onChange={(e) => setAddUnitId(e.target.value)}
+                          className="w-full px-3 py-2.5 bg-white border border-blue-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-200"
+                        >
+                          <option value="">Select a unit...</option>
+                          {units
+                            .filter(u => u.course === editingUser.course || !editingUser.course)
+                            .map(u => (
+                              <option key={u.id} value={u.id}>{u.code}: {u.name}</option>
+                            ))}
+                        </select>
+                        <select
+                          value={addingSemesterId}
+                          onChange={(e) => setAddingSemesterId(e.target.value)}
+                          className="w-full px-3 py-2.5 bg-white border border-blue-100 rounded-xl text-xs font-bold text-slate-700 outline-none focus:ring-2 focus:ring-blue-200"
+                        >
+                          <option value="">Use student's current semester</option>
+                          {semesters.map(s => (
+                            <option key={s.id} value={s.id}>{s.name}</option>
+                          ))}
+                        </select>
+                        <button
+                          type="button"
+                          onClick={handleDirectAssign}
+                          disabled={!addUnitId || isAddingUnit}
+                          className="w-full py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-all"
+                        >
+                          {isAddingUnit ? 'Registering...' : 'Register & Approve'}
+                        </button>
+                      </div>
+                    )}
+
                     {loadingRegistrations ? (
                       <div className="text-xs text-slate-400 animate-pulse font-medium">Loading registered units...</div>
                     ) : studentRegistrations.length === 0 ? (

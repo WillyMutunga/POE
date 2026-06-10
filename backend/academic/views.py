@@ -693,9 +693,10 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['post'])
     def direct_assign(self, request):
-        instructor = request.user
-        if instructor.role != 'INSTRUCTOR' and instructor.role != 'ADMIN':
-            return Response({"error": "Only instructors can assign units."}, status=403)
+        requester = request.user
+        is_admin = requester.role in ['ADMIN', 'MANAGER']
+        if requester.role != 'INSTRUCTOR' and not is_admin:
+            return Response({"error": "Only instructors or admins can assign units."}, status=403)
 
         student_id = request.data.get('student_id')
         unit_ids = request.data.get('unit_ids', [])
@@ -722,21 +723,24 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
             try:
                 unit = Unit.objects.get(id=uid)
                 current_instructors = unit.instructors.all()
-                if current_instructors.exists() and instructor not in current_instructors:
-                    other_inst = current_instructors.first()
-                    return Response({
-                        "error": f"Unit {unit.code} is already assigned to {other_inst.first_name or other_inst.username}. You cannot assign students to it."
-                    }, status=400)
 
-                if instructor not in current_instructors:
-                    unit.instructors.add(instructor)
+                # Admins bypass instructor ownership restrictions
+                if not is_admin:
+                    if current_instructors.exists() and requester not in current_instructors:
+                        other_inst = current_instructors.first()
+                        return Response({
+                            "error": f"Unit {unit.code} is already assigned to {other_inst.first_name or other_inst.username}. You cannot assign students to it."
+                        }, status=400)
+                    # Only add requester as instructor when they're an actual instructor (not admin)
+                    if requester not in current_instructors:
+                        unit.instructors.add(requester)
 
                 unit.students.add(student)
 
                 reg, created = UnitRegistration.objects.update_or_create(
                     student=student,
                     unit=unit,
-                    defaults={'status': 'APPROVED', 'approved_by': instructor, 'semester': semester}
+                    defaults={'status': 'APPROVED', 'approved_by': requester, 'semester': semester}
                 )
 
                 from poe_core.models import Portfolio
