@@ -21,19 +21,22 @@ const InstructorDashboard = () => {
   const [portfolios, setPortfolios] = useState([]);
   const [units, setUnits] = useState([]);
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
+  const [studentsCount, setStudentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
 
   const fetchData = async () => {
     try {
-      const [portfoliosRes, unitsRes, registrationsRes] = await Promise.all([
+      const [portfoliosRes, unitsRes, registrationsRes, studentsRes] = await Promise.all([
         api.get('/poe/portfolios/'),
         api.get('/academic/units/my_units/'),
-        api.get('/academic/registrations/')
+        api.get('/academic/registrations/'),
+        api.get('/users/my-students/')
       ]);
       setPortfolios(portfoliosRes.data);
       setUnits(unitsRes.data);
       setPendingRegistrations(registrationsRes.data);
+      setStudentsCount(studentsRes.data?.length || 0);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
@@ -48,8 +51,8 @@ const InstructorDashboard = () => {
   const pendingEvaluations = portfolios.filter(p => p.status === 'SUBMITTED');
   const evaluatedCount = portfolios.filter(p => p.status === 'EVALUATED').length;
   
-  // Get total student count from units
-  const totalStudents = units.reduce((acc, unit) => acc + (unit.student_count || 0), 0);
+  // Get total student count from distinct student list
+  const totalStudents = studentsCount;
 
   const filteredPending = pendingEvaluations.filter(p => 
     p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

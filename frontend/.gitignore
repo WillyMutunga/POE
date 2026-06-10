@@ -7,7 +7,7 @@ pnpm-debug.log*
 .pnpm-store/
 
 # ─── Vite build output ───────────────────────────────────────────────────────
-dist/
+# dist/
 dist-ssr/
 *.local
 
