@@ -17,7 +17,9 @@ from .views import (
     BulkStudentEnrollmentView,
     StudentExportView,
     StudentExportPdfView,
-    InstructorExportPdfView
+    InstructorExportPdfView,
+    PasswordResetRequestView,
+    PasswordResetConfirmView
 )
 
 urlpatterns = [
@@ -36,4 +38,6 @@ urlpatterns = [
     path('login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('change-password/', ChangePasswordView.as_view(), name='change-password'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
+    path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
 ]

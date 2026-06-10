@@ -38,6 +38,8 @@ import ExamRepository from './pages/instructor/ExamRepository';
 import GradingCriteria from './pages/admin/GradingCriteria';
 import MarkComponents from './pages/admin/MarkComponents';
 import AdminExams from './pages/admin/AdminExams';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 
 // Placeholder components
@@ -75,6 +77,8 @@ function App() {
       <Router>
         <Routes>
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
           
           <Route 

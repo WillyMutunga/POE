@@ -6,6 +6,11 @@ from .serializers import UserSerializer, UserRegistrationSerializer, CustomToken
 from rest_framework.views import APIView
 from academic.models import School, Course, Unit
 from poe_core.models import Portfolio
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.utils.encoding import force_bytes, force_str
+from django.core.mail import send_mail
+from django.conf import settings
 
 User = get_user_model()
 
@@ -324,3 +329,79 @@ class SystemAnalyticsView(APIView):
             "pending_evaluations": Portfolio.objects.filter(status='SUBMITTED').count(),
         }
         return Response(data)
+
+class PasswordResetRequestView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        if not email:
+            return Response({"detail": "Email is required."}, status=status.HTTP_400_BAD_REQUEST)
+        
+        user = User.objects.filter(email=email).first()
+        
+        if user:
+            token = default_token_generator.make_token(user)
+            uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
+            
+            frontend_url = request.data.get('frontend_url', 'http://localhost:5173')
+            reset_link = f"{frontend_url.rstrip('/')}/reset-password?uidb64={uidb64}&token={token}"
+            
+            from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@headwaycollege.ac.ke')
+            subject = "Password Reset Request - POE System"
+            message = (
+                f"Hello {user.first_name or user.username},\n\n"
+                f"You requested a password reset for your POE Management System account. "
+                f"Please click the link below to set a new password:\n\n"
+                f"{reset_link}\n\n"
+                f"If you did not request this, please ignore this email.\n\n"
+                f"Best regards,\n"
+                f"Headway College POE Team"
+            )
+            
+            try:
+                send_mail(subject, message, from_email, [email], fail_silently=False)
+            except Exception as e:
+                return Response(
+                    {"detail": "Error sending email. Please try again later."},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+
+        return Response(
+            {"detail": "If a matching account exists, a password reset link has been sent to your email."},
+            status=status.HTTP_200_OK
+        )
+
+class PasswordResetConfirmView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        uidb64 = request.data.get('uidb64')
+        token = request.data.get('token')
+        new_password = request.data.get('new_password')
+        
+        if not uidb64 or not token or not new_password:
+            return Response(
+                {"detail": "uidb64, token, and new_password are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            uid = force_str(urlsafe_base64_decode(uidb64))
+            user = User.objects.get(pk=uid)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            user = None
+            
+        if user is not None and default_token_generator.check_token(user, token):
+            user.set_password(new_password)
+            user.save()
+            return Response(
+                {"detail": "Your password has been successfully reset. You can now log in with your new password."},
+                status=status.HTTP_200_OK
+            )
+        else:
+            return Response(
+                {"detail": "The reset link is invalid or has expired."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
