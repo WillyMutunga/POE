@@ -1,0 +1,18 @@
+---
+deployment:
+  tasks:
+    - export PATH=/bin:/usr/bin:/usr/local/bin
+    
+    # 1. Sync backend files
+    - rsync -av --exclude="venv" --exclude="*.pyc" --exclude="__pycache__" backend/ /home1/headwayc/poe_backend/
+    
+    # 2. Sync built frontend files
+    - rsync -av frontend/dist/ /home1/headwayc/poe.headwaycollege.ac.ke/
+    
+    # 3. Run backend migrations and restart application
+    - cd /home1/headwayc/poe_backend
+    - source ~/virtualenv/poe_backend/*/bin/activate || source venv/bin/activate || true
+    - pip install -r requirements.txt --quiet
+    - python manage.py migrate --no-input
+    - python manage.py collectstatic --no-input
+    - touch passenger_wsgi.py || touch tmp/restart.txt

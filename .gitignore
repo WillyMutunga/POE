@@ -110,3 +110,6 @@ build/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Allow tracking of compiled frontend
+!frontend/dist/
