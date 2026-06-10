@@ -124,7 +124,7 @@ const UserManagement = () => {
       const fetchStudentRegistrations = async () => {
         setLoadingRegistrations(true);
         try {
-          const response = await api.get(`/academic/unit-registrations/?student=${editingUser.id}`);
+          const response = await api.get(`/academic/registrations/?student=${editingUser.id}`);
           setStudentRegistrations(response.data);
         } catch (error) {
           console.error('Error fetching registrations:', error);
@@ -147,9 +147,9 @@ const UserManagement = () => {
 
     if (window.confirm(confirmMsg)) {
       try {
-        await api.post(`/academic/unit-registrations/${reg.id}/${action}/`);
+        await api.post(`/academic/registrations/${reg.id}/${action}/`);
         // Refresh registrations
-        const response = await api.get(`/academic/unit-registrations/?student=${editingUser.id}`);
+        const response = await api.get(`/academic/registrations/?student=${editingUser.id}`);
         setStudentRegistrations(response.data);
       } catch (error) {
         console.error('Error toggling registration status:', error);
