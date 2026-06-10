@@ -17,13 +17,16 @@ import {
   GraduationCap,
   ChevronDown,
   ChevronUp,
-  Download
+  Download,
+  X
 } from 'lucide-react';
 
-const Sidebar = () => {
+const Sidebar = ({ isOpen, setIsOpen }) => {
   const { user, logout } = useAuth();
   const [academicsOpen, setAcademicsOpen] = useState(false);
   const [courseMgmtOpen, setCourseMgmtOpen] = useState(false);
+
+  const closeSidebar = () => setIsOpen(false);
 
   const studentLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -63,13 +66,23 @@ const Sidebar = () => {
                 user.role === 'CDACC' ? cdaccLinks : instructorLinks;
 
   return (
-    <aside className="w-72 bg-white border-r border-slate-100 flex flex-col h-screen sticky top-0">
-      <div className="p-8">
-        <h2 className="text-2xl font-black text-[#0000FE] tracking-tight">POE Portal</h2>
-        <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Management System</p>
+    <aside className={`fixed inset-y-0 left-0 z-40 w-72 bg-white border-r border-slate-100 flex flex-col h-screen transition-transform duration-300 ease-in-out md:translate-x-0 md:static md:z-auto ${
+      isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'
+    }`}>
+      <div className="p-6 md:p-8 flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-black text-[#0000FE] tracking-tight">POE Portal</h2>
+          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Management System</p>
+        </div>
+        <button
+          onClick={closeSidebar}
+          className="p-2 rounded-xl bg-slate-50 text-slate-400 hover:bg-slate-100 hover:text-slate-600 md:hidden active:scale-95 transition-all"
+        >
+          <X size={18} />
+        </button>
       </div>
 
-      <nav className="flex-1 px-4 space-y-2">
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto" onClick={closeSidebar}>
         {user.role === 'STUDENT' ? (
           <>
             <NavLink
