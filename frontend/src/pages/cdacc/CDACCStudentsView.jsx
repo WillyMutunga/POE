@@ -42,9 +42,9 @@ const CDACCStudentsView = () => {
     const fetchCourses = async () => {
       try {
         const response = await api.get('/academic/courses/');
-        // Filter for CDACC relevant courses (Level 5 & 6)
+        // Filter for CDACC relevant courses (Level 4, 5 & 6)
         const filtered = response.data.filter(c => 
-          ['LEVEL_5', 'LEVEL_6', '5', '6'].includes(c.level)
+          ['LEVEL_4', 'LEVEL_5', 'LEVEL_6', '4', '5', '6'].includes(c.level)
         );
         setCourses(filtered);
       } catch (error) {

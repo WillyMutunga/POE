@@ -23,10 +23,10 @@ const CDACCDashboard = () => {
   useEffect(() => {
     const fetchCDACCData = async () => {
       try {
-        // Fetch courses filtered by level 5 and 6
+        // Fetch courses filtered by level 4, 5 and 6
         const response = await api.get('/academic/courses/');
         const filteredCourses = response.data.filter(c =>
-          ['LEVEL_5', 'LEVEL_6', '5', '6'].includes(c.level)
+          ['LEVEL_4', 'LEVEL_5', 'LEVEL_6', '4', '5', '6'].includes(c.level)
         );
         setCourses(filteredCourses);
       } catch (error) {
@@ -114,7 +114,7 @@ const CDACCDashboard = () => {
       <div className="bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-50 bg-slate-50/50 flex items-center justify-between">
           <h2 className="font-black text-slate-700 uppercase tracking-widest text-xs">Academic Hierarchy</h2>
-          <span className="px-3 py-1 bg-white rounded-full border border-slate-200 text-[10px] font-black text-slate-400 uppercase">Level 5 & 6</span>
+          <span className="px-3 py-1 bg-white rounded-full border border-slate-200 text-[10px] font-black text-slate-400 uppercase">Level 4, 5 & 6</span>
         </div>
 
         <div className="p-8 space-y-6">
