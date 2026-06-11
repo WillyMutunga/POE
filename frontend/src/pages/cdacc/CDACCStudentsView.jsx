@@ -117,7 +117,7 @@ const CDACCStudentsView = () => {
                 <div className="flex items-center gap-6">
                   <div className="px-4 py-2 bg-white rounded-xl border border-slate-100 shadow-sm">
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Learners</p>
-                    <p className="text-lg font-black text-slate-800 leading-none">{course.students_detail?.length || 0}</p>
+                    <p className="text-lg font-black text-slate-800 leading-none">{course.students_detail?.filter(s => s.role === 'STUDENT').length || 0}</p>
                   </div>
                   {expandedCourses[course.id] ? <ChevronDown size={24} className="text-slate-300" /> : <ChevronRight size={24} className="text-slate-300" />}
                 </div>
@@ -126,7 +126,7 @@ const CDACCStudentsView = () => {
               {expandedCourses[course.id] && (
                 <div className="p-8 border-t border-slate-100 bg-slate-50/20 animate-in slide-in-from-top-4 duration-300">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {course.students_detail?.map(student => (
+                    {course.students_detail?.filter(s => s.role === 'STUDENT').map(student => (
                       <div key={student.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:shadow-md transition-all group">
                         <div className="flex items-center gap-4 mb-6">
                           <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all">

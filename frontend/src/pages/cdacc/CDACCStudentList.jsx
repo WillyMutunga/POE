@@ -38,7 +38,7 @@ const CDACCStudentList = () => {
     </div>
   );
 
-  const students = unit?.students_detail || [];
+  const students = (unit?.students_detail || []).filter(s => s.role === 'STUDENT');
   const filteredStudents = students.filter(s => 
     s.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
     s.registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
