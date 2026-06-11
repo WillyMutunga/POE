@@ -2,7 +2,7 @@ import io
 from reportlab.lib.pagesizes import A4
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, KeepTogether
 from reportlab.lib.units import inch
 from django.conf import settings
 import os
@@ -93,35 +93,107 @@ def generate_portfolio_pdf(portfolio, user=None):
     else:
         evidences = portfolio.evidence.all()
         
-    for evidence in evidences:
-        elements.append(Paragraph(f"<b>Description:</b> {evidence.description}", styles['Normal']))
-        
-        file_path = evidence.file.path
-        ext = os.path.splitext(file_path)[1].lower()
-        
-        if ext in ['.jpg', '.jpeg', '.png', '.gif']:
-            try:
-                img = Image(file_path)
-                # Resize image to fit width while maintaining aspect ratio
-                max_width = 4.5 * inch
-                aspect = img.drawHeight / img.drawWidth
-                img.drawWidth = max_width
-                img.drawHeight = max_width * aspect
-                elements.append(img)
-            except Exception as e:
-                elements.append(Paragraph(f"[Error loading image: {str(e)}]", styles['Normal']))
-        else:
-            # For videos and other files, provide a link
-            file_url = f"{settings.SITE_URL}{evidence.file.url}" if hasattr(settings, 'SITE_URL') else evidence.file.url
-            link_text = f'<link href="{file_url}" color="blue"><u>{file_url}</u></link>'
-            elements.append(Paragraph(f"<b>File Link:</b> {link_text}", styles['Normal']))
-        
-        elements.append(Spacer(1, 0.2 * inch))
+    if len(evidences) > 1:
+        cells = []
+        for evidence in evidences:
+            cell_elements = []
+            desc_style = ParagraphStyle(
+                'EvidenceDescStyle',
+                parent=styles['Normal'],
+                fontSize=9,
+                leading=11,
+                spaceAfter=4
+            )
+            cell_elements.append(Paragraph(f"<b>Description:</b> {evidence.description}", desc_style))
+            
+            file_path = evidence.file.path
+            ext = os.path.splitext(file_path)[1].lower()
+            
+            if ext in ['.jpg', '.jpeg', '.png', '.gif']:
+                try:
+                    img = Image(file_path)
+                    # Resize to fit in a 2-column grid cell: max_w = 2.8*inch, max_h = 2.0*inch
+                    max_w = 2.8 * inch
+                    max_h = 2.0 * inch
+                    aspect = img.drawHeight / img.drawWidth
+                    
+                    if aspect > 1: # Portrait
+                        img.drawHeight = max_h
+                        img.drawWidth = max_h / aspect
+                        if img.drawWidth > max_w:
+                            img.drawWidth = max_w
+                            img.drawHeight = max_w * aspect
+                    else: # Landscape
+                        img.drawWidth = max_w
+                        img.drawHeight = max_w * aspect
+                        if img.drawHeight > max_h:
+                            img.drawHeight = max_h
+                            img.drawWidth = max_h / aspect
+                            
+                    cell_elements.append(img)
+                except Exception as e:
+                    cell_elements.append(Paragraph(f"[Error loading image: {str(e)}]", styles['Normal']))
+            else:
+                file_url = f"{settings.SITE_URL}{evidence.file.url}" if hasattr(settings, 'SITE_URL') else evidence.file.url
+                link_text = f'<link href="{file_url}" color="blue"><u>{file_url}</u></link>'
+                cell_elements.append(Paragraph(f"<b>File Link:</b> {link_text}", styles['Normal']))
+            
+            cells.append(cell_elements)
+            
+        # Group cells into rows of 2
+        grid_data = []
+        row = []
+        for cell in cells:
+            row.append(cell)
+            if len(row) == 2:
+                grid_data.append(row)
+                row = []
+        if row:
+            row.append([]) # Empty cell
+            grid_data.append(row)
+            
+        evidence_table = Table(grid_data, colWidths=[3.1 * inch, 3.1 * inch])
+        evidence_table.setStyle(TableStyle([
+            ('ALIGN', (0,0), (-1,-1), 'LEFT'),
+            ('VALIGN', (0,0), (-1,-1), 'TOP'),
+            ('TOPPADDING', (0,0), (-1,-1), 4),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+            ('LEFTPADDING', (0,0), (-1,-1), 0),
+            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+        ]))
+        elements.append(evidence_table)
+    else:
+        # Just 1 evidence, or 0. Render it in single column layout
+        for evidence in evidences:
+            elements.append(Paragraph(f"<b>Description:</b> {evidence.description}", styles['Normal']))
+            
+            file_path = evidence.file.path
+            ext = os.path.splitext(file_path)[1].lower()
+            
+            if ext in ['.jpg', '.jpeg', '.png', '.gif']:
+                try:
+                    img = Image(file_path)
+                    max_width = 4.0 * inch
+                    aspect = img.drawHeight / img.drawWidth
+                    img.drawWidth = max_width
+                    img.drawHeight = max_width * aspect
+                    elements.append(img)
+                except Exception as e:
+                    elements.append(Paragraph(f"[Error loading image: {str(e)}]", styles['Normal']))
+            else:
+                file_url = f"{settings.SITE_URL}{evidence.file.url}" if hasattr(settings, 'SITE_URL') else evidence.file.url
+                link_text = f'<link href="{file_url}" color="blue"><u>{file_url}</u></link>'
+                elements.append(Paragraph(f"<b>File Link:</b> {link_text}", styles['Normal']))
+            
+            elements.append(Spacer(1, 0.2 * inch))
 
     # Assessment Section
     if hasattr(portfolio, 'assessment'):
         assessment = portfolio.assessment
-        elements.append(Paragraph("Assessment Results", section_style))
+        
+        assessment_elements = []
+        assessment_elements.append(Paragraph("Assessment Results", section_style))
+        assessment_elements.append(Spacer(1, 0.1 * inch))
         
         assessment_data = [
             [Paragraph("<b>Grade:</b>", label_style), Paragraph(assessment.grade, value_style)],
@@ -130,7 +202,7 @@ def generate_portfolio_pdf(portfolio, user=None):
             [Paragraph("<b>Date:</b>", label_style), Paragraph(assessment.date.strftime("%Y-%m-%d"), value_style)],
         ]
         
-        assessment_table = Table(assessment_data, colWidths=[1.2*inch, 5.2*inch])
+        assessment_table = Table(assessment_data, colWidths=[1.2*inch, 5.0*inch])
         assessment_table.setStyle(TableStyle([
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
@@ -138,7 +210,9 @@ def generate_portfolio_pdf(portfolio, user=None):
             ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
             ('BACKGROUND', (0,0), (0,-1), colors.whitesmoke),
         ]))
-        elements.append(assessment_table)
+        assessment_elements.append(assessment_table)
+        
+        elements.append(KeepTogether(assessment_elements))
 
     # Build PDF
     doc.build(elements)
