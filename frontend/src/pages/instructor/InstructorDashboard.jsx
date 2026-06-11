@@ -17,7 +17,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 const InstructorDashboard = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [portfolios, setPortfolios] = useState([]);
   const [units, setUnits] = useState([]);
   const [pendingRegistrations, setPendingRegistrations] = useState([]);
@@ -77,7 +77,7 @@ const InstructorDashboard = () => {
             </span>
           </div>
           <h1 className="text-4xl font-black text-slate-800 tracking-tight mb-2">
-            Welcome back, <span className="text-[#0000FE]">{user?.username}</span>!
+            Welcome back, <span className="text-[#0000FE]">{profile?.full_name || user?.username}</span>!
           </h1>
           <p className="text-slate-500 font-medium max-w-lg">
             Manage your units, evaluate student evidence, and track academic progress all in one place.
