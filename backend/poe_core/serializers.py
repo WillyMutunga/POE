@@ -35,13 +35,18 @@ class AssessmentCriterionScoreSerializer(serializers.ModelSerializer):
         fields = ('id', 'assessment', 'criterion', 'criterion_description', 'is_critical', 'is_satisfied')
 
 class AssessmentSerializer(serializers.ModelSerializer):
-    assessor_name = serializers.ReadOnlyField(source='assessor.username')
+    assessor_name = serializers.SerializerMethodField()
     criterion_scores = AssessmentCriterionScoreSerializer(many=True, read_only=True)
 
     class Meta:
         model = Assessment
         fields = ('id', 'portfolio', 'assessor', 'assessor_name', 'grade', 'feedback', 'is_redo_request', 'date', 'criterion_scores')
         read_only_fields = ('assessor',)
+
+    def get_assessor_name(self, obj):
+        if obj.assessor:
+            return obj.assessor.get_full_name() or obj.assessor.username
+        return None
 
 class CommentSerializer(serializers.ModelSerializer):
     user_name = serializers.ReadOnlyField(source='user.username')

@@ -126,7 +126,7 @@ def generate_portfolio_pdf(portfolio, user=None):
         assessment_data = [
             [Paragraph("<b>Grade:</b>", label_style), Paragraph(assessment.grade, value_style)],
             [Paragraph("<b>Feedback:</b>", label_style), Paragraph(assessment.feedback, value_style)],
-            [Paragraph("<b>Assessor:</b>", label_style), Paragraph(assessment.assessor.username, value_style)],
+            [Paragraph("<b>Assessor:</b>", label_style), Paragraph(assessment.assessor.get_full_name() or assessment.assessor.username, value_style)],
             [Paragraph("<b>Date:</b>", label_style), Paragraph(assessment.date.strftime("%Y-%m-%d"), value_style)],
         ]
         
