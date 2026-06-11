@@ -99,7 +99,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_students_detail(self, obj):
         from users.serializers import UserSerializer
-        return UserSerializer(obj.students.all().order_by('first_name', 'last_name', 'username'), many=True).data
+        return UserSerializer(obj.students.filter(role='STUDENT').order_by('first_name', 'last_name', 'username'), many=True).data
 
     def get_instructors_detail(self, obj):
         from users.serializers import UserSerializer
@@ -269,7 +269,7 @@ class UnitSerializer(serializers.ModelSerializer):
 
     def get_students_detail(self, obj):
         from users.serializers import UserSerializer
-        return UserSerializer(obj.students.all().order_by('first_name', 'last_name', 'username'), many=True).data
+        return UserSerializer(obj.students.filter(role='STUDENT').order_by('first_name', 'last_name', 'username'), many=True).data
 
 class RubricCriterionSerializer(serializers.ModelSerializer):
     class Meta:

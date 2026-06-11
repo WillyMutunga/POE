@@ -79,7 +79,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         writer = csv.writer(response)
         writer.writerow(['Registration Number', 'Full Name', 'Email', 'Semester', 'Intake'])
         
-        for student in course.students.all():
+        for student in course.students.filter(role='STUDENT'):
             writer.writerow([
                 student.registration_number,
                 f"{student.first_name} {student.last_name}",
@@ -135,7 +135,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         headers = ['Reg No.', 'Full Name', 'Email', 'Semester', 'Intake']
         data = []
         
-        for student in course.students.all():
+        for student in course.students.filter(role='STUDENT'):
             data.append([
                 student.registration_number or 'N/A',
                 f"{student.first_name} {student.last_name}",
