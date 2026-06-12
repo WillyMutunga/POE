@@ -6,7 +6,10 @@ deployment:
     # Sync built frontend dist files to web document root
     - /bin/cp -Rf frontend/dist/. /home1/headwayc/poe.headwaycollege.ac.ke/
 
+    # Sync backend files to passenger app root
+    - /bin/cp -Rf backend/. /home1/headwayc/poe_backend/
+
     # Restart passenger python app
-    - mkdir -p backend/tmp
-    - touch backend/tmp/restart.txt
+    - mkdir -p /home1/headwayc/poe_backend/tmp
+    - touch /home1/headwayc/poe_backend/tmp/restart.txt
 
