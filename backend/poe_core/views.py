@@ -440,7 +440,7 @@ class CohortAnalyticsView(APIView):
                 at_risk_students.append({
                     'id': student.id,
                     'username': student.username,
-                    'full_name': f"{student.first_name} {student.last_name}".strip() or student.username,
+                    'full_name': student.get_full_name(),
                     'course_name': student.course.name if student.course else 'N/A',
                     'intake': dict(User.Intake.choices).get(student.intake, student.intake) if student.intake else 'N/A',
                     'semester_name': student.semester.name if student.semester else 'N/A'

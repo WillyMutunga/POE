@@ -54,10 +54,7 @@ class UserSerializer(serializers.ModelSerializer):
     full_name = serializers.SerializerMethodField()
 
     def get_full_name(self, obj):
-        first = obj.first_name or ""
-        last = obj.last_name or ""
-        full = f"{first} {last}".strip()
-        return full if full else obj.username
+        return obj.get_full_name()
 
     class Meta:
         model = User

@@ -209,7 +209,7 @@ class StudentExportView(APIView):
         for student in students:
             writer.writerow([
                 student.registration_number,
-                f"{student.first_name} {student.last_name}".strip() or student.username,
+                student.get_full_name(),
                 student.email,
                 student.course.name if student.course else 'N/A',
                 student.semester.name if student.semester else 'N/A',

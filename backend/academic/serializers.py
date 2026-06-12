@@ -111,8 +111,7 @@ class CourseSerializer(serializers.ModelSerializer):
 
     def get_instructor_name(self, obj):
         if obj.instructor:
-            fullName = f"{obj.instructor.first_name} {obj.instructor.last_name}".strip()
-            return fullName if fullName else obj.instructor.username
+            return obj.instructor.get_full_name()
         return None
 
 class ElementSerializer(serializers.ModelSerializer):
@@ -300,10 +299,7 @@ class UnitRegistrationSerializer(serializers.ModelSerializer):
         )
 
     def get_student_name(self, obj):
-        from users.serializers import UserSerializer
-        if obj.student.first_name or obj.student.last_name:
-            return f"{obj.student.first_name} {obj.student.last_name}".strip()
-        return obj.student.username
+        return obj.student.get_full_name()
 
 class GradeRangeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -338,9 +334,7 @@ class StudentMarkSerializer(serializers.ModelSerializer):
         )
 
     def get_student_name(self, obj):
-        if obj.student.first_name or obj.student.last_name:
-            return f"{obj.student.first_name} {obj.student.last_name}".strip()
-        return obj.student.username
+        return obj.student.get_full_name()
 
 class ExamRepositorySerializer(serializers.ModelSerializer):
     instructor_name = serializers.SerializerMethodField(read_only=True)
@@ -358,6 +352,4 @@ class ExamRepositorySerializer(serializers.ModelSerializer):
         read_only_fields = ('instructor',)
 
     def get_instructor_name(self, obj):
-        if obj.instructor.first_name or obj.instructor.last_name:
-            return f"{obj.instructor.first_name} {obj.instructor.last_name}".strip()
-        return obj.instructor.username
+        return obj.instructor.get_full_name()

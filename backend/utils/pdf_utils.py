@@ -320,7 +320,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     elements.append(Paragraph("OFFICIAL ACADEMIC TRANSCRIPT", doc_title_style))
 
     # 3. Student Details Grid Table
-    student_name = f"{student.first_name} {student.last_name}".strip() or student.username
+    student_name = student.get_full_name()
     year_of_study = semester.name
     
     from django.utils import timezone
