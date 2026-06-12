@@ -54,5 +54,15 @@ class User(AbstractUser):
                 self.semester = active_session.semester
         super().save(*args, **kwargs)
 
+    def get_full_name(self):
+        full_name = f"{self.first_name} {self.last_name}".strip()
+        if not full_name:
+            if self.username and '.' in self.username:
+                parts = self.username.split('.')
+                full_name = " ".join([p.capitalize() for p in parts])
+            else:
+                full_name = self.username or ""
+        return full_name
+
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"

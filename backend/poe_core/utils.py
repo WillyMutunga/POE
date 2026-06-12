@@ -59,7 +59,7 @@ def generate_portfolio_pdf(portfolio, user=None):
     course = learner.course if hasattr(learner, 'course') else (unit.course if unit else None)
     
     details_data = [
-        [Paragraph("<b>Full Name:</b>", label_style), Paragraph(f"{learner.first_name} {learner.last_name}".strip() or learner.username, value_style),
+        [Paragraph("<b>Full Name:</b>", label_style), Paragraph(learner.get_full_name(), value_style),
          Paragraph("<b>Reg Number:</b>", label_style), Paragraph(learner.registration_number or "N/A", value_style)],
         [Paragraph("<b>Course:</b>", label_style), Paragraph(course.name if course else "N/A", value_style),
          Paragraph("<b>Unit Code:</b>", label_style), Paragraph(unit.code if unit else "N/A", value_style)],
@@ -198,7 +198,7 @@ def generate_portfolio_pdf(portfolio, user=None):
         assessment_data = [
             [Paragraph("<b>Grade:</b>", label_style), Paragraph(assessment.grade, value_style)],
             [Paragraph("<b>Feedback:</b>", label_style), Paragraph(assessment.feedback, value_style)],
-            [Paragraph("<b>Assessor:</b>", label_style), Paragraph(f"{assessment.assessor.first_name} {assessment.assessor.last_name}".strip() or assessment.assessor.username, value_style)],
+            [Paragraph("<b>Assessor:</b>", label_style), Paragraph(assessment.assessor.get_full_name(), value_style)],
             [Paragraph("<b>Date:</b>", label_style), Paragraph(assessment.date.strftime("%Y-%m-%d"), value_style)],
         ]
         

@@ -241,7 +241,7 @@ class StudentExportPdfView(APIView):
                     Q(semester__in=semesters) | Q(enrolled_units__in=units)
                 )
             ).distinct().select_related('course', 'semester')
-            full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            full_name = user.get_full_name()
             title = f"My Learners Registry - {full_name}"
             subtitle = f"List of students enrolled in units taught by {full_name}"
         else:
@@ -252,7 +252,7 @@ class StudentExportPdfView(APIView):
         for student in students:
             data.append([
                 student.registration_number or 'N/A',
-                f"{student.first_name} {student.last_name}".strip() or student.username,
+                student.get_full_name(),
                 student.course.name if student.course else 'N/A',
                 student.semester.name if student.semester else 'N/A',
                 student.get_intake_display() if student.intake else 'N/A'
@@ -294,7 +294,7 @@ class InstructorExportPdfView(APIView):
             units_str = "<br/>".join([f"{i+1}. {name}" for i, name in enumerate(units_list)]) if units_list else 'N/A'
                 
             data.append([
-                f"{inst.first_name} {inst.last_name}".strip() or inst.username,
+                inst.get_full_name(),
                 inst.email,
                 courses_str,
                 units_str
