@@ -17,7 +17,7 @@ def comment_notification(sender, instance, created, **kwargs):
                     Notification.objects.create(
                         user=instructor,
                         title="New Comment on Portfolio",
-                        message=f"Student {instance.user.username} commented on '{portfolio.title}'.",
+                        message=f"{instance.user.get_full_name()} commented on '{portfolio.title}'.",
                         notification_type=Notification.NotificationType.STATUS_CHANGE,
                         target_url=f"/evaluation/{portfolio.id}",
                         action_text="Read Comment"
@@ -27,7 +27,7 @@ def comment_notification(sender, instance, created, **kwargs):
             Notification.objects.create(
                 user=portfolio.learner,
                 title="New Feedback/Comment",
-                message=f"{instance.user.username} commented on your portfolio '{portfolio.title}'.",
+                message=f"{instance.user.get_full_name()} commented on your portfolio '{portfolio.title}'.",
                 notification_type=Notification.NotificationType.STATUS_CHANGE,
                 target_url=f"/portfolios/{portfolio.id}",
                 action_text="Read Comment"
@@ -55,7 +55,7 @@ def portfolio_status_notification(sender, instance, created, **kwargs):
                     Notification.objects.create(
                         user=instructor,
                         title="New Portfolio Submission",
-                        message=f"Student {instance.learner.username} has submitted a portfolio for {instance.unit.name}.",
+                        message=f"{instance.learner.get_full_name()} has submitted a portfolio for {instance.unit.name}.",
                         notification_type=Notification.NotificationType.SUBMISSION,
                         target_url=f"/evaluation/{instance.id}",
                         action_text="Review Portfolio"
@@ -107,7 +107,7 @@ def evidence_updated_notification(sender, instance, created, **kwargs):
                     Notification.objects.create(
                         user=instructor,
                         title="Portfolio Updated",
-                        message=f"Student {portfolio.learner.username} has updated evidence for '{portfolio.title}'.",
+                        message=f"{portfolio.learner.get_full_name()} has updated evidence for '{portfolio.title}'.",
                         notification_type=Notification.NotificationType.SUBMISSION,
                         target_url=f"/evaluation/{portfolio.id}",
                         action_text="Review Update"

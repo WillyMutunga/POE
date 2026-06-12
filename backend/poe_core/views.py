@@ -148,7 +148,7 @@ class PortfolioViewSet(viewsets.ModelViewSet):
                 if emails:
                     send_mail(
                         subject=f"New Portfolio Submission: {portfolio.title}",
-                        message=f"Student {portfolio.learner.username} has submitted a portfolio for {portfolio.unit.code}: {portfolio.unit.name}.\nLog in to grade it.",
+                        message=f"{portfolio.learner.get_full_name()} has submitted a portfolio for {portfolio.unit.code}: {portfolio.unit.name}.\nLog in to grade it.",
                         from_email="noreply@headwaycollege.ac.ke",
                         recipient_list=emails,
                         fail_silently=True
