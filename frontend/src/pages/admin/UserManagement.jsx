@@ -447,15 +447,14 @@ const UserManagement = () => {
 
                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                        CDACC Reg No. {isLevel5Or6 && <span className="text-red-500 font-bold">*</span>}
+                        CDACC Reg No.
                       </label>
                       <input 
                         type="text"
-                        required={isLevel5Or6}
                         value={newUser.cdacc_registration_number || ''}
                         onChange={(e) => setNewUser({...newUser, cdacc_registration_number: e.target.value.toUpperCase()})}
-                        className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-[#0000FE]/20 outline-none font-bold ${isLevel5Or6 ? 'border-amber-200' : 'border-slate-100'}`}
-                        placeholder={isLevel5Or6 ? "Required (e.g. CDACC/001)" : "Optional"}
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#0000FE]/20 outline-none font-bold"
+                        placeholder="Optional (e.g. CDACC/001)"
                       />
                     </div>
                     
@@ -637,21 +636,20 @@ const UserManagement = () => {
                       </select>
                     </div>
 
-                    {editingUser.role === 'STUDENT' && (
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                          CDACC Reg No. {editingUserIsLevel5Or6 && <span className="text-red-500 font-bold">*</span>}
-                        </label>
-                        <input 
-                          type="text"
-                          required={editingUserIsLevel5Or6}
-                          value={editingUser.cdacc_registration_number || ''}
-                          onChange={(e) => setEditingUser({...editingUser, cdacc_registration_number: e.target.value.toUpperCase()})}
-                          className={`w-full px-4 py-3 bg-slate-50 border rounded-xl focus:ring-2 focus:ring-[#0000FE]/20 outline-none font-bold ${editingUserIsLevel5Or6 ? 'border-amber-200' : 'border-slate-100'}`}
-                          placeholder={editingUserIsLevel5Or6 ? "Required (e.g. CDACC/001)" : "Optional"}
-                        />
-                      </div>
-                    )}
+                      {editingUser.role === 'STUDENT' && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
+                            CDACC Reg No.
+                          </label>
+                          <input 
+                            type="text"
+                            value={editingUser.cdacc_registration_number || ''}
+                            onChange={(e) => setEditingUser({...editingUser, cdacc_registration_number: e.target.value.toUpperCase()})}
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-[#0000FE]/20 outline-none font-bold"
+                            placeholder="Optional (e.g. CDACC/001)"
+                          />
+                        </div>
+                      )}
                   </div>
                 )}
 

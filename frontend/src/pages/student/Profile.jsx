@@ -11,6 +11,7 @@ const Profile = () => {
     email: '',
     phone_number: '',
     registration_number: '',
+    cdacc_registration_number: '',
     course_display: '',
     semester_display: '',
     intake: ''
@@ -43,7 +44,8 @@ const Profile = () => {
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
-        phone_number: formData.phone_number
+        phone_number: formData.phone_number,
+        cdacc_registration_number: formData.cdacc_registration_number
       });
       await refreshProfile();
       setSuccess(true);
@@ -85,6 +87,12 @@ const Profile = () => {
                 <div className="flex items-center gap-3 text-slate-600 animate-in slide-in-from-top-2">
                   <Hash size={18} className="text-slate-400" />
                   <span className="text-sm font-bold">{formData.registration_number || 'No Reg No.'}</span>
+                </div>
+              )}
+              {formData.role === 'STUDENT' && formData.cdacc_registration_number && (
+                <div className="flex items-center gap-3 text-slate-600 animate-in slide-in-from-top-2">
+                  <Hash size={18} className="text-slate-400" />
+                  <span className="text-sm font-bold">CDACC: {formData.cdacc_registration_number}</span>
                 </div>
               )}
               {formData.intake && (
@@ -195,6 +203,22 @@ const Profile = () => {
                 />
               </div>
             </div>
+
+            {formData.role === 'STUDENT' && (
+              <div className="space-y-2 animate-in slide-in-from-top-2">
+                <label className="text-sm font-bold text-slate-700 ml-1">CDACC Registration Number</label>
+                <div className="relative">
+                  <Hash className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    type="text"
+                    className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:border-[#0000FE] focus:ring-1 focus:ring-[#0000FE] focus:outline-none transition-all font-medium"
+                    value={formData.cdacc_registration_number || ''}
+                    placeholder="Optional (e.g. CDACC/001)"
+                    onChange={(e) => setFormData({...formData, cdacc_registration_number: e.target.value.toUpperCase()})}
+                  />
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center justify-between pt-4">
               {success && (

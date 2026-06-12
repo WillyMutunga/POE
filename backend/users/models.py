@@ -39,10 +39,7 @@ class User(AbstractUser):
 
     def clean(self):
         super().clean()
-        if self.role == 'STUDENT' and self.course:
-            if self.course.level in ['LEVEL_5', 'LEVEL_6'] and not self.cdacc_registration_number:
-                from django.core.exceptions import ValidationError
-                raise ValidationError({'cdacc_registration_number': 'CDACC registration number is required for Level 5 and Level 6 students.'})
+
 
     def save(self, *args, **kwargs):
         if not self.registration_number:

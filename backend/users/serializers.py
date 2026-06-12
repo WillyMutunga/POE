@@ -50,6 +50,7 @@ class UserSerializer(serializers.ModelSerializer):
     school_name = serializers.ReadOnlyField(source='course.school.name')
     school = serializers.ReadOnlyField(source='course.school.id')
     course_name = serializers.ReadOnlyField(source='course.name')
+    course_level = serializers.ReadOnlyField(source='course.level')
     full_name = serializers.SerializerMethodField()
 
     def get_full_name(self, obj):
@@ -63,24 +64,13 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'registration_number', 'cdacc_registration_number', 'username', 'email', 'role', 'password', 
             'first_name', 'last_name', 'phone_number', 'assigned_units', 'assigned_courses', 'course', 'semester', 'intake',
-            'course_display', 'semester_display', 'school', 'school_name', 'course_name', 'full_name'
+            'course_display', 'semester_display', 'school', 'school_name', 'course_name', 'full_name', 'course_level'
         )
         extra_kwargs = {
             'password': {'write_only': True},
             'username': {'validators': []}
         }
 
-    def validate(self, attrs):
-        role = attrs.get('role') or getattr(self.instance, 'role', None)
-        course = attrs.get('course') or getattr(self.instance, 'course', None)
-        cdacc_reg = attrs.get('cdacc_registration_number') or getattr(self.instance, 'cdacc_registration_number', None)
-        
-        if role == 'STUDENT' and course:
-            if course.level in ['LEVEL_5', 'LEVEL_6'] and not cdacc_reg:
-                raise serializers.ValidationError({
-                    'cdacc_registration_number': 'CDACC registration number is required for Level 5 and Level 6 students.'
-                })
-        return attrs
 
     def create(self, validated_data):
         assigned_units = validated_data.pop('assigned_units', [])
@@ -185,17 +175,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         model = User
         fields = ('registration_number', 'cdacc_registration_number', 'username', 'email', 'password', 'role', 'first_name', 'last_name', 'course', 'semester', 'intake')
 
-    def validate(self, attrs):
-        role = attrs.get('role')
-        course = attrs.get('course')
-        cdacc_reg = attrs.get('cdacc_registration_number')
-        
-        if role == 'STUDENT' and course:
-            if course.level in ['LEVEL_5', 'LEVEL_6'] and not cdacc_reg:
-                raise serializers.ValidationError({
-                    'cdacc_registration_number': 'CDACC registration number is required for Level 5 and Level 6 students.'
-                })
-        return attrs
 
     def create(self, validated_data):
         user = User.objects.create_user(

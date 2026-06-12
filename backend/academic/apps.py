@@ -6,6 +6,7 @@ class AcademicConfig(AppConfig):
     name = 'academic'
 
     def ready(self):
+        import os
         from django.conf import settings
         target_media = '/home1/headwayc/poe.headwaycollege.ac.ke/media'
         if os.path.exists('/home1/headwayc/poe.headwaycollege.ac.ke') and not os.path.lexists(target_media):
