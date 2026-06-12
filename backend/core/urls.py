@@ -24,20 +24,22 @@ from django.http import JsonResponse
 
 def check_media_log(request):
     log_path = '/home1/headwayc/poe_backend/media_status.txt'
+    media_dir = '/home1/headwayc/poe_backend/media/evidence'
+    
+    media_files = []
+    if os.path.exists(media_dir):
+        media_files = os.listdir(media_dir)
+        
+    log_content = ""
     if os.path.exists(log_path):
         with open(log_path, 'r') as f:
-            return JsonResponse({"status": "exists", "log": f.read()})
-    
-    alt_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'media_status.txt')
-    if os.path.exists(alt_path):
-        with open(alt_path, 'r') as f:
-            return JsonResponse({"status": "exists_alt", "log": f.read()})
+            log_content = f.read()
             
     return JsonResponse({
-        "status": "not_found", 
-        "cwd": os.getcwd(), 
-        "files_in_cwd": os.listdir('.'),
-        "parent_files": os.listdir('..') if os.path.exists('..') else []
+        "status": "success",
+        "media_dir_exists": os.path.exists(media_dir),
+        "media_files": media_files,
+        "log": log_content
     })
 
 urlpatterns = [
