@@ -209,7 +209,7 @@ class StudentExportView(APIView):
         for student in students:
             writer.writerow([
                 student.registration_number,
-                f"{student.first_name} {student.last_name}",
+                f"{student.first_name} {student.last_name}".strip() or student.username,
                 student.email,
                 student.course.name if student.course else 'N/A',
                 student.semester.name if student.semester else 'N/A',
@@ -241,8 +241,9 @@ class StudentExportPdfView(APIView):
                     Q(semester__in=semesters) | Q(enrolled_units__in=units)
                 )
             ).distinct().select_related('course', 'semester')
-            title = f"My Learners Registry - {user.username}"
-            subtitle = f"List of students enrolled in units taught by {user.username}"
+            full_name = f"{user.first_name} {user.last_name}".strip() or user.username
+            title = f"My Learners Registry - {full_name}"
+            subtitle = f"List of students enrolled in units taught by {full_name}"
         else:
             students = User.objects.filter(role='STUDENT').select_related('course', 'semester')
             title = "Institutional Learner Registry"
@@ -251,7 +252,7 @@ class StudentExportPdfView(APIView):
         for student in students:
             data.append([
                 student.registration_number or 'N/A',
-                f"{student.first_name} {student.last_name}",
+                f"{student.first_name} {student.last_name}".strip() or student.username,
                 student.course.name if student.course else 'N/A',
                 student.semester.name if student.semester else 'N/A',
                 student.get_intake_display() if student.intake else 'N/A'
@@ -293,7 +294,7 @@ class InstructorExportPdfView(APIView):
             units_str = "<br/>".join([f"{i+1}. {name}" for i, name in enumerate(units_list)]) if units_list else 'N/A'
                 
             data.append([
-                f"{inst.first_name} {inst.last_name}" if inst.first_name else inst.username,
+                f"{inst.first_name} {inst.last_name}".strip() or inst.username,
                 inst.email,
                 courses_str,
                 units_str

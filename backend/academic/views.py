@@ -82,7 +82,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         for student in course.students.filter(role='STUDENT'):
             writer.writerow([
                 student.registration_number,
-                f"{student.first_name} {student.last_name}",
+                f"{student.first_name} {student.last_name}".strip() or student.username,
                 student.email,
                 student.semester.name if student.semester else 'N/A',
                 student.get_intake_display() if student.intake else 'N/A'
@@ -138,7 +138,7 @@ class CourseViewSet(viewsets.ModelViewSet):
         for student in course.students.filter(role='STUDENT'):
             data.append([
                 student.registration_number or 'N/A',
-                f"{student.first_name} {student.last_name}",
+                f"{student.first_name} {student.last_name}".strip() or student.username,
                 student.email,
                 student.semester.name if student.semester else 'N/A',
                 student.get_intake_display() if student.intake else 'N/A'
