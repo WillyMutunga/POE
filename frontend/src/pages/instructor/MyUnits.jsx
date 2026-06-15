@@ -71,6 +71,8 @@ const MyUnits = () => {
   const [newUnitName, setNewUnitName] = useState('');
   const [elements, setElements] = useState(['']);
   const [submitting, setSubmitting] = useState(false);
+  const [newInlineElementName, setNewInlineElementName] = useState('');
+  const [addingInlineElement, setAddingInlineElement] = useState(false);
 
   useEffect(() => {
     const fetchMyUnits = async () => {
@@ -199,6 +201,50 @@ const MyUnits = () => {
       alert(errorMsg);
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAddInlineElement = async () => {
+    if (!newInlineElementName.trim() || !selectedUnitDetails) return;
+    setAddingInlineElement(true);
+    try {
+      const payload = {
+        name: newInlineElementName.toUpperCase(),
+        unit: selectedUnitDetails.id
+      };
+      await api.post('/academic/elements/', payload);
+      
+      // Clear input
+      setNewInlineElementName('');
+      
+      // Refresh list
+      const response = await api.get('/academic/units/my_units/');
+      setUnits(response.data);
+      
+      // Update selectedUnitDetails
+      const updatedUnit = response.data.find(u => u.id === selectedUnitDetails.id);
+      if (updatedUnit) {
+        setSelectedUnitDetails(updatedUnit);
+      }
+      
+    } catch (error) {
+      console.error('Error adding element:', error);
+      let errorMsg = 'Failed to add element.';
+      if (error.response?.data) {
+        if (typeof error.response.data === 'object') {
+          errorMsg = Object.entries(error.response.data)
+            .map(([field, msgs]) => {
+              const fieldName = field === 'non_field_errors' ? '' : `${field}: `;
+              return `${fieldName}${Array.isArray(msgs) ? msgs.join(', ') : msgs}`;
+            })
+            .join('\n');
+        } else if (typeof error.response.data === 'string') {
+          errorMsg = error.response.data;
+        }
+      }
+      alert(errorMsg);
+    } finally {
+      setAddingInlineElement(false);
     }
   };
 
@@ -459,7 +505,10 @@ const MyUnits = () => {
       {selectedUnitDetails && (
         <Modal
           isOpen={!!selectedUnitDetails}
-          onClose={() => setSelectedUnitDetails(null)}
+          onClose={() => {
+            setSelectedUnitDetails(null);
+            setNewInlineElementName('');
+          }}
           title={`Unit Details: ${selectedUnitDetails.name}`}
         >
           <div className="space-y-6">
@@ -496,11 +545,36 @@ const MyUnits = () => {
                   ))}
                 </div>
               )}
+
+              {/* Add Element inline form for Instructors */}
+              <div className="pt-4 border-t border-slate-100 space-y-2">
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Add New Element</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="e.g. PRACTICAL TASK 3"
+                    className="flex-1 px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500/20 font-bold text-xs uppercase"
+                    value={newInlineElementName}
+                    onChange={(e) => setNewInlineElementName(e.target.value.toUpperCase())}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddInlineElement}
+                    disabled={!newInlineElementName.trim() || addingInlineElement}
+                    className="px-4 py-3 bg-[#0000FE] text-white font-black rounded-xl hover:bg-blue-700 transition-all text-xs flex items-center gap-1 shadow-sm disabled:opacity-50"
+                  >
+                    {addingInlineElement ? 'Adding...' : 'Add'}
+                  </button>
+                </div>
+              </div>
             </div>
 
             <button 
               type="button"
-              onClick={() => setSelectedUnitDetails(null)}
+              onClick={() => {
+                setSelectedUnitDetails(null);
+                setNewInlineElementName('');
+              }}
               className="w-full py-4 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-all text-xs border border-slate-200"
             >
               Close Details
