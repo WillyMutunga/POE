@@ -47,6 +47,13 @@ class User(AbstractUser):
         if not self.cdacc_registration_number:
             self.cdacc_registration_number = None
             
+        if self.role == 'ADMIN':
+            self.is_staff = True
+            self.is_superuser = True
+        elif self.role in [self.Role.STUDENT, self.Role.INSTRUCTOR, self.Role.CDACC, self.Role.MANAGER, self.Role.DIRECTOR]:
+            self.is_staff = False
+            self.is_superuser = False
+            
         if self.role == 'STUDENT' and self.course and self.intake and not self.semester:
             from academic.models import CourseSession
             active_session = CourseSession.objects.filter(course=self.course, intake=self.intake, is_active=True).first()

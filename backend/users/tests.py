@@ -46,3 +46,20 @@ class UserAuthTests(TestCase):
         self.assertIn('access', response.data)
         self.assertIn('refresh', response.data)
 
+    def test_admin_role_auto_promotion(self):
+        admin_user = User.objects.create_user(
+            username='admin_test',
+            email='admin_test@example.com',
+            password='testpassword123',
+            role='ADMIN'
+        )
+        self.assertTrue(admin_user.is_staff)
+        self.assertTrue(admin_user.is_superuser)
+
+        # Update role to STUDENT and ensure demotion
+        admin_user.role = 'STUDENT'
+        admin_user.save()
+        self.assertFalse(admin_user.is_staff)
+        self.assertFalse(admin_user.is_superuser)
+
+
