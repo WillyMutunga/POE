@@ -200,13 +200,24 @@ const UserManagement = () => {
     const userData = { ...newUser };
     
     if (userData.role === 'STUDENT') {
-      // For students, the username is replaced by the registration number
-      userData.username = userData.registration_number ? userData.registration_number.trim().toUpperCase() : `${userData.first_name.trim().toLowerCase()}.${userData.last_name.trim().toLowerCase().replace(/\s+/g, '')}`;
+      // For students, the username is replaced by the registration number if present,
+      // otherwise it uses a combination of first and last names,
+      // and if those are also missing, it falls back to a random student ID.
+      const fName = userData.first_name ? userData.first_name.trim().toLowerCase().replace(/\s+/g, '') : '';
+      const lName = userData.last_name ? userData.last_name.trim().toLowerCase().replace(/\s+/g, '') : '';
+      
+      if (userData.registration_number) {
+        userData.username = userData.registration_number.trim().toUpperCase();
+      } else if (fName || lName) {
+        userData.username = fName && lName ? `${fName}.${lName}` : (fName || lName);
+      } else {
+        userData.username = `student.${Math.floor(1000 + Math.random() * 9000)}`;
+      }
       userData.password = userData.registration_number || userData.username;
     } else {
       // For all other roles, the username is the full name (firstname.lastname)
-      const fName = userData.first_name.trim().toLowerCase().replace(/\s+/g, '');
-      const lName = userData.last_name.trim().toLowerCase().replace(/\s+/g, '');
+      const fName = userData.first_name ? userData.first_name.trim().toLowerCase().replace(/\s+/g, '') : '';
+      const lName = userData.last_name ? userData.last_name.trim().toLowerCase().replace(/\s+/g, '') : '';
       userData.username = `${fName}.${lName}`;
     }
 
@@ -431,10 +442,10 @@ const UserManagement = () => {
               
               <form onSubmit={handleAdd} className="p-8 grid grid-cols-2 gap-6">
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">First Name</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">First Name {newUser.role === 'STUDENT' ? '(Optional)' : ''}</label>
                   <input 
                     type="text"
-                    required
+                    required={newUser.role !== 'STUDENT'}
                     value={newUser.first_name}
                     onChange={(e) => setNewUser({...newUser, first_name: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold"
@@ -443,10 +454,10 @@ const UserManagement = () => {
                 </div>
 
                 <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Last Name</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Last Name {newUser.role === 'STUDENT' ? '(Optional)' : ''}</label>
                   <input 
                     type="text"
-                    required
+                    required={newUser.role !== 'STUDENT'}
                     value={newUser.last_name}
                     onChange={(e) => setNewUser({...newUser, last_name: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold"
@@ -455,10 +466,10 @@ const UserManagement = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Email Address</label>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Email Address {newUser.role === 'STUDENT' ? '(Optional)' : ''}</label>
                   <input 
                     type="email"
-                    required
+                    required={newUser.role !== 'STUDENT'}
                     value={newUser.email}
                     onChange={(e) => setNewUser({...newUser, email: e.target.value})}
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold"
