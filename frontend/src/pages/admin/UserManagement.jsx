@@ -20,6 +20,12 @@ const UserManagement = () => {
   const [addingSemesterId, setAddingSemesterId] = useState('');
   const [isAddingUnit, setIsAddingUnit] = useState(false);
 
+  const [selectedTranscriptStudent, setSelectedTranscriptStudent] = useState(null);
+  const [selectedTranscriptSemesterId, setSelectedTranscriptSemesterId] = useState('');
+  const [transcriptPdfUrl, setTranscriptPdfUrl] = useState(null);
+  const [loadingTranscriptPdf, setLoadingTranscriptPdf] = useState(false);
+  const [transcriptError, setTranscriptError] = useState(null);
+
   const showToast = (message, type = 'success', username = '') => {
     setToast({ message, type, username });
     setTimeout(() => {
@@ -315,6 +321,51 @@ const UserManagement = () => {
         alert(error.response?.data?.detail || 'Failed to reset password.');
       }
     }
+  };
+
+  const handleLoadTranscript = async () => {
+    if (!selectedTranscriptSemesterId || !selectedTranscriptStudent) return;
+    setLoadingTranscriptPdf(true);
+    setTranscriptError(null);
+    setTranscriptPdfUrl(null);
+    try {
+      const response = await api.get(
+        `/academic/student-marks/provisional_results_pdf/?semester_id=${selectedTranscriptSemesterId}&student_id=${selectedTranscriptStudent.id}`,
+        { responseType: 'blob' }
+      );
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      setTranscriptPdfUrl(URL.createObjectURL(file));
+    } catch (err) {
+      console.error('Error loading transcript:', err);
+      if (err.response && err.response.data) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            setTranscriptError(parsed.error || 'No graded results found for this student in this semester.');
+          } catch {
+            setTranscriptError('No approved units registered or graded for this student in this semester.');
+          }
+        };
+        reader.readAsText(err.response.data);
+      } else {
+        setTranscriptError('No approved units registered or graded for this student in this semester.');
+      }
+    } finally {
+      setLoadingTranscriptPdf(false);
+    }
+  };
+
+  const handleDownloadTranscript = () => {
+    if (!transcriptPdfUrl || !selectedTranscriptStudent) return;
+    const link = document.createElement('a');
+    link.href = transcriptPdfUrl;
+    const semName = semesters.find(s => s.id.toString() === selectedTranscriptSemesterId)?.name || 'Results';
+    const studentName = selectedTranscriptStudent.registration_number || selectedTranscriptStudent.username;
+    link.setAttribute('download', `ProvisionalResults_${studentName}_${semName.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
   
   const handleGlobalStudentDownload = async (format) => {
@@ -904,13 +955,27 @@ const UserManagement = () => {
                   </td>
                   <td className="px-8 py-5 text-right">
                     {u.role === 'STUDENT' && (
-                      <button 
-                        onClick={() => handleResetToRegNo(u)} 
-                        className="p-2 text-slate-400 hover:text-blue-600 inline-flex items-center gap-1 text-xs font-bold mr-2 animate-in fade-in"
-                        title="Reset password to registration number"
-                      >
-                        <Key size={14} /> Reset Pass
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => {
+                            setSelectedTranscriptStudent(u);
+                            setSelectedTranscriptSemesterId('');
+                            setTranscriptPdfUrl(null);
+                            setTranscriptError(null);
+                          }}
+                          className="p-2 text-slate-400 hover:text-[#00b074] inline-flex items-center gap-1 text-xs font-bold mr-2 animate-in fade-in"
+                          title="View provisional transcript/results"
+                        >
+                          <FileText size={14} /> Transcript
+                        </button>
+                        <button 
+                          onClick={() => handleResetToRegNo(u)} 
+                          className="p-2 text-slate-400 hover:text-blue-600 inline-flex items-center gap-1 text-xs font-bold mr-2 animate-in fade-in"
+                          title="Reset password to registration number"
+                        >
+                          <Key size={14} /> Reset Pass
+                        </button>
+                      </>
                     )}
                     <button onClick={() => setEditingUser(u)} className="p-2 text-slate-300 hover:text-[#0000FE]" title="Edit User"><MoreVertical size={18} /></button>
                     <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-slate-300 hover:text-red-500" title="Delete User"><Trash2 size={18} /></button>
@@ -948,6 +1013,106 @@ const UserManagement = () => {
             )}
           </div>
           <button type="button" onClick={() => setToast(null)} className="text-slate-400 hover:text-white font-bold text-xs ml-2">✕</button>
+        </div>
+      )}
+
+      {/* View Transcript Modal */}
+      {selectedTranscriptStudent && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 overflow-y-auto p-4 md:p-8 animate-in fade-in duration-200">
+          <div className="min-h-full flex items-center justify-center py-8">
+            <div className="bg-white rounded-[32px] w-full max-w-4xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300 relative flex flex-col max-h-[85vh]">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white z-10 shadow-sm">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Student Transcript</h2>
+                  <p className="text-slate-500 font-medium text-sm">
+                    Viewing provisional results for {selectedTranscriptStudent.full_name || selectedTranscriptStudent.username} ({selectedTranscriptStudent.registration_number || 'No Reg No'})
+                  </p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setSelectedTranscriptStudent(null);
+                    setSelectedTranscriptSemesterId('');
+                    setTranscriptPdfUrl(null);
+                    setTranscriptError(null);
+                  }} 
+                  className="text-slate-400 hover:text-slate-600 font-black text-sm"
+                >
+                  ✕ Close
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1 space-y-6">
+                <div className="flex flex-col md:flex-row gap-4 items-end bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                  <div className="flex-1">
+                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
+                      Select Module/Semester:
+                    </label>
+                    <select
+                      value={selectedTranscriptSemesterId}
+                      onChange={(e) => {
+                        setSelectedTranscriptSemesterId(e.target.value);
+                        setTranscriptPdfUrl(null);
+                        setTranscriptError(null);
+                      }}
+                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary-500/20"
+                    >
+                      <option value="">-- Select Semester --</option>
+                      {semesters
+                        .filter(s => s.course?.toString() === selectedTranscriptStudent.course?.toString())
+                        .map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))
+                      }
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleLoadTranscript}
+                    disabled={loadingTranscriptPdf || !selectedTranscriptSemesterId}
+                    className="px-6 py-3 bg-[#00b074] hover:bg-[#008f5d] text-white font-black rounded-xl text-sm transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm shrink-0 h-[46px]"
+                  >
+                    {loadingTranscriptPdf ? 'Loading...' : 'Load Transcript'}
+                  </button>
+                  {transcriptPdfUrl && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadTranscript}
+                      className="px-6 py-3 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-sm transition-all flex items-center gap-2 shadow-md shrink-0 h-[46px]"
+                    >
+                      <Download size={16} />
+                      Download
+                    </button>
+                  )}
+                </div>
+
+                {transcriptError && (
+                  <div className="p-4 bg-red-50 text-red-700 text-sm font-bold rounded-2xl border border-red-100">
+                    {transcriptError}
+                  </div>
+                )}
+
+                {transcriptPdfUrl ? (
+                  <div className="bg-slate-100 rounded-2xl p-1 border border-slate-200 overflow-hidden shadow-inner h-[50vh]">
+                    <iframe
+                      src={transcriptPdfUrl}
+                      title="Provisional Results Transcript"
+                      className="w-full h-full rounded-xl"
+                    />
+                  </div>
+                ) : (
+                  !loadingTranscriptPdf && (
+                    <div className="bg-slate-50 rounded-2xl p-12 text-center border border-slate-100 border-dashed">
+                      <FileText className="mx-auto text-slate-300 mb-4" size={48} />
+                      <h4 className="text-lg font-bold text-slate-700">No Transcript Loaded</h4>
+                      <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto font-medium">
+                        Select a semester from the dropdown above and click <strong>Load Transcript</strong> to preview the results.
+                      </p>
+                    </div>
+                  )
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>
