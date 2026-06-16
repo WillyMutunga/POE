@@ -73,6 +73,8 @@ const UserManagement = () => {
     const params = new URLSearchParams(window.location.search);
     const roleParam = params.get('role');
     if (roleParam) setRoleFilter(roleParam);
+    const searchParam = params.get('search');
+    if (searchParam) setSearchTerm(searchParam);
   }, [window.location.search]);
 
   const filteredUsers = users.filter(u => {
@@ -291,6 +293,26 @@ const UserManagement = () => {
       } catch (error) {
         console.error('Error deleting user:', error);
         alert('Could not delete user. They might have existing records in the system.');
+      }
+    }
+  };
+
+  const handleResetToRegNo = async (user) => {
+    const regNo = user.registration_number || user.username;
+    if (!regNo) {
+      alert("No registration number or username found for this student.");
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to reset password for student ${user.full_name || user.username} to their registration number/username: "${regNo}"?`)) {
+      try {
+        await api.patch(`/users/update/${user.id}/`, {
+          password: regNo
+        });
+        showToast(`Password for ${user.username} successfully reset to "${regNo}"!`, 'success');
+      } catch (error) {
+        console.error('Error resetting password:', error);
+        alert(error.response?.data?.detail || 'Failed to reset password.');
       }
     }
   };
@@ -609,6 +631,26 @@ const UserManagement = () => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                       <Key size={12} /> Reset Password
                     </label>
+                    {editingUser.role === 'STUDENT' && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const regNo = editingUser.registration_number || editingUser.username;
+                          if (regNo) {
+                            setEditingUser({
+                              ...editingUser,
+                              new_password: regNo
+                            });
+                            alert(`Password set in form to: ${regNo}. Click 'Save Changes' to confirm.`);
+                          } else {
+                            alert("No registration number or username found to reset to.");
+                          }
+                        }}
+                        className="text-[9px] font-black uppercase tracking-wider text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 border border-blue-100 px-2.5 py-1.5 rounded-lg transition-all"
+                      >
+                        Use Reg No / Username
+                      </button>
+                    )}
                   </div>
                   <div className="relative">
                     <input 
@@ -861,8 +903,17 @@ const UserManagement = () => {
                     </span>
                   </td>
                   <td className="px-8 py-5 text-right">
-                    <button onClick={() => setEditingUser(u)} className="p-2 text-slate-300 hover:text-[#0000FE]"><MoreVertical size={18} /></button>
-                    <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-slate-300 hover:text-red-500"><Trash2 size={18} /></button>
+                    {u.role === 'STUDENT' && (
+                      <button 
+                        onClick={() => handleResetToRegNo(u)} 
+                        className="p-2 text-slate-400 hover:text-blue-600 inline-flex items-center gap-1 text-xs font-bold mr-2 animate-in fade-in"
+                        title="Reset password to registration number"
+                      >
+                        <Key size={14} /> Reset Pass
+                      </button>
+                    )}
+                    <button onClick={() => setEditingUser(u)} className="p-2 text-slate-300 hover:text-[#0000FE]" title="Edit User"><MoreVertical size={18} /></button>
+                    <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-slate-300 hover:text-red-500" title="Delete User"><Trash2 size={18} /></button>
                   </td>
                 </tr>
               ))}

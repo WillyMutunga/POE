@@ -342,6 +342,26 @@ class PasswordResetRequestView(APIView):
         user = User.objects.filter(email=email).first()
         
         if user:
+            if user.role == 'STUDENT':
+                from notifications.models import Notification
+                admins = User.objects.filter(role='ADMIN')
+                
+                # Create a system alert notification for all admins
+                for admin in admins:
+                    Notification.objects.create(
+                        user=admin,
+                        title="Password Reset Request",
+                        message=f"Student {user.get_full_name()} ({user.registration_number or user.username}) has requested a password reset. Please reset their password to their registration number.",
+                        notification_type=Notification.NotificationType.SYSTEM_ALERT,
+                        target_url=f"/admin/users?role=STUDENT&search={user.registration_number or user.username}",
+                        action_text="Go to User Management"
+                    )
+                
+                return Response(
+                    {"detail": "Your password reset request has been submitted to the administrator. They will reset your password to your registration number."},
+                    status=status.HTTP_200_OK
+                )
+
             token = default_token_generator.make_token(user)
             uidb64 = urlsafe_base64_encode(force_bytes(user.pk))
             
