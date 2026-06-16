@@ -1029,99 +1029,103 @@ const UserManagement = () => {
 
       {/* View Transcript Modal */}
       {selectedTranscriptStudent && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 overflow-y-auto p-4 md:p-8 animate-in fade-in duration-200">
-          <div className="min-h-full flex items-center justify-center py-8">
-            <div className="bg-white rounded-[32px] w-full max-w-4xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300 relative flex flex-col max-h-[85vh]">
-              <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white z-10 shadow-sm">
-                <div>
-                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Student Transcript</h2>
-                  <p className="text-slate-500 font-medium text-sm">
-                    Viewing provisional results for {selectedTranscriptStudent.full_name || selectedTranscriptStudent.username} ({selectedTranscriptStudent.registration_number || 'No Reg No'})
-                  </p>
-                </div>
-                <button 
-                  onClick={() => {
-                    setSelectedTranscriptStudent(null);
-                    setSelectedTranscriptSemesterId('');
+        <div className="fixed inset-0 bg-slate-50 z-50 animate-in fade-in duration-200 flex flex-col w-screen h-screen overflow-hidden">
+          {/* Header */}
+          <div className="px-8 py-6 border-b border-slate-200/80 flex justify-between items-center bg-white z-10 shadow-sm shrink-0">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 tracking-tight flex items-center gap-2">
+                <FileText className="text-[#0000FE]" size={24} /> Student Transcript
+              </h2>
+              <p className="text-slate-500 font-medium text-sm mt-0.5">
+                Viewing provisional results for <span className="text-slate-800 font-bold">{selectedTranscriptStudent.full_name || selectedTranscriptStudent.username}</span> ({selectedTranscriptStudent.registration_number || 'No Reg No'})
+              </p>
+            </div>
+            <button 
+              onClick={() => {
+                setSelectedTranscriptStudent(null);
+                setSelectedTranscriptSemesterId('');
+                setTranscriptPdfUrl(null);
+                setTranscriptError(null);
+              }} 
+              className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-black text-sm rounded-xl transition-all flex items-center gap-2 border border-slate-200/50"
+            >
+              ✕ Close Window
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="p-8 flex-1 flex flex-col min-h-0 space-y-6 overflow-hidden">
+            {/* Control Panel */}
+            <div className="flex flex-col md:flex-row gap-4 items-end bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm shrink-0">
+              <div className="flex-1">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">
+                  Select Module/Semester:
+                </label>
+                <select
+                  value={selectedTranscriptSemesterId}
+                  onChange={(e) => {
+                    setSelectedTranscriptSemesterId(e.target.value);
                     setTranscriptPdfUrl(null);
                     setTranscriptError(null);
-                  }} 
-                  className="text-slate-400 hover:text-slate-600 font-black text-sm"
+                  }}
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary-500/20"
                 >
-                  ✕ Close
+                  <option value="">-- Select Semester --</option>
+                  {semesters
+                    .filter(s => s.course?.toString() === selectedTranscriptStudent.course?.toString())
+                    .map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))
+                  }
+                </select>
+              </div>
+              <button
+                type="button"
+                onClick={handleLoadTranscript}
+                disabled={loadingTranscriptPdf || !selectedTranscriptSemesterId}
+                className="px-6 py-3 bg-[#00b074] hover:bg-[#008f5d] text-white font-black rounded-xl text-sm transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm shrink-0 h-[46px]"
+              >
+                {loadingTranscriptPdf ? 'Loading...' : 'Load Transcript'}
+              </button>
+              {transcriptPdfUrl && (
+                <button
+                  type="button"
+                  onClick={handleDownloadTranscript}
+                  className="px-6 py-3 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-sm transition-all flex items-center gap-2 shadow-md shrink-0 h-[46px]"
+                >
+                  <Download size={16} />
+                  Download
                 </button>
+              )}
+            </div>
+
+            {transcriptError && (
+              <div className="p-4 bg-red-50 text-red-700 text-sm font-bold rounded-2xl border border-red-100 shrink-0">
+                {transcriptError}
               </div>
+            )}
 
-              <div className="p-8 overflow-y-auto flex-1 space-y-6">
-                <div className="flex flex-col md:flex-row gap-4 items-end bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                  <div className="flex-1">
-                    <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">
-                      Select Module/Semester:
-                    </label>
-                    <select
-                      value={selectedTranscriptSemesterId}
-                      onChange={(e) => {
-                        setSelectedTranscriptSemesterId(e.target.value);
-                        setTranscriptPdfUrl(null);
-                        setTranscriptError(null);
-                      }}
-                      className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-700 outline-none focus:ring-2 focus:ring-primary-500/20"
-                    >
-                      <option value="">-- Select Semester --</option>
-                      {semesters
-                        .filter(s => s.course?.toString() === selectedTranscriptStudent.course?.toString())
-                        .map(s => (
-                          <option key={s.id} value={s.id}>{s.name}</option>
-                        ))
-                      }
-                    </select>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleLoadTranscript}
-                    disabled={loadingTranscriptPdf || !selectedTranscriptSemesterId}
-                    className="px-6 py-3 bg-[#00b074] hover:bg-[#008f5d] text-white font-black rounded-xl text-sm transition-all disabled:opacity-50 flex items-center gap-2 shadow-sm shrink-0 h-[46px]"
-                  >
-                    {loadingTranscriptPdf ? 'Loading...' : 'Load Transcript'}
-                  </button>
-                  {transcriptPdfUrl && (
-                    <button
-                      type="button"
-                      onClick={handleDownloadTranscript}
-                      className="px-6 py-3 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-sm transition-all flex items-center gap-2 shadow-md shrink-0 h-[46px]"
-                    >
-                      <Download size={16} />
-                      Download
-                    </button>
-                  )}
-                </div>
-
-                {transcriptError && (
-                  <div className="p-4 bg-red-50 text-red-700 text-sm font-bold rounded-2xl border border-red-100">
-                    {transcriptError}
-                  </div>
-                )}
-
-                {transcriptPdfUrl ? (
-                  <div className="bg-slate-100 rounded-2xl p-1 border border-slate-200 overflow-hidden shadow-inner h-[50vh]">
-                    <iframe
-                      src={transcriptPdfUrl}
-                      title="Provisional Results Transcript"
-                      className="w-full h-full rounded-xl"
-                    />
-                  </div>
-                ) : (
-                  !loadingTranscriptPdf && (
-                    <div className="bg-slate-50 rounded-2xl p-12 text-center border border-slate-100 border-dashed">
-                      <FileText className="mx-auto text-slate-300 mb-4" size={48} />
-                      <h4 className="text-lg font-bold text-slate-700">No Transcript Loaded</h4>
-                      <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto font-medium">
-                        Select a semester from the dropdown above and click <strong>Load Transcript</strong> to preview the results.
-                      </p>
+            {/* Content Area */}
+            <div className="flex-1 min-h-0 bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col">
+              {transcriptPdfUrl ? (
+                <iframe
+                  src={transcriptPdfUrl}
+                  title="Provisional Results Transcript"
+                  className="w-full h-full border-none rounded-2xl"
+                />
+              ) : (
+                !loadingTranscriptPdf && (
+                  <div className="flex-1 flex flex-col items-center justify-center p-12 text-center">
+                    <div className="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 mb-4 border border-slate-100">
+                      <FileText size={32} />
                     </div>
-                  )
-                )}
-              </div>
+                    <h4 className="text-lg font-bold text-slate-700">No Transcript Loaded</h4>
+                    <p className="text-slate-400 text-xs mt-1 max-w-xs mx-auto font-medium leading-relaxed">
+                      Select a semester from the dropdown above and click <strong>Load Transcript</strong> to preview the results in full screen.
+                    </p>
+                  </div>
+                )
+              )}
             </div>
           </div>
         </div>
