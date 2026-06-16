@@ -1,5 +1,5 @@
-import React from 'react';
-import { X, ExternalLink, Download, FileText } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, ExternalLink, Download, FileText, ZoomIn, ZoomOut } from 'lucide-react';
 
 const getAbsoluteUrl = (fileUrl) => {
   if (!fileUrl) return '';
@@ -13,6 +13,45 @@ const getAbsoluteUrl = (fileUrl) => {
 
 const FileViewer = ({ url, onClose, title }) => {
   if (!url) return null;
+
+  const [zoom, setZoom] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.25, 3));
+  const handleZoomOut = () => {
+    setZoom(prev => {
+      const next = Math.max(prev - 0.25, 0.5);
+      if (next === 1) {
+        setPosition({ x: 0, y: 0 });
+      }
+      return next;
+    });
+  };
+  const handleResetZoom = () => {
+    setZoom(1);
+    setPosition({ x: 0, y: 0 });
+  };
+
+  const handleMouseDown = (e) => {
+    if (zoom <= 1) return;
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y
+    });
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
 
   const isImage = url.match(/\.(jpeg|jpg|gif|png|webp|jfif|pjpeg|pjp)$/i);
   const isPdf = url.match(/\.pdf$/i);
@@ -65,8 +104,54 @@ const FileViewer = ({ url, onClose, title }) => {
           <div className="absolute inset-0 opacity-10 pointer-events-none" style={{ backgroundImage: 'radial-gradient(#ffffff 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
           
           {isImage ? (
-            <div className="w-full h-full p-4 md:p-8 flex items-center justify-center">
-              <img src={absoluteUrl} alt="Evidence" className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition-all duration-500" />
+            <div className="w-full h-full flex items-center justify-center relative">
+              <div 
+                className="w-full h-full p-4 md:p-8 flex items-center justify-center overflow-hidden"
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                onMouseLeave={handleMouseUp}
+                style={{ cursor: zoom > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default' }}
+              >
+                <img 
+                  src={absoluteUrl} 
+                  alt="Evidence" 
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-2xl select-none pointer-events-none" 
+                  style={{
+                    transform: `translate(${position.x}px, ${position.y}px) scale(${zoom})`,
+                    transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
+                  }}
+                />
+              </div>
+
+              {/* Floating Zoom Toolbar */}
+              <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-slate-950/80 backdrop-blur-md px-6 py-2.5 rounded-2xl flex items-center gap-4 text-white border border-white/10 shadow-2xl z-20">
+                <button 
+                  onClick={handleZoomOut} 
+                  className="p-1.5 hover:text-blue-400 transition-colors"
+                  title="Zoom Out"
+                >
+                  <ZoomOut size={18} />
+                </button>
+                <span className="font-mono text-xs font-black min-w-[3.5rem] text-center select-none">
+                  {Math.round(zoom * 100)}%
+                </span>
+                <button 
+                  onClick={handleZoomIn} 
+                  className="p-1.5 hover:text-blue-400 transition-colors"
+                  title="Zoom In"
+                >
+                  <ZoomIn size={18} />
+                </button>
+                <div className="w-[1px] h-4 bg-white/20"></div>
+                <button 
+                  onClick={handleResetZoom} 
+                  className="text-[10px] font-black uppercase tracking-widest px-2 py-1 bg-white/10 hover:bg-white/20 rounded-lg transition-all"
+                  title="Reset Zoom"
+                >
+                  Reset
+                </button>
+              </div>
             </div>
           ) : isPdf ? (
             <div className="text-center p-12 md:p-20 bg-white rounded-[40px] border border-slate-100 shadow-2xl max-w-md mx-4 animate-in zoom-in-95 duration-200">
