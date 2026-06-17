@@ -9,32 +9,32 @@ import os
 
 def generate_portfolio_pdf(portfolio, user=None):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72, topMargin=72, bottomMargin=18)
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=54, leftMargin=54, topMargin=36, bottomMargin=18)
     styles = getSampleStyleSheet()
     
     # Custom styles
     title_style = ParagraphStyle(
         'TitleStyle',
         parent=styles['Heading1'],
-        fontSize=18,
+        fontSize=16,
         alignment=1, # Center
-        spaceAfter=12,
+        spaceAfter=6,
         textColor=colors.HexColor("#0000FE")
     )
     
     section_style = ParagraphStyle(
         'SectionStyle',
         parent=styles['Heading2'],
-        fontSize=14,
-        spaceBefore=12,
-        spaceAfter=6,
+        fontSize=12,
+        spaceBefore=8,
+        spaceAfter=3,
         textColor=colors.HexColor("#334155")
     )
     
     label_style = ParagraphStyle(
         'LabelStyle',
         parent=styles['Normal'],
-        fontSize=10,
+        fontSize=9,
         fontName='Helvetica-Bold',
         textColor=colors.gray
     )
@@ -42,7 +42,7 @@ def generate_portfolio_pdf(portfolio, user=None):
     value_style = ParagraphStyle(
         'ValueStyle',
         parent=styles['Normal'],
-        fontSize=11,
+        fontSize=10,
         fontName='Helvetica',
         textColor=colors.black
     )
@@ -51,7 +51,7 @@ def generate_portfolio_pdf(portfolio, user=None):
 
     # Header / Title
     elements.append(Paragraph("STUDENT PORTFOLIO TRANSCRIPT", title_style))
-    elements.append(Spacer(1, 0.2 * inch))
+    elements.append(Spacer(1, 0.05 * inch))
 
     # Student & Academic Details Table
     learner = portfolio.learner
@@ -73,17 +73,16 @@ def generate_portfolio_pdf(portfolio, user=None):
     details_table.setStyle(TableStyle([
         ('ALIGN', (0,0), (-1,-1), 'LEFT'),
         ('VALIGN', (0,0), (-1,-1), 'TOP'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 4),
     ]))
     elements.append(details_table)
-    elements.append(Spacer(1, 0.3 * inch))
+    elements.append(Spacer(1, 0.1 * inch))
 
     # Portfolio Info
     elements.append(Paragraph("Portfolio Overview", section_style))
-    elements.append(Paragraph(f"<b>Title:</b> {portfolio.title}", styles['Normal']))
+    elements.append(Paragraph(f"<b>Title:</b> {portfolio.title} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Status:</b> {portfolio.status}", styles['Normal']))
     elements.append(Paragraph(f"<b>Description:</b> {portfolio.description}", styles['Normal']))
-    elements.append(Paragraph(f"<b>Status:</b> {portfolio.status}", styles['Normal']))
-    elements.append(Spacer(1, 0.3 * inch))
+    elements.append(Spacer(1, 0.1 * inch))
 
     # Evidence Section
     elements.append(Paragraph("Submitted Evidence", section_style))
@@ -114,9 +113,9 @@ def generate_portfolio_pdf(portfolio, user=None):
             if ext in ['.jpg', '.jpeg', '.png', '.gif']:
                 try:
                     img = Image(file_path)
-                    # Resize to fit in a 2-column grid cell: max_w = 2.8*inch, max_h = 2.0*inch
-                    max_w = 2.8 * inch
-                    max_h = 2.0 * inch
+                    # Resize to fit in a 2-column grid cell: max_w = 3.0*inch, max_h = 1.5*inch
+                    max_w = 3.0 * inch
+                    max_h = 1.5 * inch
                     aspect = img.drawHeight / img.drawWidth
                     
                     if aspect > 1: # Portrait
@@ -154,14 +153,14 @@ def generate_portfolio_pdf(portfolio, user=None):
             row.append([]) # Empty cell
             grid_data.append(row)
             
-        evidence_table = Table(grid_data, colWidths=[3.1 * inch, 3.1 * inch])
+        evidence_table = Table(grid_data, colWidths=[3.3 * inch, 3.3 * inch])
         evidence_table.setStyle(TableStyle([
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('TOPPADDING', (0,0), (-1,-1), 4),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+            ('TOPPADDING', (0,0), (-1,-1), 2),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
             ('LEFTPADDING', (0,0), (-1,-1), 0),
-            ('RIGHTPADDING', (0,0), (-1,-1), 10),
+            ('RIGHTPADDING', (0,0), (-1,-1), 8),
         ]))
         elements.append(evidence_table)
     else:
@@ -176,9 +175,13 @@ def generate_portfolio_pdf(portfolio, user=None):
                 try:
                     img = Image(file_path)
                     max_width = 4.0 * inch
+                    max_height = 2.2 * inch
                     aspect = img.drawHeight / img.drawWidth
                     img.drawWidth = max_width
                     img.drawHeight = max_width * aspect
+                    if img.drawHeight > max_height:
+                        img.drawHeight = max_height
+                        img.drawWidth = max_height / aspect
                     elements.append(img)
                 except Exception as e:
                     elements.append(Paragraph(f"[Error loading image: {str(e)}]", styles['Normal']))
@@ -187,7 +190,7 @@ def generate_portfolio_pdf(portfolio, user=None):
                 link_text = f'<link href="{file_url}" color="blue"><u>{file_url}</u></link>'
                 elements.append(Paragraph(f"<b>File Link:</b> {link_text}", styles['Normal']))
             
-            elements.append(Spacer(1, 0.2 * inch))
+            elements.append(Spacer(1, 0.05 * inch))
 
     # Assessment Section
     if hasattr(portfolio, 'assessment'):
@@ -195,7 +198,7 @@ def generate_portfolio_pdf(portfolio, user=None):
         
         assessment_elements = []
         assessment_elements.append(Paragraph("Assessment Results", section_style))
-        assessment_elements.append(Spacer(1, 0.1 * inch))
+        assessment_elements.append(Spacer(1, 0.05 * inch))
         
         assessment_data = [
             [Paragraph("<b>Grade:</b>", label_style), Paragraph(assessment.grade, value_style)],
@@ -204,11 +207,11 @@ def generate_portfolio_pdf(portfolio, user=None):
             [Paragraph("<b>Date:</b>", label_style), Paragraph(assessment.date.strftime("%Y-%m-%d"), value_style)],
         ]
         
-        assessment_table = Table(assessment_data, colWidths=[1.2*inch, 5.0*inch])
+        assessment_table = Table(assessment_data, colWidths=[1.2*inch, 5.4*inch])
         assessment_table.setStyle(TableStyle([
             ('ALIGN', (0,0), (-1,-1), 'LEFT'),
             ('VALIGN', (0,0), (-1,-1), 'TOP'),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 8),
+            ('BOTTOMPADDING', (0,0), (-1,-1), 4),
             ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
             ('BACKGROUND', (0,0), (0,-1), colors.whitesmoke),
         ]))
