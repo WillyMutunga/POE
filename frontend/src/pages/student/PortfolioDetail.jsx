@@ -14,7 +14,9 @@ import {
   ArrowLeft,
   Eye,
   Video,
-  Edit
+  Edit,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
 import FileViewer from '../../components/FileViewer';
 import DiscussionThread from '../../components/DiscussionThread';
@@ -33,11 +35,12 @@ const PortfolioDetail = () => {
   const [editDescription, setEditDescription] = useState('');
   const [isResubmitMode, setIsResubmitMode] = useState(false);
   const [savingDetails, setSavingDetails] = useState(false);
-  const [newFiles, setNewFiles] = useState([]);
   const [expandedTrials, setExpandedTrials] = useState({});
   const [verifyStatus, setVerifyStatus] = useState('');
   const [verifyFeedback, setVerifyFeedback] = useState('');
   const [verifing, setVerifing] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState([]);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const handleVerifySubmit = async () => {
     if (!verifyStatus) return;
@@ -74,28 +77,65 @@ const PortfolioDetail = () => {
     }
   };
 
-  const handleFileUpload = async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  const handleFilesSelected = (e) => {
+    const selectedFiles = Array.from(e.target.files).map((file) => ({
+      file,
+      name: file.name.replace(/\.[^/.]+$/, ""), // default: filename without extension
+      tempId: Math.random().toString(36).substring(7)
+    }));
+    setStagedFiles(selectedFiles);
+    setShowUploadModal(true);
+    e.target.value = null; // reset file input
+  };
 
+  const handleUploadStaged = async () => {
     setUploading(true);
+    const maxOrder = currentEvidence.reduce((max, item) => Math.max(max, item.order || 0), 0);
     try {
-      const uploadPromises = files.map(file => {
+      const uploadPromises = stagedFiles.map((staged, index) => {
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', staged.file);
         formData.append('portfolio', id);
-        formData.append('description', file.name);
+        formData.append('description', staged.name.trim() || staged.file.name);
+        formData.append('order', maxOrder + index + 1);
         return api.post('/poe/evidence/', formData, {
           headers: { 'Content-Type': 'multipart/form-data' }
         });
       });
       await Promise.all(uploadPromises);
+      setShowUploadModal(false);
+      setStagedFiles([]);
       fetchPortfolio();
     } catch (error) {
       console.error('Upload failed:', error);
-      alert('One or more files failed to upload. Please try again.');
+      alert('Failed to upload evidence. Please try again.');
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleReorderEvidence = async (index, direction) => {
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    if (targetIndex < 0 || targetIndex >= currentEvidence.length) return;
+
+    const items = currentEvidence.map((item, idx) => ({
+      ...item,
+      order: item.order || (idx + 1)
+    }));
+
+    const tempOrder = items[index].order;
+    items[index].order = items[targetIndex].order;
+    items[targetIndex].order = tempOrder;
+
+    try {
+      await Promise.all([
+        api.patch(`/poe/evidence/${items[index].id}/`, { order: items[index].order }),
+        api.patch(`/poe/evidence/${items[targetIndex].id}/`, { order: items[targetIndex].order })
+      ]);
+      fetchPortfolio();
+    } catch (error) {
+      console.error('Error swapping evidence order:', error);
+      alert('Failed to save the new arrangement. Please try again.');
     }
   };
 
@@ -114,21 +154,7 @@ const PortfolioDetail = () => {
     e.preventDefault();
     setSavingDetails(true);
     try {
-      // 1. Upload new files if any
-      if (newFiles.length > 0) {
-        const uploadPromises = newFiles.map(file => {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('portfolio', id);
-          formData.append('description', file.name);
-          return api.post('/poe/evidence/', formData, {
-            headers: { 'Content-Type': 'multipart/form-data' }
-          });
-        });
-        await Promise.all(uploadPromises);
-      }
-
-      // 2. Update portfolio title, description, and status
+      // Update portfolio title, description, and status
       const payload = {
         title: editTitle,
         description: editDescription
@@ -138,12 +164,11 @@ const PortfolioDetail = () => {
       }
       await api.patch(`/poe/portfolios/${id}/`, payload);
       
-      setNewFiles([]);
       setShowEditModal(false);
       fetchPortfolio();
     } catch (error) {
       console.error('Error saving portfolio details:', error);
-      alert('Failed to save details or upload evidence. Please try again.');
+      alert('Failed to save details. Please try again.');
     } finally {
       setSavingDetails(false);
     }
@@ -205,7 +230,6 @@ const PortfolioDetail = () => {
               {canEdit && (
                 <button
                   onClick={() => {
-                    setNewFiles([]);
                     setIsResubmitMode(false);
                     setShowEditModal(true);
                   }}
@@ -235,7 +259,7 @@ const PortfolioDetail = () => {
               <label className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-dashed border-slate-200 text-slate-600 rounded-2xl cursor-pointer hover:border-primary-500 hover:text-primary-600 transition-all font-bold">
                 <Plus size={20} />
                 Add Evidence
-                <input type="file" className="hidden" multiple onChange={handleFileUpload} />
+                <input type="file" className="hidden" multiple onChange={handleFilesSelected} />
               </label>
             )}
           </div>
@@ -253,7 +277,7 @@ const PortfolioDetail = () => {
                 <p className="text-slate-400 font-bold">No evidence uploaded for this trial yet.</p>
               </div>
             ) : (
-               currentEvidence.map((item) => (
+               currentEvidence.map((item, index) => (
                 <div key={item.id} className="flex flex-col p-6 bg-white rounded-3xl shadow-sm border border-slate-100 hover:border-primary-100 transition-all gap-4">
                   <div className="flex items-center justify-between group">
                     <div className="flex items-center gap-4">
@@ -266,6 +290,28 @@ const PortfolioDetail = () => {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
+                      {canEdit && (
+                        <div className="flex gap-1 mr-2 shrink-0">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => handleReorderEvidence(index, 'up')}
+                            className="p-1.5 bg-slate-50 border border-slate-100 hover:border-[#0000FE] text-slate-400 rounded-lg hover:text-[#0000FE] disabled:opacity-30 transition-all"
+                            title="Move Up"
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === currentEvidence.length - 1}
+                            onClick={() => handleReorderEvidence(index, 'down')}
+                            className="p-1.5 bg-slate-50 border border-slate-100 hover:border-[#0000FE] text-slate-400 rounded-lg hover:text-[#0000FE] disabled:opacity-30 transition-all"
+                            title="Move Down"
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
+                      )}
                       <button 
                         onClick={() => setPreviewFile({ url: item.file, title: item.description })}
                         className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-[#0000FE] font-black text-xs uppercase tracking-widest rounded-xl hover:bg-[#0000FE] hover:text-white transition-all shadow-sm"
@@ -624,46 +670,7 @@ const PortfolioDetail = () => {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Add New Evidence (Optional)</label>
-                  <div className="flex flex-col gap-3">
-                    <label className="flex items-center justify-center gap-2 px-6 py-4 bg-slate-50 border-2 border-dashed border-slate-200 text-slate-600 rounded-2xl cursor-pointer hover:border-primary-500 hover:text-primary-600 transition-all font-bold">
-                      <Upload size={20} />
-                      <span>Select Files...</span>
-                      <input 
-                        type="file" 
-                        multiple 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const selectedFiles = Array.from(e.target.files);
-                          setNewFiles(prev => [...prev, ...selectedFiles]);
-                        }} 
-                      />
-                    </label>
-                    
-                    {newFiles.length > 0 && (
-                      <div className="space-y-2 max-h-40 overflow-y-auto p-2 bg-slate-50 rounded-xl border border-slate-100">
-                        {newFiles.map((file, idx) => (
-                          <div key={idx} className="flex items-center justify-between p-2.5 bg-white rounded-xl shadow-sm border border-slate-100">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-slate-400">
-                                <FileText size={16} />
-                              </div>
-                              <span className="text-xs font-bold text-slate-700 line-clamp-1">{file.name}</span>
-                            </div>
-                            <button 
-                              type="button" 
-                              onClick={() => setNewFiles(prev => prev.filter((_, i) => i !== idx))}
-                              className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+
 
                 <div className="flex gap-3 pt-4">
                   <button 
@@ -682,6 +689,143 @@ const PortfolioDetail = () => {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 overflow-y-auto p-4 md:p-8 animate-in fade-in duration-200">
+          <div className="min-h-full flex items-center justify-center py-8">
+            <div className="bg-white rounded-[32px] w-full max-w-xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-8 duration-300 relative flex flex-col max-h-[85vh]">
+              <div className="p-8 border-b border-slate-50 flex justify-between items-center sticky top-0 bg-white z-10 shadow-sm">
+                <div>
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">Stage Evidence Upload</h2>
+                  <p className="text-slate-500 font-medium text-sm">Give each item a clear name and arrange their display order.</p>
+                </div>
+                <button 
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setStagedFiles([]);
+                  }} 
+                  className="text-slate-400 hover:text-slate-600 font-black text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <div className="p-8 overflow-y-auto flex-1 space-y-6">
+                <div className="space-y-4">
+                  {stagedFiles.map((staged, index) => {
+                    const isImage = staged.file.type.startsWith('image/');
+                    const isVideo = staged.file.type.startsWith('video/');
+                    const objectUrl = (isImage || isVideo) ? URL.createObjectURL(staged.file) : null;
+
+                    return (
+                      <div key={staged.tempId} className="flex flex-col sm:flex-row items-center gap-4 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                        {/* Thumbnail / Preview */}
+                        <div className="w-16 h-16 rounded-xl overflow-hidden bg-slate-200 flex items-center justify-center text-slate-400 shrink-0 border border-slate-200">
+                          {isImage ? (
+                            <img src={objectUrl} alt="preview" className="w-full h-full object-cover" />
+                          ) : isVideo ? (
+                            <div className="relative w-full h-full flex items-center justify-center bg-slate-950 text-white">
+                              <Video size={16} />
+                            </div>
+                          ) : (
+                            <FileText size={24} />
+                          )}
+                        </div>
+
+                        {/* Title Input */}
+                        <div className="flex-1 w-full space-y-1 text-left">
+                          <label className="text-[9px] font-black uppercase tracking-widest text-slate-400 block ml-1">Evidence Name</label>
+                          <input
+                            type="text"
+                            value={staged.name}
+                            onChange={(e) => {
+                              const updated = stagedFiles.map(f => f.tempId === staged.tempId ? { ...f, name: e.target.value } : f);
+                              setStagedFiles(updated);
+                            }}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs focus:ring-2 focus:ring-[#0000FE]/20 outline-none"
+                            placeholder="e.g. Completed assignment screenshot"
+                          />
+                        </div>
+
+                        {/* Reordering Controls */}
+                        <div className="flex sm:flex-col gap-1 shrink-0">
+                          <button
+                            type="button"
+                            disabled={index === 0}
+                            onClick={() => {
+                              const updated = [...stagedFiles];
+                              const temp = updated[index];
+                              updated[index] = updated[index - 1];
+                              updated[index - 1] = temp;
+                              setStagedFiles(updated);
+                            }}
+                            className="p-1.5 bg-white border border-slate-200 hover:border-[#0000FE] text-slate-500 rounded-lg hover:text-[#0000FE] disabled:opacity-30 transition-all"
+                            title="Move Up"
+                          >
+                            <ArrowUp size={14} />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={index === stagedFiles.length - 1}
+                            onClick={() => {
+                              const updated = [...stagedFiles];
+                              const temp = updated[index];
+                              updated[index] = updated[index + 1];
+                              updated[index + 1] = temp;
+                              setStagedFiles(updated);
+                            }}
+                            className="p-1.5 bg-white border border-slate-200 hover:border-[#0000FE] text-slate-500 rounded-lg hover:text-[#0000FE] disabled:opacity-30 transition-all"
+                            title="Move Down"
+                          >
+                            <ArrowDown size={14} />
+                          </button>
+                        </div>
+
+                        {/* Delete Button */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setStagedFiles(prev => prev.filter(f => f.tempId !== staged.tempId));
+                            if (stagedFiles.length <= 1) {
+                              setShowUploadModal(false);
+                            }
+                          }}
+                          className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                          title="Remove File"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-8 border-t border-slate-50 bg-slate-50/50 flex gap-4 sticky bottom-0 z-10 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setStagedFiles([]);
+                  }}
+                  className="flex-1 px-6 py-4 bg-white border border-slate-200 text-slate-500 font-black rounded-2xl hover:bg-slate-100 transition-all text-xs"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleUploadStaged}
+                  disabled={uploading}
+                  className="flex-1 px-6 py-4 bg-[#0000FE] text-white font-black rounded-2xl shadow-lg hover:bg-blue-700 disabled:opacity-50 transition-all text-xs"
+                >
+                  {uploading ? 'Uploading...' : 'Upload Staged Evidence'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

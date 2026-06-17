@@ -53,9 +53,17 @@ const StudentDashboard = () => {
               <h1 className="text-4xl font-black text-slate-800 tracking-tight mb-2">Welcome, {user?.first_name || user?.username}!</h1>
               <p className="text-slate-500 font-medium">Currently enrolled in <span className="text-slate-800 font-bold">{user?.course_name || 'your course'}</span></p>
             </div>
-            <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100">
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Registration Number</p>
-              <p className="text-lg font-black text-[#0000FE]">{user?.registration_number}</p>
+            <div className="flex flex-wrap gap-4">
+              <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 min-w-[160px]">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Registration Number</p>
+                <p className="text-lg font-black text-[#0000FE]">{user?.registration_number}</p>
+              </div>
+              {user?.cdacc_registration_number && (
+                <div className="bg-slate-50 rounded-3xl p-6 border border-slate-100 min-w-[160px] animate-in slide-in-from-top-2 duration-300">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">CDACC Reg Number</p>
+                  <p className="text-lg font-black text-emerald-600">{user?.cdacc_registration_number}</p>
+                </div>
+              )}
             </div>
           </div>
         </div>

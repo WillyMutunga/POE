@@ -24,7 +24,7 @@ class EvidenceSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Evidence
-        fields = ('id', 'portfolio', 'file', 'description', 'uploaded_at', 'submission_round', 'file_hash', 'plagiarism_flags')
+        fields = ('id', 'portfolio', 'file', 'description', 'uploaded_at', 'submission_round', 'file_hash', 'plagiarism_flags', 'order')
 
 class AssessmentCriterionScoreSerializer(serializers.ModelSerializer):
     criterion_description = serializers.ReadOnlyField(source='criterion.description')

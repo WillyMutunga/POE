@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Phone, Loader2, CheckCircle, Save, Calendar, Hash } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 
 const Profile = () => {
+  const navigate = useNavigate();
   const { refreshProfile } = useAuth();
   const [formData, setFormData] = useState({
     first_name: '',
@@ -49,7 +51,10 @@ const Profile = () => {
       });
       await refreshProfile();
       setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      setTimeout(() => {
+        setSuccess(false);
+        navigate('/dashboard');
+      }, 2000);
     } catch (error) {
       console.error('Error updating profile:', error);
     } finally {

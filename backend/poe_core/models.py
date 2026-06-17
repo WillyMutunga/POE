@@ -67,6 +67,10 @@ class Evidence(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
     submission_round = models.IntegerField(default=1)
     file_hash = models.CharField(max_length=64, blank=True, db_index=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order', 'id']
 
     def save(self, *args, **kwargs):
         if not self.id and self.portfolio:
