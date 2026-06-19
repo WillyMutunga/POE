@@ -77,6 +77,16 @@ class CanManagePortfolio(permissions.BasePermission):
             self.message = "This portfolio has been verified by CDACC and is permanently locked."
             return False
             
+        if request.method == 'DELETE':
+            if portfolio.status != 'DRAFT':
+                self.message = "Only draft portfolios can be deleted."
+                return False
+            if user.role == 'STUDENT':
+                return portfolio.learner == user
+            if user.role == 'INSTRUCTOR':
+                return portfolio.unit.instructors.filter(id=user.id).exists()
+            return user.role in ['ADMIN', 'MANAGER', 'DIRECTOR']
+            
         if user.role == 'STUDENT':
             # Check locking for write requests
             if request.method not in permissions.SAFE_METHODS:

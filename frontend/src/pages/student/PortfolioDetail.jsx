@@ -39,6 +39,7 @@ const PortfolioDetail = () => {
   const [verifyStatus, setVerifyStatus] = useState('');
   const [verifyFeedback, setVerifyFeedback] = useState('');
   const [verifing, setVerifing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [stagedFiles, setStagedFiles] = useState([]);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -174,6 +175,32 @@ const PortfolioDetail = () => {
     }
   };
 
+  const handleDeletePortfolio = async () => {
+    if (!window.confirm('Are you sure you want to delete this portfolio? This action cannot be undone and all uploaded evidence will be permanently deleted.')) return;
+    
+    setDeleting(true);
+    try {
+      await api.delete(`/poe/portfolios/${id}/`);
+      alert('Portfolio deleted successfully.');
+      
+      // Role-based redirection
+      if (user.role === 'STUDENT') {
+        navigate('/portfolios');
+      } else if (user.role === 'INSTRUCTOR') {
+        navigate('/units-assigned');
+      } else if (['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user.role)) {
+        navigate('/admin/portfolios');
+      } else {
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Delete failed:', error);
+      alert(error.response?.data?.detail || 'Failed to delete portfolio. Please try again.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (loading) return <div>Loading portfolio...</div>;
   if (!portfolio) return <div>Portfolio not found.</div>;
 
@@ -203,6 +230,11 @@ const PortfolioDetail = () => {
 
   const trialRounds = Object.keys(trialsMap).map(Number).sort((a, b) => a - b);
   const canEdit = ['DRAFT', 'REDO'].includes(portfolio.status);
+  const canDelete = portfolio.status === 'DRAFT' && (
+    (user?.role === 'STUDENT' && portfolio.learner === user?.id) ||
+    (user?.role === 'INSTRUCTOR') ||
+    (user && ['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user.role))
+  );
 
   return (
     <div className="space-y-8">
@@ -467,6 +499,17 @@ const PortfolioDetail = () => {
               >
                 {portfolio.status === 'REDO' ? <Clock size={20} /> : <Send size={20} />}
                 {portfolio.status === 'REDO' ? 'Resubmit Work' : 'Submit for Evaluation'}
+              </button>
+            )}
+
+            {canDelete && (
+              <button
+                onClick={handleDeletePortfolio}
+                disabled={deleting}
+                className="w-full flex items-center justify-center gap-3 py-4 bg-red-50 hover:bg-red-100 text-red-600 font-bold rounded-2xl border border-red-200 transition-all active:scale-95 text-sm disabled:opacity-50"
+              >
+                {deleting ? <Loader2 className="animate-spin" size={18} /> : <Trash2 size={18} />}
+                Delete Portfolio
               </button>
             )}
 
