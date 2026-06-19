@@ -645,6 +645,67 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(registration).data)
 
     @action(detail=False, methods=['post'])
+    def bulk_approve(self, request):
+        registration_ids = request.data.get('registration_ids', [])
+        if not registration_ids:
+            return Response({"error": "No registrations provided."}, status=400)
+        
+        instructor = request.user
+        if instructor.role != 'INSTRUCTOR' and instructor.role != 'ADMIN':
+            return Response({"error": "Only instructors or admins can approve registrations."}, status=403)
+        
+        registrations = UnitRegistration.objects.filter(id__in=registration_ids)
+        approved_regs = []
+        
+        for registration in registrations:
+            unit = registration.unit
+            current_instructors = unit.instructors.all()
+            if instructor.role not in ['ADMIN', 'MANAGER', 'DIRECTOR'] and current_instructors.exists() and instructor not in current_instructors:
+                continue
+            
+            registration.status = 'APPROVED'
+            registration.approved_by = instructor
+            registration.save()
+            
+            if instructor not in current_instructors and instructor.role == 'INSTRUCTOR':
+                unit.instructors.add(instructor)
+            
+            unit.students.add(registration.student)
+            
+            from poe_core.models import Portfolio
+            if not Portfolio.objects.filter(learner=registration.student, unit=unit).exists():
+                Portfolio.objects.create(
+                    title=f"Portfolio - {unit.name}",
+                    learner=registration.student,
+                    unit=unit,
+                    status='DRAFT'
+                )
+            approved_regs.append(registration)
+            
+        return Response(self.get_serializer(approved_regs, many=True).data)
+
+    @action(detail=False, methods=['post'])
+    def bulk_reject(self, request):
+        registration_ids = request.data.get('registration_ids', [])
+        if not registration_ids:
+            return Response({"error": "No registrations provided."}, status=400)
+        
+        instructor = request.user
+        if instructor.role != 'INSTRUCTOR' and instructor.role != 'ADMIN':
+            return Response({"error": "Only instructors or admins can reject registrations."}, status=403)
+        
+        registrations = UnitRegistration.objects.filter(id__in=registration_ids)
+        
+        for r in registrations:
+            r.status = 'REJECTED'
+            r.save()
+            # Also remove the student from unit's student list when rejecting!
+            unit = r.unit
+            unit.students.remove(r.student)
+            
+        return Response(self.get_serializer(registrations, many=True).data)
+
+    @action(detail=False, methods=['post'])
     def bulk_register(self, request):
         student = request.user
         if student.role != 'STUDENT':

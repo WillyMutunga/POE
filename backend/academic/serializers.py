@@ -284,6 +284,7 @@ class RubricSerializer(serializers.ModelSerializer):
 
 class UnitRegistrationSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField(read_only=True)
+    student_registration_number = serializers.ReadOnlyField(source='student.registration_number')
     unit_code = serializers.ReadOnlyField(source='unit.code')
     unit_name = serializers.ReadOnlyField(source='unit.name')
     semester_name = serializers.ReadOnlyField(source='semester.name')
@@ -293,7 +294,7 @@ class UnitRegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitRegistration
         fields = (
-            'id', 'student', 'student_name', 'unit', 'unit_code', 
+            'id', 'student', 'student_name', 'student_registration_number', 'unit', 'unit_code', 
             'unit_name', 'semester', 'semester_name', 'course_name', 'status', 
             'status_display', 'registered_at', 'approved_by'
         )

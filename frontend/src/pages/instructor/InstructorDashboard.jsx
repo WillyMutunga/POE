@@ -24,6 +24,7 @@ const InstructorDashboard = () => {
   const [studentsCount, setStudentsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [expandedStudent, setExpandedStudent] = useState(null);
 
   const fetchData = async () => {
     try {
@@ -218,74 +219,167 @@ const InstructorDashboard = () => {
             </div>
 
             <div className="space-y-4">
-              {pendingRegistrations.length === 0 ? (
-                <div className="p-16 text-center bg-white rounded-[40px] border border-slate-100 shadow-sm">
-                  <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-[#0000FE] mx-auto mb-4">
-                    <CheckCircle2 size={32} />
-                  </div>
-                  <h3 className="text-xl font-bold text-slate-800">All caught up!</h3>
-                  <p className="text-slate-400 mt-2 font-medium">No pending unit registration requests are currently waiting for your approval.</p>
-                </div>
-              ) : (
-                pendingRegistrations.map((reg) => (
-                  <div 
-                    key={reg.id} 
-                    className="group flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white rounded-[32px] shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300"
-                  >
-                    <div className="flex items-center gap-5">
-                      <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0000FE]">
-                        <BookOpen size={24} />
+              {(() => {
+                const groupedRegs = pendingRegistrations.reduce((acc, reg) => {
+                  const studentId = reg.student;
+                  if (!acc[studentId]) {
+                    acc[studentId] = {
+                      studentId: studentId,
+                      studentName: reg.student_name,
+                      studentRegNo: reg.student_registration_number || 'N/A',
+                      registrations: []
+                    };
+                  }
+                  acc[studentId].registrations.push(reg);
+                  return acc;
+                }, {});
+                const groupedStudents = Object.values(groupedRegs);
+
+                if (groupedStudents.length === 0) {
+                  return (
+                    <div className="p-16 text-center bg-white rounded-[40px] border border-slate-100 shadow-sm">
+                      <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-[#0000FE] mx-auto mb-4">
+                        <CheckCircle2 size={32} />
                       </div>
-                      <div>
-                        <p className="text-xs font-black text-[#0000FE] uppercase tracking-widest mb-0.5">
-                          {reg.student_name}
-                        </p>
-                        <h3 className="text-lg font-bold text-slate-800 leading-tight line-clamp-1">{reg.unit_name}</h3>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <p className="text-[10px] font-black text-primary-600 uppercase tracking-[0.1em]">{reg.unit_code}</p>
-                          <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{reg.semester_name}</p>
+                      <h3 className="text-xl font-bold text-slate-800">All caught up!</h3>
+                      <p className="text-slate-400 mt-2 font-medium">No pending unit registration requests are currently waiting for your approval.</p>
+                    </div>
+                  );
+                }
+
+                return groupedStudents.map((group) => {
+                  const isExpanded = expandedStudent === group.studentId;
+                  const regIds = group.registrations.map(r => r.id);
+
+                  return (
+                    <div key={group.studentId} className="bg-white rounded-[32px] shadow-sm border border-slate-50 overflow-hidden transition-all duration-300">
+                      {/* Student Header Card */}
+                      <div 
+                        onClick={() => setExpandedStudent(isExpanded ? null : group.studentId)}
+                        className="flex items-center justify-between p-6 cursor-pointer hover:bg-slate-55/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-5">
+                          <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-[#0000FE]">
+                            <Users size={24} />
+                          </div>
+                          <div>
+                            <h3 className="text-lg font-bold text-slate-800 leading-tight">{group.studentName}</h3>
+                            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                              Reg No: {group.studentRegNo}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                          <span className="px-3.5 py-1.5 bg-blue-50 text-[#0000FE] font-black text-[10px] uppercase tracking-widest rounded-full border border-blue-100">
+                            {group.registrations.length} {group.registrations.length === 1 ? 'Unit' : 'Units'} Requested
+                          </span>
+                          <span className="text-slate-400 font-bold text-xs">
+                            {isExpanded ? '▲ Hide' : '▼ Expand'}
+                          </span>
                         </div>
                       </div>
-                    </div>
 
-                    <div className="flex items-center gap-2 self-end sm:self-center">
-                      <button
-                        onClick={async () => {
-                          try {
-                            await api.post(`/academic/registrations/${reg.id}/approve/`);
-                            alert('Registration approved successfully!');
-                            fetchData();
-                          } catch (err) {
-                            console.error(err);
-                            alert(err.response?.data?.error || 'Failed to approve registration.');
-                          }
-                        }}
-                        className="px-4 py-2 bg-green-600 text-white font-black rounded-xl text-xs hover:bg-green-700 transition-all shadow-md shadow-green-100"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        onClick={async () => {
-                          if (window.confirm('Are you sure you want to reject this registration?')) {
-                            try {
-                              await api.post(`/academic/registrations/${reg.id}/reject/`);
-                              alert('Registration rejected.');
-                              fetchData();
-                            } catch (err) {
-                              console.error(err);
-                              alert('Failed to reject registration.');
-                            }
-                          }
-                        }}
-                        className="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-600 hover:text-white transition-all"
-                      >
-                        Reject
-                      </button>
+                      {/* Expanded Section */}
+                      {isExpanded && (
+                        <div className="p-6 bg-slate-50 border-t border-slate-100 space-y-4">
+                          {/* Bulk Actions Panel */}
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100">
+                            <span className="text-xs font-bold text-slate-500">Bulk Options for this student:</span>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    await api.post('/academic/registrations/bulk_approve/', { registration_ids: regIds });
+                                    alert(`Approved all ${group.registrations.length} units successfully!`);
+                                    fetchData();
+                                  } catch (err) {
+                                    console.error(err);
+                                    alert(err.response?.data?.error || 'Failed to approve registrations.');
+                                  }
+                                }}
+                                className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white font-black rounded-xl text-xs hover:bg-green-700 transition-all shadow-md shadow-green-100"
+                              >
+                                Approve All
+                              </button>
+                              <button
+                                onClick={async (e) => {
+                                  e.stopPropagation();
+                                  if (window.confirm(`Are you sure you want to reject all ${group.registrations.length} registrations for this student?`)) {
+                                    try {
+                                      await api.post('/academic/registrations/bulk_reject/', { registration_ids: regIds });
+                                      alert('Rejected all registrations.');
+                                      fetchData();
+                                    } catch (err) {
+                                      console.error(err);
+                                      alert('Failed to reject registrations.');
+                                    }
+                                  }
+                                }}
+                                className="flex-1 sm:flex-none px-4 py-2 bg-red-50 text-red-600 font-bold rounded-xl text-xs hover:bg-red-600 hover:text-white transition-all"
+                              >
+                                Reject All
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Individual list */}
+                          <div className="space-y-2">
+                            {group.registrations.map((reg) => (
+                              <div key={reg.id} className="flex justify-between items-center p-4 bg-white rounded-2xl border border-slate-100 text-xs">
+                                <div className="min-w-0 flex-1 pr-2">
+                                  <h4 className="font-bold text-slate-700 truncate">{reg.unit_name}</h4>
+                                  <div className="flex items-center gap-2 mt-0.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <span className="text-primary-600">{reg.unit_code}</span>
+                                    <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                                    <span>{reg.semester_name}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <button
+                                    onClick={async () => {
+                                      try {
+                                        await api.post(`/academic/registrations/${reg.id}/approve/`);
+                                        alert('Registration approved successfully!');
+                                        fetchData();
+                                      } catch (err) {
+                                        console.error(err);
+                                        alert(err.response?.data?.error || 'Failed to approve registration.');
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-green-50 text-green-600 border border-green-100 font-black rounded-lg text-[9px] hover:bg-green-600 hover:text-white transition-all uppercase tracking-wider"
+                                  >
+                                    Approve
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (window.confirm('Are you sure you want to reject this registration?')) {
+                                        try {
+                                          await api.post(`/academic/registrations/${reg.id}/reject/`);
+                                          alert('Registration rejected.');
+                                          fetchData();
+                                        } catch (err) {
+                                          console.error(err);
+                                          alert('Failed to reject registration.');
+                                        }
+                                      }
+                                    }}
+                                    className="px-3 py-1.5 bg-red-50 text-red-600 font-bold rounded-lg text-[9px] hover:bg-red-600 hover:text-white transition-all uppercase tracking-wider"
+                                  >
+                                    Reject
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
-              )}
+                  );
+                });
+              })()}
             </div>
           </div>
         </div>

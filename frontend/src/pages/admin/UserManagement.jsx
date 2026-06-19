@@ -17,6 +17,9 @@ const UserManagement = () => {
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
   const [showAddUnit, setShowAddUnit] = useState(false);
   const [addUnitId, setAddUnitId] = useState('');
+  const [selectedBatchUnits, setSelectedBatchUnits] = useState([]);
+  const [isBatchRegistering, setIsBatchRegistering] = useState(false);
+  const [registerOnSave, setRegisterOnSave] = useState(true);
   const [addingSemesterId, setAddingSemesterId] = useState('');
   const [isAddingUnit, setIsAddingUnit] = useState(false);
 
@@ -150,6 +153,26 @@ const UserManagement = () => {
     }
   }, [editingUser]);
 
+  useEffect(() => {
+    if (editingUser && editingUser.role === 'STUDENT' && editingUser.course && editingUser.semester) {
+      const courseSemesterUnits = units.filter(u => 
+        u.course?.toString() === editingUser.course?.toString() &&
+        u.semester?.toString() === editingUser.semester?.toString()
+      );
+      setSelectedBatchUnits(courseSemesterUnits.map(u => u.id));
+
+      const originalUser = users.find(u => u.id === editingUser.id);
+      const hasChanged = originalUser && (
+        originalUser.course?.toString() !== editingUser.course?.toString() ||
+        originalUser.semester?.toString() !== editingUser.semester?.toString()
+      );
+      setRegisterOnSave(!!hasChanged);
+    } else {
+      setSelectedBatchUnits([]);
+      setRegisterOnSave(false);
+    }
+  }, [editingUser?.course, editingUser?.semester, units, users, editingUser?.id]);
+
   const handleToggleRegistration = async (reg) => {
     const isApproved = reg.status === 'APPROVED';
     const action = isApproved ? 'reject' : 'approve';
@@ -191,6 +214,29 @@ const UserManagement = () => {
       alert(error.response?.data?.error || 'Failed to register unit.');
     } finally {
       setIsAddingUnit(false);
+    }
+  };
+
+  const handleBatchRegister = async () => {
+    if (selectedBatchUnits.length === 0) {
+      alert('Please select at least one unit to register.');
+      return;
+    }
+    setIsBatchRegistering(true);
+    try {
+      await api.post('/academic/registrations/direct_assign/', {
+        student_id: editingUser.id,
+        unit_ids: selectedBatchUnits.map(id => parseInt(id)),
+        semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined
+      });
+      const response = await api.get(`/academic/registrations/?student=${editingUser.id}`);
+      setStudentRegistrations(response.data);
+      showToast(`Registered student for ${selectedBatchUnits.length} units successfully!`, 'success');
+    } catch (error) {
+      console.error('Error batch registering units:', error);
+      alert(error.response?.data?.error || 'Failed to batch register.');
+    } finally {
+      setIsBatchRegistering(false);
     }
   };
 
@@ -278,8 +324,18 @@ const UserManagement = () => {
         assigned_courses: editingUser.assigned_courses,
         password: editingUser.new_password // Only send if set
       });
+
+      if (editingUser.role === 'STUDENT' && registerOnSave && selectedBatchUnits.length > 0) {
+        await api.post('/academic/registrations/direct_assign/', {
+          student_id: editingUser.id,
+          unit_ids: selectedBatchUnits.map(id => parseInt(id)),
+          semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined
+        });
+      }
+
       setEditingUser(null);
       fetchUsers();
+      showToast('User profile updated successfully!', 'success');
     } catch (error) {
       if (error.response?.data) {
         const errors = error.response.data;
@@ -732,7 +788,7 @@ const UserManagement = () => {
                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Course</label>
                       <select 
                         value={editingUser.course || ''}
-                        onChange={(e) => setEditingUser({...editingUser, course: e.target.value})}
+                        onChange={(e) => setEditingUser({...editingUser, course: e.target.value, semester: ''})}
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"
                       >
                         <option value="">Select Course</option>
@@ -740,7 +796,27 @@ const UserManagement = () => {
                       </select>
                     </div>
 
-                      {editingUser.role === 'STUDENT' && (
+                    {editingUser.role === 'STUDENT' && editingUser.course && (
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Semester/Grade</label>
+                        <select 
+                          value={editingUser.semester || ''}
+                          onChange={(e) => setEditingUser({...editingUser, semester: e.target.value})}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl outline-none font-bold"
+                        >
+                          <option value="">Select Semester/Grade</option>
+                          {semesters
+                            .filter(s => s.course?.toString() === editingUser.course?.toString())
+                            .map(s => (
+                              <option key={s.id} value={s.id}>{s.name}</option>
+                            ))
+                          }
+                        </select>
+                      </div>
+                    )}
+
+                    {editingUser.role === 'STUDENT' && (
+                      <>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
                             CDACC Reg No.
@@ -753,7 +829,68 @@ const UserManagement = () => {
                             placeholder="Optional (e.g. CDACC/001)"
                           />
                         </div>
-                      )}
+
+                        {editingUser.course && editingUser.semester && (
+                          <div className="space-y-3 bg-blue-50/30 p-4 rounded-2xl border border-blue-100 mt-2">
+                            <div className="flex items-center justify-between">
+                              <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest block">
+                                Quick-Register Units
+                              </label>
+                              <label className="flex items-center gap-1.5 text-[10px] font-black text-[#0000FE] uppercase cursor-pointer">
+                                <input 
+                                  type="checkbox"
+                                  checked={registerOnSave}
+                                  onChange={(e) => setRegisterOnSave(e.target.checked)}
+                                  className="rounded border-slate-300 text-blue-600 focus:ring-[#0000FE]"
+                                />
+                                <span>On Save</span>
+                              </label>
+                            </div>
+                            
+                            <div className="space-y-2 max-h-32 overflow-y-auto pr-1 bg-white p-3 rounded-xl border border-slate-100">
+                              {(() => {
+                                const courseSemesterUnits = units.filter(u => 
+                                  u.course?.toString() === editingUser.course?.toString() && 
+                                  u.semester?.toString() === editingUser.semester?.toString()
+                                );
+                                
+                                if (courseSemesterUnits.length === 0) {
+                                  return <p className="text-xs text-slate-400 italic">No units found for this course & semester.</p>;
+                                }
+                                
+                                return courseSemesterUnits.map(u => {
+                                  const isChecked = selectedBatchUnits.includes(u.id);
+                                  return (
+                                    <label key={u.id} className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer">
+                                      <input 
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => {
+                                          setSelectedBatchUnits(prev => 
+                                            isChecked ? prev.filter(id => id !== u.id) : [...prev, u.id]
+                                          );
+                                        }}
+                                        className="rounded border-slate-300 text-blue-600 focus:ring-[#0000FE]"
+                                      />
+                                      <span>{u.code}: {u.name}</span>
+                                    </label>
+                                  );
+                                });
+                              })()}
+                            </div>
+                            
+                            <button
+                              type="button"
+                              onClick={handleBatchRegister}
+                              disabled={isBatchRegistering || selectedBatchUnits.length === 0}
+                              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black rounded-xl shadow transition-all disabled:opacity-50"
+                            >
+                              {isBatchRegistering ? 'Registering...' : `Register & Approve Checked (${selectedBatchUnits.length})`}
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
                 )}
 
