@@ -642,6 +642,10 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
         unit = registration.unit
         unit.students.remove(registration.student)
         
+        # Delete draft portfolios for this unit registration
+        from poe_core.models import Portfolio
+        Portfolio.objects.filter(learner=registration.student, unit=unit, status='DRAFT').delete()
+        
         return Response(self.get_serializer(registration).data)
 
     @action(detail=False, methods=['post'])
@@ -702,6 +706,9 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
             # Also remove the student from unit's student list when rejecting!
             unit = r.unit
             unit.students.remove(r.student)
+            # Delete draft portfolios
+            from poe_core.models import Portfolio
+            Portfolio.objects.filter(learner=r.student, unit=unit, status='DRAFT').delete()
             
         return Response(self.get_serializer(registrations, many=True).data)
 
@@ -778,6 +785,17 @@ class UnitRegistrationViewSet(viewsets.ModelViewSet):
                 pass
         if not semester:
             semester = student.semester
+
+        replace_existing = request.data.get('replace_existing', False)
+        if replace_existing:
+            # Reject all registrations not in the new unit_ids
+            old_regs = UnitRegistration.objects.filter(student=student).exclude(unit_id__in=unit_ids)
+            for reg in old_regs:
+                reg.status = 'REJECTED'
+                reg.save()
+                reg.unit.students.remove(student)
+                from poe_core.models import Portfolio
+                Portfolio.objects.filter(learner=student, unit=reg.unit, status='DRAFT').delete()
 
         assigned_regs = []
         for uid in unit_ids:

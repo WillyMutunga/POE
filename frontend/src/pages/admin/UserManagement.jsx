@@ -20,6 +20,7 @@ const UserManagement = () => {
   const [selectedBatchUnits, setSelectedBatchUnits] = useState([]);
   const [isBatchRegistering, setIsBatchRegistering] = useState(false);
   const [registerOnSave, setRegisterOnSave] = useState(true);
+  const [replaceExisting, setReplaceExisting] = useState(true);
   const [addingSemesterId, setAddingSemesterId] = useState('');
   const [isAddingUnit, setIsAddingUnit] = useState(false);
 
@@ -227,7 +228,8 @@ const UserManagement = () => {
       await api.post('/academic/registrations/direct_assign/', {
         student_id: editingUser.id,
         unit_ids: selectedBatchUnits.map(id => parseInt(id)),
-        semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined
+        semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined,
+        replace_existing: replaceExisting
       });
       const response = await api.get(`/academic/registrations/?student=${editingUser.id}`);
       setStudentRegistrations(response.data);
@@ -329,7 +331,8 @@ const UserManagement = () => {
         await api.post('/academic/registrations/direct_assign/', {
           student_id: editingUser.id,
           unit_ids: selectedBatchUnits.map(id => parseInt(id)),
-          semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined
+          semester_id: editingUser.semester ? parseInt(editingUser.semester) : undefined,
+          replace_existing: replaceExisting
         });
       }
 
@@ -832,19 +835,30 @@ const UserManagement = () => {
 
                         {editingUser.course && editingUser.semester && (
                           <div className="space-y-3 bg-blue-50/30 p-4 rounded-2xl border border-blue-100 mt-2">
-                            <div className="flex items-center justify-between">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                               <label className="text-[10px] font-black text-blue-700 uppercase tracking-widest block">
                                 Quick-Register Units
                               </label>
-                              <label className="flex items-center gap-1.5 text-[10px] font-black text-[#0000FE] uppercase cursor-pointer">
-                                <input 
-                                  type="checkbox"
-                                  checked={registerOnSave}
-                                  onChange={(e) => setRegisterOnSave(e.target.checked)}
-                                  className="rounded border-slate-300 text-blue-600 focus:ring-[#0000FE]"
-                                />
-                                <span>On Save</span>
-                              </label>
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-1.5 text-[10px] font-black text-[#0000FE] uppercase cursor-pointer">
+                                  <input 
+                                    type="checkbox"
+                                    checked={registerOnSave}
+                                    onChange={(e) => setRegisterOnSave(e.target.checked)}
+                                    className="rounded border-slate-300 text-blue-600 focus:ring-[#0000FE]"
+                                  />
+                                  <span>On Save</span>
+                                </label>
+                                <label className="flex items-center gap-1.5 text-[10px] font-black text-red-600 uppercase cursor-pointer" title="Rejects student's other active unit registrations not checked above">
+                                  <input 
+                                    type="checkbox"
+                                    checked={replaceExisting}
+                                    onChange={(e) => setReplaceExisting(e.target.checked)}
+                                    className="rounded border-slate-300 text-red-600 focus:ring-red-500"
+                                  />
+                                  <span>Replace Existing</span>
+                                </label>
+                              </div>
                             </div>
                             
                             <div className="space-y-2 max-h-32 overflow-y-auto pr-1 bg-white p-3 rounded-xl border border-slate-100">
