@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import api from '../../api';
 import { BookOpen, Clock, ChevronRight, FilePlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SEO from '../../components/SEO';
 
 const StudentDashboard = () => {
   const [units, setUnits] = useState([]);
@@ -44,6 +45,7 @@ const StudentDashboard = () => {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
+      <SEO title="Student Dashboard" />
       <div className="bg-white rounded-[40px] p-8 md:p-12 shadow-sm border border-slate-100 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary-50 rounded-full -mr-32 -mt-32 opacity-50"></div>
         <div className="relative z-10">

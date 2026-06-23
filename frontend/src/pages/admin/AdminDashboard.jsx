@@ -11,6 +11,7 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import SEO from '../../components/SEO';
 
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
@@ -83,6 +84,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
+      <SEO title="Admin Dashboard" />
       <div className="flex flex-col">
         <h1 className="text-4xl font-black text-slate-800 tracking-tight">System Overview</h1>
         <p className="text-slate-500 font-medium text-lg">Centralized analytics and institutional management.</p>

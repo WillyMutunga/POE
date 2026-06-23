@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 import { jwtDecode } from 'jwt-decode';
 import { Lock, User, Loader2, ChevronRight, Eye, EyeOff } from 'lucide-react';
 
@@ -39,6 +40,11 @@ const Login = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F3F4F6] p-6">
+      <SEO 
+        title="Login | Headway College POE Portal"
+        description="Login to your Headway College Portfolio of Evidence (POE) account."
+        keywords="Login Headway POE, Sign In Headway College POE"
+      />
       {/* Centered Login Card */}
       <div className="w-full max-w-[450px] bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden">
         <div className="p-8 md:p-12">

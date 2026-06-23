@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import SEO from '../components/SEO';
 import { 
   BookOpen, 
   Award, 
@@ -132,6 +133,11 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 text-[#141313] font-sans antialiased scroll-smooth" id="home">
+      <SEO 
+        title="Portfolio of Evidence | Headway College POE Portal"
+        description="Access the official Headway College Portfolio of Evidence (POE) Portal. Log in to manage your student profile, course units, exams, and academic evidence submissions."
+        keywords="Headway College POE, Portfolio of Evidence, Headway College Portfolio of Evidence, Headway Student Portal, POE Portal Headway College, headway college, poe headway, headway college ac ke"
+      />
       {/* Top Announcement Alert Bar */}
       <div className="bg-[#EF1B1B] text-white text-xs md:text-sm font-extrabold py-2.5 px-4 text-center select-none border-b border-red-700 relative z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5 tracking-wide uppercase">

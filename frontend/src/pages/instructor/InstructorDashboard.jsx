@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import SEO from '../../components/SEO';
 
 const InstructorDashboard = () => {
   const { user, profile } = useAuth();
@@ -69,6 +70,7 @@ const InstructorDashboard = () => {
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
+      <SEO title="Instructor Dashboard" />
       {/* Welcome Header */}
       <div className="relative overflow-hidden bg-white p-10 rounded-[40px] shadow-sm border border-slate-100 group">
         <div className="relative z-10">
