@@ -30,6 +30,41 @@ class GradingWorkflowTests(APITestCase):
         self.assessment_url = reverse('assessment-list')
         self.portfolio_url = reverse('portfolio-list')
 
+    def test_instructor_creates_portfolio_for_student(self):
+        # Authenticate as instructor
+        self.client.force_authenticate(user=self.instructor)
+        data = {
+            "title": "Instructor Folder",
+            "description": "Created on behalf of student",
+            "unit": self.unit.id,
+            "learner": self.student.id,
+            "status": "DRAFT"
+        }
+        response = self.client.post(self.portfolio_url, data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        
+        # Verify database record
+        portfolio = Portfolio.objects.get(id=response.data['id'])
+        self.assertEqual(portfolio.title, "Instructor Folder")
+        self.assertEqual(portfolio.learner, self.student)
+        self.assertEqual(portfolio.unit, self.unit)
+        self.assertEqual(portfolio.status, "DRAFT")
+
+    def test_instructor_cannot_create_portfolio_for_unassigned_unit(self):
+        # Create unassigned unit
+        other_unit = Unit.objects.create(name="Networking", code="CS102", semester=self.semester)
+        
+        self.client.force_authenticate(user=self.instructor)
+        data = {
+            "title": "Unauthorized Folder",
+            "unit": other_unit.id,
+            "learner": self.student.id,
+            "status": "DRAFT"
+        }
+        response = self.client.post(self.portfolio_url, data)
+        # Forbidden since the instructor does not teach other_unit
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
     def test_grading_workflow(self):
         # 1. Student creates a portfolio
         self.client.force_authenticate(user=self.student)
