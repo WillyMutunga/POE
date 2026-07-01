@@ -62,7 +62,7 @@ class CanManagePortfolio(permissions.BasePermission):
         if user.role == 'INSTRUCTOR':
             if request.method == 'POST':
                 unit_id = request.data.get('unit')
-                return user.assigned_units.filter(id=unit_id).exists()
+                return user.taught_units.filter(id=unit_id).exists()
             return True
         return user.role in ['ADMIN', 'MANAGER', 'DIRECTOR', 'CDACC']
 
@@ -183,11 +183,14 @@ class PortfolioViewSet(viewsets.ModelViewSet):
         # Optional filters
         status_filter = self.request.query_params.get('status')
         unit_id = self.request.query_params.get('unit')
+        learner_id = self.request.query_params.get('learner')
         
         if status_filter:
             queryset = queryset.filter(status=status_filter)
         if unit_id:
             queryset = queryset.filter(unit_id=unit_id)
+        if learner_id:
+            queryset = queryset.filter(learner_id=learner_id)
             
         return queryset
 

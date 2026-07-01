@@ -18,6 +18,33 @@ const InstructorStudents = () => {
   const [checkedUnits, setCheckedUnits] = useState({});
   const [savingUnits, setSavingUnits] = useState(false);
 
+  const [selectedStudentProfile, setSelectedStudentProfile] = useState(null);
+  const [profileUnits, setProfileUnits] = useState([]);
+  const [profilePortfolios, setProfilePortfolios] = useState([]);
+  const [loadingProfileData, setLoadingProfileData] = useState(false);
+  const [selectedUnitForNewPortfolio, setSelectedUnitForNewPortfolio] = useState('');
+  const [showCreatePortfolioSection, setShowCreatePortfolioSection] = useState(false);
+
+  const handleOpenStudentProfile = async (student) => {
+    setSelectedStudentProfile(student);
+    setLoadingProfileData(true);
+    setShowCreatePortfolioSection(false);
+    setSelectedUnitForNewPortfolio('');
+    try {
+      const [unitsRes, portfoliosRes] = await Promise.all([
+        api.get(`/academic/units/student_units_for_assignment/?student_id=${student.id}`),
+        api.get(`/poe/portfolios/?learner=${student.id}`)
+      ]);
+      setProfileUnits(unitsRes.data);
+      setProfilePortfolios(portfoliosRes.data);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load student profile details.');
+    } finally {
+      setLoadingProfileData(false);
+    }
+  };
+
   const handleOpenManageUnits = async (student) => {
     setSelectedStudentForUnits(student);
     setLoadingStudentUnits(true);
@@ -218,14 +245,24 @@ const InstructorStudents = () => {
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => handleOpenManageUnits(student)}
-                  className="w-full mt-4 py-3 bg-[#0000FE]/5 hover:bg-[#0000FE]/10 text-[#0000FE] font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2"
-                >
-                  <Plus size={14} />
-                  Manage Unit Assignments
-                </button>
+                <div className="flex gap-3 mt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenManageUnits(student)}
+                    className="flex-1 py-3 bg-[#0000FE]/5 hover:bg-[#0000FE]/10 text-[#0000FE] font-black rounded-xl text-xs transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={14} />
+                    Units
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOpenStudentProfile(student)}
+                    className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2 border border-slate-200"
+                  >
+                    <FileText size={14} />
+                    Profile
+                  </button>
+                </div>
               </div>
             </div>
           ))
@@ -472,6 +509,160 @@ const InstructorStudents = () => {
                 className="w-full py-4 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-all text-xs border border-slate-200"
               >
                 Cancel / Close
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {selectedStudentProfile && (
+        <Modal
+          isOpen={!!selectedStudentProfile}
+          onClose={() => setSelectedStudentProfile(null)}
+          title={`Student Profile: ${selectedStudentProfile.full_name}`}
+          size="2xl"
+        >
+          <div className="space-y-6">
+            {/* Header profile details */}
+            <div className="flex items-start justify-between border-b border-slate-100 pb-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                  {selectedStudentProfile.registration_number || 'No Registration Number'}
+                </p>
+                <h2 className="text-2xl font-black text-slate-800 tracking-tight">
+                  {selectedStudentProfile.full_name}
+                </h2>
+                <p className="text-sm font-medium text-slate-500">
+                  {selectedStudentProfile.course_display} • {selectedStudentProfile.semester_display}
+                </p>
+                <p className="text-xs text-slate-400 font-bold">{selectedStudentProfile.email}</p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowCreatePortfolioSection(!showCreatePortfolioSection)}
+                className="px-5 py-3 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-xs shadow-md transition-all flex items-center gap-2"
+              >
+                <Plus size={16} />
+                Create Portfolio
+              </button>
+            </div>
+
+            {/* Create Portfolio Dropdown Section */}
+            {showCreatePortfolioSection && (
+              <div className="bg-blue-50/50 border border-blue-100/50 p-6 rounded-2xl space-y-4 animate-in fade-in slide-in-from-top-3 duration-300">
+                <h3 className="text-sm font-black text-slate-800">Select Unit for New Portfolio</h3>
+                <div className="flex gap-4">
+                  <select
+                    value={selectedUnitForNewPortfolio}
+                    onChange={(e) => setSelectedUnitForNewPortfolio(e.target.value)}
+                    className="flex-1 px-4 py-3 bg-white border border-slate-200 rounded-xl font-bold text-xs"
+                  >
+                    <option value="">Choose Unit</option>
+                    {profileUnits
+                      .filter(u => u.registration_status === 'APPROVED' && u.can_assign)
+                      .map(u => (
+                        <option key={u.id} value={u.id}>{u.code}: {u.name}</option>
+                      ))
+                    }
+                  </select>
+                  <button
+                    type="button"
+                    disabled={!selectedUnitForNewPortfolio}
+                    onClick={() => {
+                      window.location.assign(`/portfolios/new?unit=${selectedUnitForNewPortfolio}&learner=${selectedStudentProfile.id}&learner_name=${encodeURIComponent(selectedStudentProfile.full_name)}`);
+                    }}
+                    className="px-6 py-3 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-xs transition-all disabled:opacity-50"
+                  >
+                    Proceed
+                  </button>
+                </div>
+                {profileUnits.filter(u => u.registration_status === 'APPROVED' && u.can_assign).length === 0 && (
+                  <p className="text-[10px] text-amber-600 font-bold mt-1">No approved units taught by you are available for portfolio creation.</p>
+                )}
+              </div>
+            )}
+
+            {/* Units & Portfolios List */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-black text-slate-800">Assigned Units & Portfolios</h3>
+
+              {loadingProfileData ? (
+                <div className="py-10 text-center animate-pulse text-[#0000FE] font-bold">Loading profile details...</div>
+              ) : profileUnits.length === 0 ? (
+                <p className="text-xs font-bold text-slate-400 bg-slate-50 p-4 rounded-xl text-center">No units assigned to this student.</p>
+              ) : (
+                <div className="space-y-4 max-h-[350px] overflow-y-auto pr-1">
+                  {profileUnits.map(unit => {
+                    const unitPortfolios = profilePortfolios.filter(p => p.unit === unit.id);
+                    
+                    return (
+                      <div key={unit.id} className="p-5 bg-slate-50 border border-slate-100 rounded-2xl space-y-4">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="text-sm font-black text-slate-800 leading-tight">{unit.name}</h4>
+                            <p className="text-[10px] font-bold text-slate-400 mt-1">{unit.code} • {unit.semester_name}</p>
+                          </div>
+                          <div>
+                            {unit.registration_status === 'APPROVED' ? (
+                              <span className="px-2 py-0.5 bg-green-50 text-green-700 border border-green-100 font-bold rounded-lg text-[9px] uppercase tracking-wider">
+                                Approved
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 border border-slate-200 font-bold rounded-lg text-[9px] uppercase tracking-wider">
+                                {unit.registration_status || 'Not Registered'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Portfolio list inside this unit */}
+                        <div className="space-y-2.5">
+                          {unitPortfolios.length === 0 ? (
+                            <p className="text-[11px] font-bold text-slate-400 italic">No portfolios initialized yet for this unit.</p>
+                          ) : (
+                            unitPortfolios.map(portfolio => (
+                              <div key={portfolio.id} className="flex items-center justify-between p-3 bg-white border border-slate-100 rounded-xl shadow-xs">
+                                <div className="min-w-0 flex-1 pr-3">
+                                  <p className="text-xs font-bold text-slate-700 truncate">{portfolio.title}</p>
+                                  <p className="text-[9px] font-medium text-slate-400 mt-0.5">
+                                    {portfolio.element_display || 'General'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <span className={`px-2 py-0.5 font-bold rounded-lg text-[9px] uppercase tracking-wider ${
+                                    portfolio.status === 'EVALUATED' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                    portfolio.status === 'SUBMITTED' ? 'bg-blue-50 text-[#0000FE] border border-blue-100 animate-pulse' :
+                                    'bg-amber-50 text-amber-700 border border-amber-100'
+                                  }`}>
+                                    {portfolio.status}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => window.location.assign(`/portfolios/${portfolio.id}`)}
+                                    className="px-3 py-1.5 bg-slate-50 hover:bg-[#0000FE] hover:text-white border border-slate-200 text-slate-600 rounded-lg text-[10px] font-bold transition-all"
+                                  >
+                                    View / Grade
+                                  </button>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="pt-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setSelectedStudentProfile(null)}
+                className="px-6 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition-all border border-slate-200"
+              >
+                Close Profile
               </button>
             </div>
           </div>

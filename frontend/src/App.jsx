@@ -169,7 +169,7 @@ function App() {
           <Route 
             path="/portfolios/new" 
             element={
-              <ProtectedRoute allowedRoles={['STUDENT']}>
+              <ProtectedRoute allowedRoles={['STUDENT', 'INSTRUCTOR']}>
                 <DashboardLayout>
                   <CreatePortfolio />
                 </DashboardLayout>
