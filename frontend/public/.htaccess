@@ -1,3 +1,9 @@
+# DO NOT EDIT. passenger_wsgi config rules
+PassengerAppRoot "/home1/headwayc/poe_backend"
+PassengerBaseURI "/api"
+PassengerPython "/home1/headwayc/virtualenv/poe_backend/3.10/bin/python"
+# END passenger_wsgi config rules
+
 Options +FollowSymLinks
 
 <IfModule mod_rewrite.c>
