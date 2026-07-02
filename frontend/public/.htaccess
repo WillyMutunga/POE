@@ -13,6 +13,9 @@ DirectoryIndex index.html
   RewriteEngine On
   RewriteBase /
 
+  # Specifically serve index.html for the root path
+  RewriteRule ^$ /index.html [L]
+
   # For any other route, if it's not an API call and the file/dir doesn't exist, serve index.html
   RewriteCond %{REQUEST_URI} !^/api/ [NC]
   RewriteCond %{REQUEST_FILENAME} !-f
