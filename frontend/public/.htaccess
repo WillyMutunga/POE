@@ -9,12 +9,9 @@ Options +FollowSymLinks
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
-  
-  # Skip rewriting for API calls
-  RewriteCond %{REQUEST_URI} ^/api/ [NC]
-  RewriteRule ^api/(.*)$ - [L]
 
-  # For any other route, if the file or directory does not exist, serve index.html
+  # For any other route, if it's not an API call and the file/dir doesn't exist, serve index.html
+  RewriteCond %{REQUEST_URI} !^/api/ [NC]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
