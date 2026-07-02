@@ -20,6 +20,7 @@ import SEO from '../../components/SEO';
 const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
+    total_students: 0,
     total_trainees: 0,
     poe_submitted: 0,
     poe_submitted_pct: 0,
@@ -238,12 +239,12 @@ const AdminDashboard = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-5">
-          {/* Card 1: Total Trainees */}
+          {/* Card 1: All Students */}
           <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between h-36 relative overflow-hidden group">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">Total Trainees</p>
-                <h3 className="text-3xl font-black text-slate-800 mt-2">{stats.total_trainees}</h3>
+                <p className="text-slate-400 text-[10px] font-black uppercase tracking-wider">All Students</p>
+                <h3 className="text-3xl font-black text-slate-800 mt-2">{stats.total_students || stats.total_trainees}</h3>
               </div>
               <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-[#0000FE]">
                 <Users size={18} />
@@ -611,7 +612,7 @@ const AdminDashboard = () => {
                         {prog.level || 'Level'}
                       </span>
                       <h4 className="text-base font-black text-slate-800 uppercase tracking-tight">{prog.name}</h4>
-                      <p className="text-xs text-slate-400 font-medium">Trainees enrolled: <span className="font-bold text-slate-700">{prog.total_trainees}</span></p>
+                      <p className="text-xs text-slate-400 font-medium">Students enrolled: <span className="font-bold text-slate-700">{prog.total_trainees}</span></p>
                     </div>
 
                     {/* Progress Bar Column */}

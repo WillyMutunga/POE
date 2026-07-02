@@ -482,7 +482,14 @@ class AdminPoeManagementView(APIView):
         course_id = request.query_params.get('course')
         search = request.query_params.get('search')
         
-        # 2. Filter courses (programmes)
+        # 2. Base Queries (Fetch all live database data first)
+        from django.db.models import Q
+        User = get_user_model()
+        
+        students = User.objects.filter(role='STUDENT')
+        portfolios = Portfolio.objects.all().select_related('unit', 'unit__course')
+        
+        # Filter courses for programme list and dropdowns
         courses = Course.objects.all().select_related('school').prefetch_related('units', 'units__semester')
         if department_id:
             courses = courses.filter(school_id=department_id)
@@ -492,10 +499,27 @@ class AdminPoeManagementView(APIView):
             courses = courses.filter(id=course_id)
         if search:
             courses = courses.filter(name__icontains=search)
-            
-        User = get_user_model()
-        students = User.objects.filter(role='STUDENT', course__in=courses)
-        portfolios = Portfolio.objects.filter(unit__course__in=courses)
+
+        # Apply filters to students and portfolios
+        if department_id:
+            students = students.filter(course__school_id=department_id)
+            portfolios = portfolios.filter(unit__course__school_id=department_id)
+        if level:
+            students = students.filter(course__level=level)
+            portfolios = portfolios.filter(unit__course__level=level)
+        if course_id:
+            students = students.filter(course_id=course_id)
+            portfolios = portfolios.filter(unit__course_id=course_id)
+        if search:
+            students = students.filter(
+                Q(course__name__icontains=search) | 
+                Q(first_name__icontains=search) | 
+                Q(last_name__icontains=search)
+            )
+            portfolios = portfolios.filter(
+                Q(unit__course__name__icontains=search) |
+                Q(title__icontains=search)
+            )
         
         # 3. Overall stats
         total_trainees = students.count()
@@ -597,6 +621,7 @@ class AdminPoeManagementView(APIView):
         
         return Response({
             "stats": {
+                "total_students": total_trainees,
                 "total_trainees": total_trainees,
                 "poe_submitted": poe_submitted,
                 "poe_submitted_pct": poe_submitted_pct,

@@ -218,7 +218,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               >
                 <div className="flex items-center gap-4">
                   <Users size={22} />
-                  <span>Trainees</span>
+                  <span>All Students</span>
                 </div>
                 {academicsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
