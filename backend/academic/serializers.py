@@ -199,6 +199,7 @@ class UnitSerializer(serializers.ModelSerializer):
     practical_count = serializers.SerializerMethodField()
     oral_count = serializers.SerializerMethodField()
     overall_progress = serializers.SerializerMethodField()
+    registered_semester = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit

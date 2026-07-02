@@ -113,16 +113,24 @@ const UserManagement = () => {
 
   const fetchAcademicData = async () => {
     try {
-      const [schoolsRes, coursesRes, semRes] = await Promise.all([
-        api.get('/academic/schools/'),
-        api.get('/academic/courses/'),
-        api.get('/academic/semesters/')
-      ]);
+      const schoolsRes = await api.get('/academic/schools/');
       setSchools(schoolsRes.data);
+    } catch (error) {
+      console.error('Error fetching schools:', error);
+    }
+
+    try {
+      const coursesRes = await api.get('/academic/courses/');
       setCourses(coursesRes.data);
+    } catch (error) {
+      console.error('Error fetching courses:', error);
+    }
+
+    try {
+      const semRes = await api.get('/academic/semesters/');
       setSemesters(semRes.data);
     } catch (error) {
-      console.error('Error fetching academic data:', error);
+      console.error('Error fetching semesters:', error);
     }
   };
 
