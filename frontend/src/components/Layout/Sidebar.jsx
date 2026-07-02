@@ -71,7 +71,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
     }`}>
       <div className="p-6 lg:p-8 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-black text-[#0000FE] tracking-tight">POE Portal</h2>
+          <h2 className="text-2xl font-black text-[#0000FE] tracking-tight">PoE</h2>
           <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mt-1">Management System</p>
         </div>
         <button
@@ -209,6 +209,81 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </>
         ) : ['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user.role) ? (
           <>
+            {/* Trainees (Expandable) */}
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => setAcademicsOpen(!academicsOpen)}
+                className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 hover:text-[#0000FE] transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <Users size={22} />
+                  <span>Trainees</span>
+                </div>
+                {academicsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </button>
+
+              {academicsOpen && (
+                <div className="pl-6 space-y-1 transition-all duration-300">
+                  <NavLink
+                    to="/admin/users?role=STUDENT"
+                    className={({ isActive }) => 
+                      `flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all ${
+                        isActive 
+                        ? 'bg-blue-50 text-[#0000FE]' 
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#0000FE]'
+                      }`
+                    }
+                  >
+                    <div className="w-2 h-2 rounded-full border-2 border-current"></div>
+                    <span>Students</span>
+                  </NavLink>
+                  <NavLink
+                    to="/admin/users?role=INSTRUCTOR"
+                    className={({ isActive }) => 
+                      `flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all ${
+                        isActive 
+                        ? 'bg-blue-50 text-[#0000FE]' 
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#0000FE]'
+                      }`
+                    }
+                  >
+                    <div className="w-2 h-2 rounded-full border-2 border-current"></div>
+                    <span>Instructors</span>
+                  </NavLink>
+                  <NavLink
+                    to="/admin/users"
+                    className={({ isActive }) => 
+                      `flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all ${
+                        isActive 
+                        ? 'bg-blue-50 text-[#0000FE]' 
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#0000FE]'
+                      }`
+                    }
+                  >
+                    <div className="w-2 h-2 rounded-full border-2 border-current"></div>
+                    <span>All Users</span>
+                  </NavLink>
+                </div>
+              )}
+            </div>
+
+            {/* Units of Competence */}
+            <NavLink
+              to="/admin/academic"
+              className={({ isActive }) => 
+                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
+                  isActive 
+                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
+                }`
+              }
+            >
+              <BookOpen size={22} />
+              <span>Units of Competence</span>
+            </NavLink>
+
+            {/* PoE Management */}
             <NavLink
               to="/dashboard"
               className={({ isActive }) => 
@@ -220,65 +295,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               }
             >
               <LayoutDashboard size={22} />
-              <span>Dashboard</span>
+              <span>PoE Management</span>
             </NavLink>
 
-            <NavLink
-              to="/admin/analytics"
-              className={({ isActive }) => 
-                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
-                  isActive 
-                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
-                }`
-              }
-            >
-              <TrendingUp size={22} />
-              <span>Cohort Analytics</span>
-            </NavLink>
-
-            <NavLink
-              to="/admin/users"
-              className={({ isActive }) => 
-                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
-                  isActive 
-                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
-                }`
-              }
-            >
-              <Shield size={22} />
-              <span>User Management</span>
-            </NavLink>
-
-            <NavLink
-              to="/admin/users?role=STUDENT"
-              className={({ isActive }) => 
-                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
-                  isActive 
-                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
-                }`
-              }
-            >
-              <Users size={22} />
-              <span>Students</span>
-            </NavLink>
-
-            <NavLink
-              to="/admin/users?role=INSTRUCTOR"
-              className={({ isActive }) => 
-                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
-                  isActive 
-                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
-                }`
-              }
-            >
-              <UserCheck size={22} />
-              <span>Instructors</span>
-            </NavLink>
-
+            {/* Curriculums */}
             <div className="space-y-1">
               <button
                 type="button"
@@ -286,27 +306,14 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 className="w-full flex items-center justify-between px-4 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 hover:text-[#0000FE] transition-all"
               >
                 <div className="flex items-center gap-4">
-                  <BookOpen size={22} />
-                  <span>Course Management</span>
+                  <ClipboardList size={22} />
+                  <span>Curriculums</span>
                 </div>
                 {courseMgmtOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
 
               {courseMgmtOpen && (
                 <div className="pl-6 space-y-1 transition-all duration-300">
-                  <NavLink
-                    to="/admin/academic"
-                    className={({ isActive }) => 
-                      `flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all ${
-                        isActive 
-                        ? 'bg-blue-50 text-[#0000FE]' 
-                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#0000FE]'
-                      }`
-                    }
-                  >
-                    <div className="w-2 h-2 rounded-full border-2 border-current"></div>
-                    <span>Schools & Courses</span>
-                  </NavLink>
                   <NavLink
                     to="/admin/grading"
                     className={({ isActive }) => 
@@ -349,6 +356,34 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </div>
               )}
             </div>
+
+            {/* Reports */}
+            <NavLink
+              to="/admin/analytics"
+              className={({ isActive }) => 
+                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
+                  isActive 
+                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
+                }`
+              }
+            >
+              <TrendingUp size={22} />
+              <span>Reports</span>
+            </NavLink>
+
+            {/* Subscription plans */}
+            <NavLink
+              to="#"
+              onClick={(e) => {
+                e.preventDefault();
+                alert('Subscription plans feature is under development.');
+              }}
+              className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 hover:text-[#0000FE] transition-all"
+            >
+              <Bell size={22} />
+              <span>Subscription plans</span>
+            </NavLink>
 
             <NavLink
               to="/profile"

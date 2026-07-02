@@ -390,7 +390,9 @@ class AssessmentViewSet(viewsets.ModelViewSet):
 from rest_framework.views import APIView
 from django.db.models import Avg
 from django.contrib.auth import get_user_model
-from academic.models import Course, CourseSession
+from django.utils import timezone
+from datetime import timedelta
+from academic.models import Course, CourseSession, School, Unit
 
 class CohortAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -463,4 +465,150 @@ class CohortAnalyticsView(APIView):
             'cohorts': cohorts_data,
             'overall_avg_rounds': overall_avg_rounds,
             'at_risk_students': at_risk_students
+        })
+
+
+class AdminPoeManagementView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR']:
+            return Response({"detail": "Not authorized to view POE management analytics."}, status=403)
+
+        # 1. Fetch query parameters for filtering
+        department_id = request.query_params.get('department')
+        level = request.query_params.get('level')
+        course_id = request.query_params.get('course')
+        search = request.query_params.get('search')
+        
+        # 2. Filter courses (programmes)
+        courses = Course.objects.all().select_related('school').prefetch_related('units', 'units__semester')
+        if department_id:
+            courses = courses.filter(school_id=department_id)
+        if level:
+            courses = courses.filter(level=level)
+        if course_id:
+            courses = courses.filter(id=course_id)
+        if search:
+            courses = courses.filter(name__icontains=search)
+            
+        User = get_user_model()
+        students = User.objects.filter(role='STUDENT', course__in=courses)
+        portfolios = Portfolio.objects.filter(unit__course__in=courses)
+        
+        # 3. Overall stats
+        total_trainees = students.count()
+        total_portfolios = portfolios.count()
+        
+        poe_submitted = portfolios.filter(status__in=['SUBMITTED', 'EVALUATED', 'REDO']).count()
+        poe_approved = portfolios.filter(status='EVALUATED').count()
+        poe_pending_approval = portfolios.filter(status='SUBMITTED').count()
+        poe_pending_submission = portfolios.filter(status__in=['DRAFT', 'REDO']).count()
+        
+        poe_submitted_pct = round((poe_submitted / total_portfolios * 100), 1) if total_portfolios > 0 else 0
+        poe_approved_pct = round((poe_approved / total_portfolios * 100), 1) if total_portfolios > 0 else 0
+        poe_pending_approval_pct = round((poe_pending_approval / total_portfolios * 100), 1) if total_portfolios > 0 else 0
+        poe_pending_submission_pct = round((poe_pending_submission / total_portfolios * 100), 1) if total_portfolios > 0 else 0
+        
+        # 4. Submission Trends (past 30 days)
+        trends_data = []
+        today = timezone.now().date()
+        for i in range(30):
+            d = today - timedelta(days=29 - i)
+            day_portfolios = portfolios.filter(created_at__date=d)
+            submitted_count = day_portfolios.filter(status__in=['SUBMITTED', 'EVALUATED', 'REDO']).count()
+            approved_count = day_portfolios.filter(status='EVALUATED').count()
+            pending_count = day_portfolios.filter(status='SUBMITTED').count()
+            trends_data.append({
+                "date": d.strftime("%b %d"),
+                "Submitted": submitted_count,
+                "Approved": approved_count,
+                "Pending": pending_count
+            })
+            
+        # 5. Albums Distribution (doughnut chart)
+        albums_data = []
+        for course in courses:
+            course_portfolios = portfolios.filter(unit__course=course)
+            if course_portfolios.exists():
+                albums_data.append({
+                    "name": course.name,
+                    "count": course_portfolios.count()
+                })
+        # Sort albums_data by count descending
+        albums_data = sorted(albums_data, key=lambda x: x['count'], reverse=True)
+        
+        # 6. Programme Overview list
+        programme_overview = []
+        for course in courses:
+            course_students = students.filter(course=course)
+            course_portfolios = portfolios.filter(unit__course=course)
+            
+            c_total = course_portfolios.count()
+            c_submitted = course_portfolios.filter(status__in=['SUBMITTED', 'EVALUATED', 'REDO']).count()
+            c_approved = course_portfolios.filter(status='EVALUATED').count()
+            c_pending_app = course_portfolios.filter(status='SUBMITTED').count()
+            c_pending_sub = course_portfolios.filter(status__in=['DRAFT', 'REDO']).count()
+            
+            c_progress = round((c_approved / c_total * 100), 1) if c_total > 0 else 0
+            
+            units_data = []
+            for unit in course.units.all():
+                unit_portfolios = course_portfolios.filter(unit=unit)
+                u_total = unit_portfolios.count()
+                u_submitted = unit_portfolios.filter(status__in=['SUBMITTED', 'EVALUATED', 'REDO']).count()
+                u_approved = unit_portfolios.filter(status='EVALUATED').count()
+                u_pending_app = unit_portfolios.filter(status='SUBMITTED').count()
+                u_pending_sub = unit_portfolios.filter(status__in=['DRAFT', 'REDO']).count()
+                
+                units_data.append({
+                    "id": unit.id,
+                    "name": unit.name,
+                    "code": unit.code,
+                    "semester_name": unit.semester.name if unit.semester else "Unassigned",
+                    "total": u_total,
+                    "submitted": u_submitted,
+                    "approved": u_approved,
+                    "pending_approval": u_pending_app,
+                    "pending_submission": u_pending_sub
+                })
+                
+            programme_overview.append({
+                "id": course.id,
+                "name": course.name,
+                "level": course.get_level_display(),
+                "total_trainees": course_students.count(),
+                "total_portfolios": c_total,
+                "submitted": c_submitted,
+                "approved": c_approved,
+                "pending_approval": c_pending_app,
+                "pending_submission": c_pending_sub,
+                "progress": c_progress,
+                "units": units_data
+            })
+            
+        # 7. Available filter options
+        filter_options = {
+            "departments": [{"id": s.id, "name": s.name} for s in School.objects.all()],
+            "levels": [{"value": val, "label": label} for val, label in Course.LEVEL_CHOICES],
+            "programmes": [{"id": c.id, "name": c.name} for c in Course.objects.all()]
+        }
+        
+        return Response({
+            "stats": {
+                "total_trainees": total_trainees,
+                "poe_submitted": poe_submitted,
+                "poe_submitted_pct": poe_submitted_pct,
+                "poe_approved": poe_approved,
+                "poe_approved_pct": poe_approved_pct,
+                "poe_pending_approval": poe_pending_approval,
+                "poe_pending_approval_pct": poe_pending_approval_pct,
+                "poe_pending_submission": poe_pending_submission,
+                "poe_pending_submission_pct": poe_pending_submission_pct
+            },
+            "trends": trends_data,
+            "albums": albums_data,
+            "programmes": programme_overview,
+            "filter_options": filter_options
         })
