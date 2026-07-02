@@ -612,3 +612,57 @@ class AdminPoeManagementView(APIView):
             "programmes": programme_overview,
             "filter_options": filter_options
         })
+
+
+class AdminPoeReportsView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR']:
+            return Response({"detail": "Not authorized to view POE reports analytics."}, status=403)
+
+        User = get_user_model()
+        portfolios = Portfolio.objects.all().select_related(
+            'learner', 'learner__course', 'learner__course__school', 
+            'unit', 'unit__course'
+        )
+
+        # 1. Summary Metrics
+        total_reports = portfolios.count()
+        approved_reports = portfolios.filter(status='EVALUATED').count()
+        pending_workflow = portfolios.filter(status='SUBMITTED').count()
+        declined_reports = portfolios.filter(status='REDO').count()
+
+        # 2. Reports List
+        reports_list = []
+        for p in portfolios:
+            learner = p.learner
+            school_name = learner.course.school.name if learner.course and learner.course.school else "Unassigned"
+            course_name = learner.course.name if learner.course else "Unassigned"
+            unit_display = f"{p.unit.code}: {p.unit.name}" if p.unit else "Unassigned"
+            intake_display = dict(User.Intake.choices).get(learner.intake, learner.intake) if learner.intake else "Unassigned"
+
+            reports_list.append({
+                "id": p.id,
+                "admission_number": learner.registration_number or "N/A",
+                "assessment_number": learner.cdacc_registration_number or learner.username,
+                "name": learner.get_full_name(),
+                "department": school_name,
+                "title": p.title,
+                "category": p.get_assessment_type_display(),
+                "status": p.status,
+                "unit": unit_display,
+                "programme": course_name,
+                "session": intake_display
+            })
+
+        return Response({
+            "metrics": {
+                "total_reports": total_reports,
+                "approved_reports": approved_reports,
+                "pending_workflow": pending_workflow,
+                "declined_reports": declined_reports
+            },
+            "reports": reports_list
+        })
