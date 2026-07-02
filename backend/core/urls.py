@@ -19,12 +19,39 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+from django.http import JsonResponse
+import traceback
+
+def test_debug_view(request):
+    try:
+        from academic.models import School
+        from academic.serializers import SchoolSerializer
+        schools = School.objects.all()
+        serializer = SchoolSerializer(schools, many=True)
+        data = serializer.data
+        return JsonResponse({"status": "ok", "data": data})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e), "traceback": traceback.format_exc()})
+
+def test_debug_semesters(request):
+    try:
+        from academic.models import Semester
+        from academic.serializers import SemesterSerializer
+        semesters = Semester.objects.all()
+        serializer = SemesterSerializer(semesters, many=True)
+        data = serializer.data
+        return JsonResponse({"status": "ok", "data": data})
+    except Exception as e:
+        return JsonResponse({"status": "error", "message": str(e), "traceback": traceback.format_exc()})
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/poe/', include('poe_core.urls')),
     path('api/academic/', include('academic.urls')),
     path('api/notifications/', include('notifications.urls')),
+    path('api/test-debug/', test_debug_view),
+    path('api/test-debug-semesters/', test_debug_semesters),
 ]
 
 if settings.DEBUG:
