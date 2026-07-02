@@ -6,6 +6,9 @@ PassengerPython "/home1/headwayc/virtualenv/poe_backend/3.10/bin/python"
 
 Options +FollowSymLinks
 
+# Serve index.html when accessing the root directory
+DirectoryIndex index.html
+
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
