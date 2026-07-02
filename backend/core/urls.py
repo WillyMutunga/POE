@@ -21,10 +21,17 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    # Prefixed paths (when running at root base URI)
     path('api/users/', include('users.urls')),
     path('api/poe/', include('poe_core.urls')),
     path('api/academic/', include('academic.urls')),
     path('api/notifications/', include('notifications.urls')),
+    
+    # Non-prefixed paths (when running at /api base URI where prefix is stripped)
+    path('users/', include('users.urls')),
+    path('poe/', include('poe_core.urls')),
+    path('academic/', include('academic.urls')),
+    path('notifications/', include('notifications.urls')),
 ]
 
 if settings.DEBUG:
