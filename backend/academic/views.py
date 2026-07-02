@@ -291,12 +291,10 @@ class UnitViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.role == 'STUDENT':
-            # Only return units where the student has an APPROVED registration
-            return Unit.objects.filter(
-                registrations__student=user,
-                registrations__status='APPROVED',
-                is_approved=True
-            ).distinct()
+            # Return all approved units in the student's course
+            if user.course:
+                return Unit.objects.filter(course=user.course, is_approved=True).distinct()
+            return Unit.objects.none()
         elif user.role == 'INSTRUCTOR':
             active_semesters = CourseSession.objects.filter(is_active=True).values_list('semester_id', flat=True)
             return Unit.objects.filter(

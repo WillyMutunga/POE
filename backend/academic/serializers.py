@@ -171,7 +171,11 @@ class UnitSerializer(serializers.ModelSerializer):
     instructors_detail = serializers.SerializerMethodField()
     students_detail = serializers.SerializerMethodField()
     elements = ElementSerializer(many=True, read_only=True)
-    registered_semester = serializers.SerializerMethodField()
+    is_locked = serializers.SerializerMethodField()
+    theory_count = serializers.SerializerMethodField()
+    practical_count = serializers.SerializerMethodField()
+    oral_count = serializers.SerializerMethodField()
+    overall_progress = serializers.SerializerMethodField()
 
     class Meta:
         model = Unit
@@ -179,7 +183,8 @@ class UnitSerializer(serializers.ModelSerializer):
             'id', 'name', 'code', 'course', 'semester', 'semester_name', 
             'course_name', 'instructors', 'students', 'student_count',
             'instructors_detail', 'students_detail', 'elements', 'is_approved',
-            'registered_semester', 'credit_hours'
+            'registered_semester', 'credit_hours',
+            'is_locked', 'theory_count', 'practical_count', 'oral_count', 'overall_progress'
         )
         validators = [
             serializers.UniqueTogetherValidator(
@@ -188,6 +193,78 @@ class UnitSerializer(serializers.ModelSerializer):
                 message="A unit with this code already exists in this semester/module."
             )
         ]
+
+    def get_is_locked(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.role == 'STUDENT':
+            student = request.user
+            if student.semester and obj.semester_id != student.semester_id:
+                return True
+        return False
+
+    def _get_element_counts(self, obj):
+        elements_count = obj.elements.count()
+        theory_total = elements_count
+        practical_total = elements_count
+        
+        oral_total = 0
+        if obj.name.lower() == 'default' or 'communication' in obj.name.lower():
+            oral_total = 1
+            
+        return theory_total, practical_total, oral_total
+
+    def get_theory_count(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.role == 'STUDENT':
+            student = request.user
+            from poe_core.models import Portfolio
+            completed = Portfolio.objects.filter(
+                learner=student, unit=obj, 
+                assessment_type='WRITTEN', status='EVALUATED'
+            ).count()
+            total, _, _ = self._get_element_counts(obj)
+            return f"{completed}/{total}"
+        return "0/0"
+
+    def get_practical_count(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.role == 'STUDENT':
+            student = request.user
+            from poe_core.models import Portfolio
+            completed = Portfolio.objects.filter(
+                learner=student, unit=obj, 
+                assessment_type='PRACTICAL', status='EVALUATED'
+            ).count()
+            _, total, _ = self._get_element_counts(obj)
+            return f"{completed}/{total}"
+        return "0/0"
+
+    def get_oral_count(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.role == 'STUDENT':
+            student = request.user
+            from poe_core.models import Portfolio
+            completed = Portfolio.objects.filter(
+                learner=student, unit=obj, 
+                assessment_type='ORAL', status='EVALUATED'
+            ).count()
+            _, _, total = self._get_element_counts(obj)
+            return f"{completed}/{total}"
+        return "0/0"
+
+    def get_overall_progress(self, obj):
+        request = self.context.get('request')
+        if request and request.user and request.user.role == 'STUDENT':
+            student = request.user
+            from poe_core.models import Portfolio
+            completed_count = Portfolio.objects.filter(
+                learner=student, unit=obj, status='EVALUATED'
+            ).count()
+            t_tot, p_tot, o_tot = self._get_element_counts(obj)
+            total_expected = t_tot + p_tot + o_tot
+            if total_expected > 0:
+                return round((completed_count / total_expected * 100), 1)
+        return 0.0
 
     def get_registered_semester(self, obj):
         request = self.context.get('request')
