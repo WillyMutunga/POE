@@ -55,19 +55,17 @@ const StudentDashboard = () => {
     }
 
     const unitPortfolios = portfolios.filter(p => p.unit === unit.id);
-    if (unitPortfolios.length === 0) {
-      return 'Not Started';
-    }
-
-    const hasPending = unitPortfolios.some(p => p.status === 'SUBMITTED');
     const allEvaluated = unitPortfolios.length > 0 && unitPortfolios.every(p => p.status === 'EVALUATED');
 
     if (allEvaluated && unit.overall_progress === 100) {
       return 'Complete';
     }
+
+    const hasPending = unitPortfolios.some(p => p.status === 'SUBMITTED');
     if (hasPending) {
       return 'Pending Review';
     }
+    // Active (unlocked) units are considered In Progress
     return 'In Progress';
   };
 
