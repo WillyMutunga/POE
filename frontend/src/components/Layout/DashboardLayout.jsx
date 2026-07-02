@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 const DashboardLayout = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="flex min-h-screen bg-[#F3F4F6] overflow-x-hidden relative">
@@ -21,7 +23,7 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-        <main className="p-4 sm:p-6 lg:p-10">
+        <main key={location.pathname} className="p-4 sm:p-6 lg:p-10 animate-fade-in">
           {children}
         </main>
       </div>

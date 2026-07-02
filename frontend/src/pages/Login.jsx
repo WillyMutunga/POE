@@ -46,7 +46,7 @@ const Login = () => {
         keywords="Login Headway POE, Sign In Headway College POE"
       />
       {/* Centered Login Card */}
-      <div className="w-full max-w-[450px] bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="w-full max-w-[450px] bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden animate-fade-in">
         <div className="p-8 md:p-12">
           <div className="mb-10 text-center">
             <h1 className="text-3xl font-black text-[#0000FE] mb-2 tracking-tight">

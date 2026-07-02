@@ -105,13 +105,15 @@ class Evidence(models.Model):
     def __str__(self):
         return f"Evidence for {self.portfolio.title}"
 
+from django.utils import timezone
+
 class Assessment(models.Model):
     portfolio = models.OneToOneField(Portfolio, on_delete=models.CASCADE, related_name='assessment')
     assessor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='assessments')
     grade = models.CharField(max_length=50)
     feedback = models.TextField(blank=True)
     is_redo_request = models.BooleanField(default=False)
-    date = models.DateTimeField(auto_now_add=True)
+    date = models.DateTimeField(default=timezone.now)
 
     def __str__(self):
         return f"Assessment for {self.portfolio.title}"

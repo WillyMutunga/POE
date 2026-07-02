@@ -28,6 +28,7 @@ const EvaluationPage = () => {
   const [grade, setGrade] = useState('');
   const [feedback, setFeedback] = useState('');
   const [isRedoRequest, setIsRedoRequest] = useState(false);
+  const [assessmentDate, setAssessmentDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
   const [expandedTrials, setExpandedTrials] = useState({});
@@ -61,6 +62,22 @@ const EvaluationPage = () => {
       if (response.data.unit) {
         fetchRubrics(response.data.unit, response.data.element);
       }
+      if (response.data.assessment) {
+        const assessment = response.data.assessment;
+        setGrade(assessment.grade || '');
+        setFeedback(assessment.feedback || '');
+        setIsRedoRequest(assessment.is_redo_request || false);
+        if (assessment.date) {
+          setAssessmentDate(new Date(assessment.date).toISOString().split('T')[0]);
+        }
+        if (assessment.criterion_scores) {
+          const scores = {};
+          assessment.criterion_scores.forEach(score => {
+            scores[score.criterion] = score.is_satisfied;
+          });
+          setCriterionScores(scores);
+        }
+      }
     } catch (error) {
       console.error('Error fetching portfolio:', error);
     } finally {
@@ -93,7 +110,8 @@ const EvaluationPage = () => {
         grade: isRedoRequest ? 'REDO' : grade,
         feedback,
         is_redo_request: isRedoRequest,
-        criterion_scores: criterionScoresList
+        criterion_scores: criterionScoresList,
+        date: assessmentDate
       });
       navigate('/dashboard');
     } catch (error) {
@@ -388,6 +406,17 @@ const EvaluationPage = () => {
                   />
                 </div>
               )}
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 ml-1">Date of Assessment</label>
+                <input 
+                  type="date"
+                  className="w-full px-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary-100 focus:border-primary-500 transition-all font-bold text-slate-800"
+                  value={assessmentDate}
+                  onChange={(e) => setAssessmentDate(e.target.value)}
+                  required
+                />
+              </div>
             </div>
 
             <div className="space-y-2">

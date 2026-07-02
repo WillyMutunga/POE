@@ -132,7 +132,7 @@ const Landing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-[#141313] font-sans antialiased scroll-smooth" id="home">
+    <div className="min-h-screen bg-slate-50 text-[#141313] font-sans antialiased scroll-smooth animate-fade-in" id="home">
       <SEO 
         title="Portfolio of Evidence | Headway College POE Portal"
         description="Access the official Headway College Portfolio of Evidence (POE) Portal. Log in to manage your student profile, course units, exams, and academic evidence submissions."

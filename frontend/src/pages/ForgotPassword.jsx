@@ -31,7 +31,7 @@ const ForgotPassword = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-[#F3F4F6] p-6">
-      <div className="w-full max-w-[450px] bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden">
+      <div className="w-full max-w-[450px] bg-white rounded-3xl shadow-[0_10px_40px_rgba(0,0,0,0.08)] overflow-hidden animate-fade-in">
         <div className="p-8 md:p-12">
           <div className="mb-8 text-center">
             <h1 className="text-3xl font-black text-[#0000FE] mb-2 tracking-tight">
