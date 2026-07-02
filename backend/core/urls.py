@@ -15,9 +15,22 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
+import os
+
+def serve_spa(request, path=''):
+    # Path on production server where index.html is located
+    index_path = '/home1/headwayc/poe.headwaycollege.ac.ke/index.html'
+    if not os.path.exists(index_path):
+        # Fallback to local or default if path doesn't exist
+        return HttpResponse("SPA index.html not found.", status=404)
+        
+    with open(index_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    return HttpResponse(content, content_type='text/html')
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -32,6 +45,10 @@ urlpatterns = [
     path('poe/', include('poe_core.urls')),
     path('academic/', include('academic.urls')),
     path('notifications/', include('notifications.urls')),
+    
+    # Catch-all patterns to serve React SPA
+    path('', serve_spa),
+    re_path(r'^(?P<path>.*)$', serve_spa),
 ]
 
 if settings.DEBUG:
