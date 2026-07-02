@@ -157,8 +157,31 @@ class ElementSerializer(serializers.ModelSerializer):
                 return obj.name
         return obj.name
 
+class CourseStructureSerializer(serializers.ModelSerializer):
+    level_display = serializers.CharField(source='get_level_display', read_only=True)
+    semesters = serializers.SerializerMethodField()
+    unassigned_units = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Course
+        fields = ('id', 'name', 'level', 'level_display', 'semesters', 'unassigned_units')
+
+    def get_semesters(self, obj):
+        semesters = list(obj.semesters.all())
+        semesters.sort(key=lambda s: semester_sort_key(s.name))
+        return SemesterSerializer(semesters, many=True, context=self.context).data
+
+    def get_unassigned_units(self, obj):
+        from .serializers import UnitSerializer
+        units = obj.units.filter(semester__isnull=True)
+        request = self.context.get('request')
+        if request and request.user:
+            if request.user.role in ['STUDENT', 'INSTRUCTOR', 'CDACC']:
+                units = units.filter(is_approved=True)
+        return UnitSerializer(units.order_by('name'), many=True, context=self.context).data
+
 class SchoolSerializer(serializers.ModelSerializer):
-    courses = CourseSerializer(many=True, read_only=True)
+    courses = CourseStructureSerializer(many=True, read_only=True)
 
     class Meta:
         model = School
