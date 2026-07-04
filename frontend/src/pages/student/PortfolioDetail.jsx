@@ -61,6 +61,24 @@ const PortfolioDetail = () => {
     }
   };
 
+  const handleBackClick = () => {
+    if (window.history.state && window.history.state.idx > 0) {
+      navigate(-1);
+    } else {
+      if (user?.role === 'STUDENT') {
+        navigate('/portfolios');
+      } else if (user?.role === 'INSTRUCTOR') {
+        navigate('/units-assigned');
+      } else if (['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user?.role)) {
+        navigate('/admin/portfolios');
+      } else if (user?.role === 'CDACC') {
+        navigate('/dashboard');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  };
+
   useEffect(() => {
     fetchPortfolio();
   }, [id]);
@@ -239,11 +257,11 @@ const PortfolioDetail = () => {
   return (
     <div className="space-y-8">
       <button 
-        onClick={() => navigate('/portfolios')}
-        className="flex items-center gap-2 text-slate-500 hover:text-primary-600 font-bold transition-colors"
+        onClick={handleBackClick}
+        className="flex items-center gap-2 text-slate-500 hover:text-[#0000FE] font-bold transition-colors"
       >
         <ArrowLeft size={20} />
-        Back to My Portfolios
+        {user?.role === 'STUDENT' ? 'Back to My Portfolios' : 'Back to Portfolios List'}
       </button>
 
       <div className="flex justify-between items-start">
