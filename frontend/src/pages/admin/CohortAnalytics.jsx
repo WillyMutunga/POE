@@ -65,9 +65,7 @@ const CohortAnalytics = () => {
       result = result.filter(r => r.status === 'REDO');
     } else if (activeTab === 'In Work Flow') {
       result = result.filter(r => r.status === 'SUBMITTED');
-    } else if (activeTab === 'Subscribers') {
-      // Show reports where students exist (already filtered, but can serve as a clone)
-    } else if (['Attendance Registers', 'Poe Expiry', 'Course per Candidature per Unit Reports', 'Trainee Activation Report'].includes(activeTab)) {
+    } else if (['Attendance Registers', 'Course per Candidature per Unit Reports'].includes(activeTab)) {
       // Placeholders / Empty tabs matching TVET platform
       return [];
     }
@@ -161,11 +159,8 @@ const CohortAnalytics = () => {
     'Approved',
     'Declined',
     'In Work Flow',
-    'Subscribers',
     'Attendance Registers',
-    'Poe Expiry',
-    'Course per Candidature per Unit Reports',
-    'Trainee Activation Report'
+    'Course per Candidature per Unit Reports'
   ];
 
   if (loading) {
@@ -381,11 +376,16 @@ const CohortAnalytics = () => {
                   <th className="p-4 text-[10px] font-black uppercase tracking-wider text-slate-400">Unit</th>
                   <th className="p-4 text-[10px] font-black uppercase tracking-wider text-slate-400">Programme</th>
                   <th className="p-4 text-[10px] font-black uppercase tracking-wider text-slate-400">Session</th>
+                  <th className="p-4 text-[10px] font-black uppercase tracking-wider text-slate-400 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {currentRows.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/40 transition-colors">
+                  <tr 
+                    key={row.id} 
+                    className="hover:bg-slate-50/40 transition-colors cursor-pointer"
+                    onClick={() => navigate(`/portfolios/${row.id}`)}
+                  >
                     <td className="p-4 font-mono font-bold text-[#0000FE]">{row.admission_number}</td>
                     <td className="p-4 font-mono font-bold text-slate-600">{row.assessment_number}</td>
                     <td className="p-4 font-bold text-slate-800">{row.name}</td>
@@ -405,6 +405,18 @@ const CohortAnalytics = () => {
                     <td className="p-4 font-bold text-slate-600 truncate max-w-[120px]" title={row.unit}>{row.unit}</td>
                     <td className="p-4 font-bold text-slate-600 truncate max-w-[120px]" title={row.programme}>{row.programme}</td>
                     <td className="p-4 font-bold text-slate-500">{row.session}</td>
+                    <td className="p-4 text-center">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/portfolios/${row.id}`);
+                        }}
+                        className="px-3 py-1.5 bg-[#0000FE]/5 hover:bg-[#0000FE]/10 text-[#0000FE] font-bold rounded-lg text-[10px] uppercase tracking-wider transition-all"
+                      >
+                        View
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

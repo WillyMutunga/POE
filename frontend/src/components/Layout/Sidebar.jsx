@@ -372,18 +372,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <span>Reports</span>
             </NavLink>
 
-            {/* Subscription plans */}
-            <NavLink
-              to="#"
-              onClick={(e) => {
-                e.preventDefault();
-                alert('Subscription plans feature is under development.');
-              }}
-              className="flex items-center gap-4 px-4 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-50 hover:text-[#0000FE] transition-all"
-            >
-              <Bell size={22} />
-              <span>Subscription plans</span>
-            </NavLink>
 
             <NavLink
               to="/profile"

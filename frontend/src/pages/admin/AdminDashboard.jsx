@@ -37,7 +37,8 @@ const AdminDashboard = () => {
   const [filterOptions, setFilterOptions] = useState({
     departments: [],
     levels: [],
-    programmes: []
+    programmes: [],
+    semesters: []
   });
 
   // Filters State
@@ -73,7 +74,20 @@ const AdminDashboard = () => {
       setAlbums(albums);
       setProgrammes(programmes);
       if (filter_options) {
-        setFilterOptions(filter_options);
+        setFilterOptions({
+          departments: filter_options.departments || [],
+          levels: filter_options.levels || [],
+          programmes: filter_options.programmes || [],
+          semesters: filter_options.semesters || []
+        });
+
+        const sems = filter_options.semesters || [];
+        if (sems.length > 0) {
+          const names = sems.map(s => s.name);
+          if (series === 'July/August 2026' && !names.includes('July/August 2026')) {
+            setSeries(sems[0].name);
+          }
+        }
       }
     } catch (error) {
       console.error('Error fetching dashboard analytics:', error);
@@ -153,11 +167,19 @@ const AdminDashboard = () => {
           <select
             value={series}
             onChange={(e) => setSeries(e.target.value)}
-            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0000FE]/20"
+            className="px-4 py-2.5 bg-white border border-slate-200 rounded-xl font-bold text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#0000FE]/20 cursor-pointer"
           >
-            <option value="July/August 2026">July/August 2026</option>
-            <option value="Jan/Feb 2026">Jan/Feb 2026</option>
-            <option value="May/June 2026">May/June 2026</option>
+            {filterOptions.semesters && filterOptions.semesters.length > 0 ? (
+              filterOptions.semesters.map(sem => (
+                <option key={sem.id} value={sem.name}>{sem.name}</option>
+              ))
+            ) : (
+              <>
+                <option value="July/August 2026">July/August 2026</option>
+                <option value="Jan/Feb 2026">Jan/Feb 2026</option>
+                <option value="May/June 2026">May/June 2026</option>
+              </>
+            )}
           </select>
         </div>
       </div>

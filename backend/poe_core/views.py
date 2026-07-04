@@ -392,7 +392,7 @@ from django.db.models import Avg
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import timedelta
-from academic.models import Course, CourseSession, School, Unit
+from academic.models import Course, CourseSession, School, Unit, Semester
 
 class CohortAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -616,7 +616,8 @@ class AdminPoeManagementView(APIView):
         filter_options = {
             "departments": [{"id": s.id, "name": s.name} for s in School.objects.all()],
             "levels": [{"value": val, "label": label} for val, label in Course.LEVEL_CHOICES],
-            "programmes": [{"id": c.id, "name": c.name} for c in Course.objects.all()]
+            "programmes": [{"id": c.id, "name": c.name} for c in Course.objects.all()],
+            "semesters": [{"id": sem.id, "name": sem.name} for sem in Semester.objects.all()]
         }
         
         return Response({

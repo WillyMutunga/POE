@@ -222,6 +222,10 @@ class UnitSerializer(serializers.ModelSerializer):
         request = self.context.get('request')
         if request and request.user and request.user.role == 'STUDENT':
             student = request.user
+            from academic.models import UnitRegistration
+            reg = UnitRegistration.objects.filter(student=student, unit=obj).first()
+            if not reg or reg.status != 'APPROVED':
+                return True
             if student.semester and obj.semester_id != student.semester_id:
                 return True
         return False

@@ -86,9 +86,13 @@ const CDACCPortfolioList = () => {
                 <FileText size={28} />
               </div>
               <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                portfolio.status === 'EVALUATED' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                portfolio.status === 'EVALUATED' ? 'bg-green-50 text-green-600' :
+                portfolio.status === 'SUBMITTED' ? 'bg-blue-50 text-blue-600' :
+                'bg-red-50 text-red-600'
               }`}>
-                {portfolio.status}
+                {portfolio.status === 'EVALUATED' ? 'Approved' :
+                 portfolio.status === 'SUBMITTED' ? 'In Workflow' :
+                 portfolio.status === 'REDO' ? 'Declined' : portfolio.status}
               </span>
             </div>
 
