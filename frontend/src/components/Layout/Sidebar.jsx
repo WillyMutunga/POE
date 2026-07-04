@@ -209,6 +209,21 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </>
         ) : ['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user.role) ? (
           <>
+            {/* PoE Management */}
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) => 
+                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
+                  isActive 
+                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
+                }`
+              }
+            >
+              <LayoutDashboard size={22} />
+              <span>PoE Management</span>
+            </NavLink>
+
             {/* Trainees (Expandable) */}
             <div className="space-y-1">
               <button
@@ -281,21 +296,6 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             >
               <BookOpen size={22} />
               <span>Units of Competence</span>
-            </NavLink>
-
-            {/* PoE Management */}
-            <NavLink
-              to="/dashboard"
-              className={({ isActive }) => 
-                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
-                  isActive 
-                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
-                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
-                }`
-              }
-            >
-              <LayoutDashboard size={22} />
-              <span>PoE Management</span>
             </NavLink>
 
             {/* Curriculums */}

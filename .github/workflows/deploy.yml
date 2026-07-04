@@ -34,14 +34,6 @@ jobs:
           local-dir: ./frontend/dist/
           server-dir: ./poe.headwaycollege.ac.ke/
 
-      - name: 🚀 Deploy Frontend to Main Domain (public_html)
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: ./frontend/dist/
-          server-dir: ./public_html/
 
       - name: 🚀 Deploy Backend to Passenger App Directory
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
