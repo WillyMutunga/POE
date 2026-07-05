@@ -304,8 +304,7 @@ class UnitViewSet(viewsets.ModelViewSet):
                 )
             ).distinct()
         elif user.role == 'CDACC':
-            active_semesters = CourseSession.objects.filter(is_active=True).values_list('semester_id', flat=True)
-            return Unit.objects.filter(is_approved=True, semester__in=active_semesters)
+            return Unit.objects.filter(is_approved=True)
         # ADMIN, MANAGER, DIRECTOR see all
         return Unit.objects.all()
 

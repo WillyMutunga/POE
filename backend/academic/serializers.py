@@ -82,7 +82,7 @@ class CourseSerializer(serializers.ModelSerializer):
         semesters = list(obj.semesters.all())
         request = self.context.get('request')
         if request and request.user:
-            if request.user.role in ['STUDENT', 'INSTRUCTOR', 'CDACC']:
+            if request.user.role in ['STUDENT', 'INSTRUCTOR']:
                 active_sem_ids = set(CourseSession.objects.filter(course=obj, is_active=True).values_list('semester_id', flat=True))
                 semesters = [s for s in semesters if s.id in active_sem_ids]
         semesters.sort(key=lambda s: semester_sort_key(s.name))

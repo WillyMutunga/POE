@@ -71,7 +71,7 @@ const CDACCStudentGlobalPortfolios = () => {
 
   // Group portfolios by unit
   const groupedPortfolios = portfolios.reduce((acc, p) => {
-    const unitName = p.unit_name || 'Other Units';
+    const unitName = p.unit_display || 'Other Units';
     if (!acc[unitName]) acc[unitName] = [];
     acc[unitName].push(p);
     return acc;

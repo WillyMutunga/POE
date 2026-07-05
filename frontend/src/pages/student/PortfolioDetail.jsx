@@ -506,7 +506,7 @@ const PortfolioDetail = () => {
               <button 
                 onClick={() => {
                   if (portfolio.status === 'REDO') {
-                    setNewFiles([]);
+                    setStagedFiles([]);
                     setIsResubmitMode(true);
                     setShowEditModal(true);
                   } else {
