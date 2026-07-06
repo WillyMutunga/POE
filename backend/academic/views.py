@@ -965,6 +965,7 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
         # Process groups
         for g_name, g_info in groups.items():
             comp_scores = []
+            max_marks = []
             for comp in g_info['components']:
                 score = marks_dict.get(str(comp.id)) or marks_dict.get(comp.name) or marks_dict.get(comp.name.upper()) or 0
                 try:
@@ -974,21 +975,27 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
                 if score < 0 or score > comp.weight:
                     return Response({"error": f"Mark for component {comp.name} cannot be less than 0 or exceed the max component mark ({comp.weight})."}, status=400)
                 comp_scores.append(score)
+                max_marks.append(comp.weight)
 
             if not comp_scores:
                 continue
 
             formula = g_info['formula']
-            if formula == 'SUM':
-                g_score = sum(comp_scores)
-            elif formula == 'AVERAGE':
-                g_score = sum(comp_scores) / len(comp_scores)
-            elif formula == 'BEST_OF':
-                g_score = max(comp_scores)
+            g_weight = float(g_info['weight'])
+            
+            if formula == 'BEST_OF':
+                best_pct = 0.0
+                for s, m in zip(comp_scores, max_marks):
+                    pct = (s / m) if m > 0 else 0
+                    if pct > best_pct:
+                        best_pct = pct
+                weighted_score = best_pct * g_weight
             else:
-                g_score = sum(comp_scores)
+                raw_sum = sum(comp_scores)
+                raw_max = sum(max_marks)
+                weighted_score = (raw_sum / raw_max) * g_weight if raw_max > 0 else 0.0
 
-            total_score += min(g_score, float(g_info['weight']))
+            total_score += min(weighted_score, g_weight)
 
         # Process standalone components
         for comp in standalone:
@@ -1119,21 +1126,6 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
         if secret != 'headway_migration_key_2026':
             return Response({"detail": "Authentication credentials were not provided."}, status=401)
 
-        from academic.models import Unit, UnitMarkComponent
-        dump = []
-        unit = Unit.objects.filter(code="ME/CU/BJ/CR/13/6/MA").first()
-        if unit:
-            components = UnitMarkComponent.objects.filter(unit=unit)
-            for c in components:
-                dump.append({
-                    "id": c.id,
-                    "name": c.name,
-                    "weight": c.weight,
-                    "group_name": c.group_name,
-                    "group_weight": c.group_weight,
-                    "formula": c.formula
-                })
-
         from django.core.management import call_command
         from io import StringIO
         import traceback
@@ -1143,7 +1135,6 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
             call_command('migrate', stdout=out, stderr=err)
             return Response({
                 "status": "success",
-                "dump": dump,
                 "stdout": out.getvalue(),
                 "stderr": err.getvalue()
             })

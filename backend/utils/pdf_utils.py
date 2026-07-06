@@ -386,6 +386,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         # Fill data for groups
         for g_name, g_info in groups.items():
             comp_scores = []
+            max_marks = []
             for comp in g_info['components']:
                 sub_headers.append(Paragraph(f"<font size='7'><b>{comp.name}</b></font>", normal_style))
                 score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
@@ -394,6 +395,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                     try:
                         score_val = float(score)
                         comp_scores.append(score_val)
+                        max_marks.append(comp.weight)
                         score_str = f"{score_val:.1f}/{comp.weight}"
                     except ValueError:
                         score_str = str(score)
@@ -404,15 +406,19 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
             # Add computed group score
             if comp_scores:
                 formula = g_info['formula']
-                if formula == 'SUM':
-                    g_score = sum(comp_scores)
-                elif formula == 'AVERAGE':
-                    g_score = sum(comp_scores) / len(comp_scores)
-                elif formula == 'BEST_OF':
-                    g_score = max(comp_scores)
+                g_weight = float(g_info['weight'])
+                if formula == 'BEST_OF':
+                    best_pct = 0.0
+                    for s, max_m in zip(comp_scores, max_marks):
+                        pct = (s / max_m) if max_m > 0 else 0
+                        if pct > best_pct:
+                            best_pct = pct
+                    g_score = best_pct * g_weight
                 else:
-                    g_score = sum(comp_scores)
-                g_score = min(g_score, float(g_info['weight']))
+                    raw_sum = sum(comp_scores)
+                    raw_max = sum(max_marks)
+                    g_score = (raw_sum / raw_max) * g_weight if raw_max > 0 else 0.0
+                g_score = min(g_score, g_weight)
                 g_score_str = f"{g_score:.1f}/{g_info['weight']}"
             else:
                 g_score_str = f"-/{g_info['weight']}"
