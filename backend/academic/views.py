@@ -1113,6 +1113,27 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
         response['Content-Disposition'] = f'inline; filename="ProvisionalResults_{student.registration_number or student.username}.pdf"'
         return response
 
+    @action(detail=False, methods=['post'], permission_classes=[permissions.IsAdminUser])
+    def run_migrations(self, request):
+        from django.core.management import call_command
+        from io import StringIO
+        import traceback
+        out = StringIO()
+        err = StringIO()
+        try:
+            call_command('migrate', stdout=out, stderr=err)
+            return Response({
+                "status": "success",
+                "stdout": out.getvalue(),
+                "stderr": err.getvalue()
+            })
+        except Exception as e:
+            return Response({
+                "status": "error",
+                "detail": str(e),
+                "traceback": traceback.format_exc()
+            }, status=500)
+
 class ExamRepositoryViewSet(viewsets.ModelViewSet):
     queryset = ExamRepository.objects.all()
     serializer_class = ExamRepositorySerializer
