@@ -143,10 +143,15 @@ const MarkComponents = () => {
           weight: parseInt(c.weight),
           group_name: c.group_name || '',
           group_weight: c.group_weight ? parseInt(c.group_weight) : null,
-          formula: c.formula || 'SUM'
         }))
       });
       setSuccess('Mark components saved successfully!');
+      setTimeout(() => {
+        setSelectedUnitId('');
+        setSelectedUnit(null);
+        setComponents([]);
+        setSuccess(null);
+      }, 1500);
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.error || 'Failed to save mark components.');
