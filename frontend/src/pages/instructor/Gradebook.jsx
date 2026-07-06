@@ -127,15 +127,75 @@ const Gradebook = () => {
     }));
   };
 
-  // Sum of raw scores (each out of its component weight)
+  // Group-aware sum of scores
   const calculateLocalTotal = (studentId) => {
     if (components.length === 0) return 0;
-    let total = 0;
     const marks = studentMarksState[studentId] || {};
+    
+    // Group scores by group_name
+    const groupedScores = {};
+    let standaloneTotal = 0;
+    
     components.forEach(comp => {
-      total += parseFloat(marks[comp.id] || 0);
+      const score = parseFloat(marks[comp.id] || 0);
+      const gName = comp.group_name?.trim().toUpperCase();
+      
+      if (gName) {
+        if (!groupedScores[gName]) {
+          groupedScores[gName] = {
+            scores: [],
+            maxMarks: [],
+            weight: parseFloat(comp.group_weight || 0),
+            formula: comp.formula || 'SUM'
+          };
+        }
+        groupedScores[gName].scores.push(score);
+        groupedScores[gName].maxMarks.push(parseFloat(comp.weight || 0));
+      } else {
+        standaloneTotal += score;
+      }
     });
-    return Math.round(total * 100) / 100;
+    
+    let groupedTotal = 0;
+    Object.keys(groupedScores).forEach(gName => {
+      const gData = groupedScores[gName];
+      const scores = gData.scores;
+      const maxMarks = gData.maxMarks;
+      const formula = gData.formula;
+      const gWeight = gData.weight;
+      
+      if (scores.length === 0) return;
+      
+      let rawSum = 0;
+      let rawMax = 0;
+      
+      if (formula === 'SUM') {
+        rawSum = scores.reduce((a, b) => a + b, 0);
+        rawMax = maxMarks.reduce((a, b) => a + b, 0);
+      } else if (formula === 'AVERAGE') {
+        rawSum = scores.reduce((a, b) => a + b, 0) / scores.length;
+        rawMax = maxMarks.reduce((a, b) => a + b, 0) / maxMarks.length;
+      } else if (formula === 'BEST_OF') {
+        let bestPct = -1;
+        for (let i = 0; i < scores.length; i++) {
+          const pct = maxMarks[i] > 0 ? (scores[i] / maxMarks[i]) : 0;
+          if (pct > bestPct) {
+            bestPct = pct;
+            rawSum = scores[i];
+            rawMax = maxMarks[i];
+          }
+        }
+      } else {
+        rawSum = scores.reduce((a, b) => a + b, 0);
+        rawMax = maxMarks.reduce((a, b) => a + b, 0);
+      }
+      
+      const weightedScore = rawMax > 0 ? (rawSum / rawMax) * gWeight : 0;
+      groupedTotal += weightedScore;
+    });
+    
+    const grandTotal = standaloneTotal + groupedTotal;
+    return Math.round(grandTotal * 100) / 100;
   };
 
   // Live grade derived from total — mirrors backend logic
