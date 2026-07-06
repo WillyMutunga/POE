@@ -1119,6 +1119,21 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
         if secret != 'headway_migration_key_2026':
             return Response({"detail": "Authentication credentials were not provided."}, status=401)
 
+        from academic.models import Unit, UnitMarkComponent
+        dump = []
+        unit = Unit.objects.filter(code="ME/CU/BJ/CR/13/6/MA").first()
+        if unit:
+            components = UnitMarkComponent.objects.filter(unit=unit)
+            for c in components:
+                dump.append({
+                    "id": c.id,
+                    "name": c.name,
+                    "weight": c.weight,
+                    "group_name": c.group_name,
+                    "group_weight": c.group_weight,
+                    "formula": c.formula
+                })
+
         from django.core.management import call_command
         from io import StringIO
         import traceback
@@ -1128,6 +1143,7 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
             call_command('migrate', stdout=out, stderr=err)
             return Response({
                 "status": "success",
+                "dump": dump,
                 "stdout": out.getvalue(),
                 "stderr": err.getvalue()
             })
