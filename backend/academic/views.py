@@ -479,19 +479,34 @@ class UnitViewSet(viewsets.ModelViewSet):
         unit = self.get_object()
         components_data = request.data.get('components', [])
         
-        # Validate total weight
-        total_weight = sum(int(c.get('weight', 0)) for c in components_data)
+        # Validate total weight: (Sum of unique group weights) + (Sum of standalone weights)
+        unique_groups = {}
+        standalone_weight = 0
+        for c in components_data:
+            g_name = c.get('group_name')
+            if g_name and g_name.strip():
+                g_weight = int(c.get('group_weight') or 0)
+                unique_groups[g_name.strip().upper()] = g_weight
+            else:
+                standalone_weight += int(c.get('weight') or 0)
+                
+        total_weight = sum(unique_groups.values()) + standalone_weight
         if total_weight != 100 and len(components_data) > 0:
-            return Response({"error": f"Total weight must sum to 100%. Current sum: {total_weight}%"}, status=400)
+            return Response({"error": f"Aggregated weight must sum to 100%. Current sum: {total_weight}% (Unique group weights sum + standalone weights)"}, status=400)
             
         # Delete existing and recreate
         unit.mark_components.all().delete()
         created = []
         for c in components_data:
+            g_name = c.get('group_name')
+            g_weight = c.get('group_weight')
             obj = UnitMarkComponent.objects.create(
                 unit=unit,
-                name=c.get('name'),
-                weight=int(c.get('weight'))
+                name=c.get('name').strip().upper(),
+                weight=int(c.get('weight')),
+                group_name=g_name.strip().upper() if g_name and g_name.strip() else None,
+                group_weight=int(g_weight) if g_weight else None,
+                formula=c.get('formula') or 'SUM'
             )
             created.append(obj)
             
@@ -928,10 +943,56 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
         if not components.exists():
             return Response({"error": "No mark components are defined for this unit. Please configure them first."}, status=400)
 
+        # Group components by group_name
+        groups = {}
+        standalone = []
+        for comp in components:
+            if comp.group_name:
+                g_name_upper = comp.group_name.upper().strip()
+                if g_name_upper not in groups:
+                    groups[g_name_upper] = {
+                        'weight': comp.group_weight or comp.weight,
+                        'formula': comp.formula or 'SUM',
+                        'components': []
+                    }
+                groups[g_name_upper]['components'].append(comp)
+            else:
+                standalone.append(comp)
+
         # Calculate weighted total
         total_score = 0.0
-        for comp in components:
-            score = marks_dict.get(str(comp.id)) or marks_dict.get(comp.name) or 0
+
+        # Process groups
+        for g_name, g_info in groups.items():
+            comp_scores = []
+            for comp in g_info['components']:
+                score = marks_dict.get(str(comp.id)) or marks_dict.get(comp.name) or marks_dict.get(comp.name.upper()) or 0
+                try:
+                    score = float(score)
+                except ValueError:
+                    return Response({"error": f"Invalid mark value for component {comp.name}."}, status=400)
+                if score < 0 or score > comp.weight:
+                    return Response({"error": f"Mark for component {comp.name} cannot be less than 0 or exceed the max component mark ({comp.weight})."}, status=400)
+                comp_scores.append(score)
+
+            if not comp_scores:
+                continue
+
+            formula = g_info['formula']
+            if formula == 'SUM':
+                g_score = sum(comp_scores)
+            elif formula == 'AVERAGE':
+                g_score = sum(comp_scores) / len(comp_scores)
+            elif formula == 'BEST_OF':
+                g_score = max(comp_scores)
+            else:
+                g_score = sum(comp_scores)
+
+            total_score += min(g_score, float(g_info['weight']))
+
+        # Process standalone components
+        for comp in standalone:
+            score = marks_dict.get(str(comp.id)) or marks_dict.get(comp.name) or marks_dict.get(comp.name.upper()) or 0
             try:
                 score = float(score)
             except ValueError:

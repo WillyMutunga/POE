@@ -355,15 +355,106 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         [
             Paragraph("UNIT CODE", header_style),
             Paragraph("UNIT TITLE", header_style),
+            Paragraph("GRADING COMPONENTS BREAKDOWN", header_style),
             Paragraph("ACADEMIC HOURS", header_style),
             Paragraph("GRADE", header_style)
         ]
     ]
 
     for m in marks:
+        sub_headers = []
+        sub_scores = []
+        
+        components = m.unit.mark_components.all().order_by('id')
+        
+        # Group components by group_name in Python
+        groups = {}
+        standalone = []
+        for comp in components:
+            if comp.group_name:
+                g_name_upper = comp.group_name.upper().strip()
+                if g_name_upper not in groups:
+                    groups[g_name_upper] = {
+                        'weight': comp.group_weight or comp.weight,
+                        'formula': comp.formula or 'SUM',
+                        'components': []
+                    }
+                groups[g_name_upper]['components'].append(comp)
+            else:
+                standalone.append(comp)
+                
+        # Fill data for groups
+        for g_name, g_info in groups.items():
+            comp_scores = []
+            for comp in g_info['components']:
+                sub_headers.append(Paragraph(f"<font size='7'><b>{comp.name}</b></font>", normal_style))
+                score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
+                score_str = ""
+                if score is not None:
+                    try:
+                        score_val = float(score)
+                        comp_scores.append(score_val)
+                        score_str = f"{score_val:.1f}/{comp.weight}"
+                    except ValueError:
+                        score_str = str(score)
+                else:
+                    score_str = f"-/{comp.weight}"
+                sub_scores.append(Paragraph(f"<font size='7'>{score_str}</font>", normal_style))
+                
+            # Add computed group score
+            if comp_scores:
+                formula = g_info['formula']
+                if formula == 'SUM':
+                    g_score = sum(comp_scores)
+                elif formula == 'AVERAGE':
+                    g_score = sum(comp_scores) / len(comp_scores)
+                elif formula == 'BEST_OF':
+                    g_score = max(comp_scores)
+                else:
+                    g_score = sum(comp_scores)
+                g_score = min(g_score, float(g_info['weight']))
+                g_score_str = f"{g_score:.1f}/{g_info['weight']}"
+            else:
+                g_score_str = f"-/{g_info['weight']}"
+                
+            sub_headers.append(Paragraph(f"<font size='7'><b>{g_name}</b></font>", normal_bold_style))
+            sub_scores.append(Paragraph(f"<font size='7'><b>{g_score_str}</b></font>", normal_bold_style))
+
+        # Fill data for standalone
+        for comp in standalone:
+            sub_headers.append(Paragraph(f"<font size='7'><b>{comp.name}</b></font>", normal_style))
+            score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
+            score_str = ""
+            if score is not None:
+                try:
+                    score_val = float(score)
+                    score_str = f"{score_val:.1f}/{comp.weight}"
+                except ValueError:
+                    score_str = str(score)
+            else:
+                score_str = f"-/{comp.weight}"
+            sub_scores.append(Paragraph(f"<font size='7'>{score_str}</font>", normal_style))
+
+        if sub_headers:
+            col_w = 200.0 / len(sub_headers)
+            nested_table = Table([sub_headers, sub_scores], colWidths=[col_w] * len(sub_headers))
+            nested_table.setStyle(TableStyle([
+                ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 1),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+                ('LEFTPADDING', (0, 0), (-1, -1), 1),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 1),
+            ]))
+            comp_cell = nested_table
+        else:
+            comp_cell = Paragraph(f"<font size='8'>Raw Score: {m.total_score:.1f}/100.0</font>", normal_style)
+
         results_data.append([
             Paragraph(m.unit.code, normal_style),
             Paragraph(m.unit.name, normal_style),
+            comp_cell,
             Paragraph(str(getattr(m.unit, 'credit_hours', 45)), normal_style),
             Paragraph(m.grade, normal_bold_style)
         ])
@@ -385,16 +476,18 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         Paragraph(f"<b>{term_upper} AVERAGE:</b>", normal_bold_style),
         Paragraph("", normal_style),
         Paragraph("", normal_style),
+        Paragraph("", normal_style),
         Paragraph(f"<b>{term_avg:.2f}</b>", normal_bold_style)
     ])
     results_data.append([
         Paragraph("<b>CUMMULATIVE AVERAGE:</b>", normal_bold_style),
         Paragraph("", normal_style),
         Paragraph("", normal_style),
+        Paragraph("", normal_style),
         Paragraph(f"<b>{cum_avg:.2f}</b>", normal_bold_style)
     ])
 
-    results_table = Table(results_data, colWidths=[100, 260, 90, 50])
+    results_table = Table(results_data, colWidths=[80, 145, 200, 50, 40])
     results_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0000FE")),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
@@ -403,8 +496,8 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
         ('LEFTPADDING', (0, 0), (-1, -1), 8),
         ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('SPAN', (0, -2), (2, -2)),
-        ('SPAN', (0, -1), (2, -1)),
+        ('SPAN', (0, -2), (3, -2)),
+        ('SPAN', (0, -1), (3, -1)),
     ]))
     elements.append(results_table)
     elements.append(Spacer(1, 20))

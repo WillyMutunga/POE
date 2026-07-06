@@ -423,7 +423,7 @@ class GradingSystemSerializer(serializers.ModelSerializer):
 class UnitMarkComponentSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitMarkComponent
-        fields = ('id', 'unit', 'name', 'weight')
+        fields = ('id', 'unit', 'name', 'weight', 'group_name', 'group_weight', 'formula')
 
 class StudentMarkSerializer(serializers.ModelSerializer):
     student_name = serializers.SerializerMethodField(read_only=True)

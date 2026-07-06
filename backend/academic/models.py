@@ -153,9 +153,20 @@ class GradeRange(models.Model):
 class UnitMarkComponent(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='mark_components')
     name = models.CharField(max_length=100)  # e.g., "CAM 1"
-    weight = models.IntegerField()  # e.g., 30
+    weight = models.IntegerField()  # e.g., 30 (max mark)
+    group_name = models.CharField(max_length=100, blank=True, null=True) # e.g. "CAT 1"
+    group_weight = models.IntegerField(blank=True, null=True) # e.g. 30
+    formula = models.CharField(
+        max_length=20,
+        choices=[('SUM', 'Sum'), ('AVERAGE', 'Average'), ('BEST_OF', 'Best Of')],
+        default='SUM',
+        blank=True,
+        null=True
+    )
 
     def __str__(self):
+        if self.group_name:
+            return f"{self.unit.code} - {self.name} (Max: {self.weight}, Group: {self.group_name} [{self.group_weight}%] - {self.formula})"
         return f"{self.unit.code} - {self.name} ({self.weight}%)"
 
 class StudentMark(models.Model):
