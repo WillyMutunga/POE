@@ -226,8 +226,6 @@ class UnitSerializer(serializers.ModelSerializer):
             reg = UnitRegistration.objects.filter(student=student, unit=obj).first()
             if not reg or reg.status != 'APPROVED':
                 return True
-            if student.semester and obj.semester_id != student.semester_id:
-                return True
         return False
 
     def _get_element_counts(self, obj):
