@@ -279,7 +279,7 @@ function App() {
           <Route 
             path="/admin/analytics" 
             element={
-              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'DIRECTOR']}>
+              <ProtectedRoute allowedRoles={['ADMIN', 'MANAGER', 'DIRECTOR', 'CDACC']}>
                 <DashboardLayout>
                   <CohortAnalytics />
                 </DashboardLayout>

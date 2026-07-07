@@ -58,6 +58,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const cdaccLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/cdacc/students', icon: Users, label: 'Students' },
+    { to: '/admin/analytics', icon: TrendingUp, label: 'Cohort Analytics' },
     { to: '/profile', icon: User, label: 'Profile' },
   ];
 

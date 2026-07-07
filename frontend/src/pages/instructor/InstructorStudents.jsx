@@ -25,11 +25,20 @@ const InstructorStudents = () => {
   const [selectedUnitForNewPortfolio, setSelectedUnitForNewPortfolio] = useState('');
   const [showCreatePortfolioSection, setShowCreatePortfolioSection] = useState(false);
 
+  // Transcript states
+  const [selectedTranscriptSemesterId, setSelectedTranscriptSemesterId] = useState('');
+  const [loadingTranscriptPdf, setLoadingTranscriptPdf] = useState(false);
+  const [transcriptPdfUrl, setTranscriptPdfUrl] = useState(null);
+  const [transcriptError, setTranscriptError] = useState(null);
+
   const handleOpenStudentProfile = async (student) => {
     setSelectedStudentProfile(student);
     setLoadingProfileData(true);
     setShowCreatePortfolioSection(false);
     setSelectedUnitForNewPortfolio('');
+    setSelectedTranscriptSemesterId('');
+    setTranscriptPdfUrl(null);
+    setTranscriptError(null);
     try {
       const [unitsRes, portfoliosRes] = await Promise.all([
         api.get(`/academic/units/student_units_for_assignment/?student_id=${student.id}`),
@@ -105,6 +114,53 @@ const InstructorStudents = () => {
     fetchStudents();
     fetchCourses();
   }, []);
+
+  const handleLoadTranscript = async () => {
+    if (!selectedTranscriptSemesterId || !selectedStudentProfile) return;
+    setLoadingTranscriptPdf(true);
+    setTranscriptError(null);
+    setTranscriptPdfUrl(null);
+    try {
+      const response = await api.get(
+        `/academic/student-marks/provisional_results_pdf/?semester_id=${selectedTranscriptSemesterId}&student_id=${selectedStudentProfile.id}`,
+        { responseType: 'blob' }
+      );
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      setTranscriptPdfUrl(URL.createObjectURL(file));
+    } catch (err) {
+      console.error('Error loading transcript:', err);
+      if (err.response && err.response.data) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            setTranscriptError(parsed.error || 'No graded results found for this student in this semester.');
+          } catch {
+            setTranscriptError('No approved units registered or graded for this student in this semester.');
+          }
+        };
+        reader.readAsText(err.response.data);
+      } else {
+        setTranscriptError('No approved units registered or graded for this student in this semester.');
+      }
+    } finally {
+      setLoadingTranscriptPdf(false);
+    }
+  };
+
+  const handleDownloadTranscript = () => {
+    if (!transcriptPdfUrl || !selectedStudentProfile) return;
+    const link = document.createElement('a');
+    link.href = transcriptPdfUrl;
+    const semName = courses
+      .find(c => c.id.toString() === selectedStudentProfile.course?.toString())
+      ?.semesters?.find(s => s.id.toString() === selectedTranscriptSemesterId)?.name || 'Results';
+    const studentName = selectedStudentProfile.registration_number || selectedStudentProfile.username;
+    link.setAttribute('download', `ProvisionalResults_${studentName}_${semName.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   const fetchCourses = async () => {
     try {
@@ -579,6 +635,67 @@ const InstructorStudents = () => {
                 </div>
                 {profileUnits.filter(u => u.registration_status === 'APPROVED' && u.can_assign).length === 0 && (
                   <p className="text-[10px] text-amber-600 font-bold mt-1">No approved units taught by you are available for portfolio creation.</p>
+                )}
+              </div>
+            )}
+
+            {/* Provisional Academic Transcript Section */}
+            {selectedStudentProfile && (
+              <div className="bg-slate-50 border border-slate-100 p-6 rounded-3xl space-y-4 shadow-sm">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-sm font-black text-slate-800">Provisional Academic Transcript</h3>
+                    <p className="text-slate-400 text-[10px] font-bold mt-0.5">Download or preview this student's results transcript.</p>
+                  </div>
+                  
+                  <div className="flex items-center gap-3">
+                    <select
+                      value={selectedTranscriptSemesterId}
+                      onChange={(e) => {
+                        setSelectedTranscriptSemesterId(e.target.value);
+                        setTranscriptPdfUrl(null);
+                        setTranscriptError(null);
+                      }}
+                      className="px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs text-slate-700 focus:outline-none"
+                    >
+                      <option value="">Choose Module</option>
+                      {courses
+                        .find(c => c.id.toString() === selectedStudentProfile.course?.toString())
+                        ?.semesters?.map(s => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))
+                      }
+                    </select>
+                    
+                    <button
+                      type="button"
+                      disabled={!selectedTranscriptSemesterId || loadingTranscriptPdf}
+                      onClick={handleLoadTranscript}
+                      className="px-4 py-2 bg-[#00b074] hover:bg-[#008f5d] text-white font-black rounded-xl text-xs transition-all disabled:opacity-50 flex items-center gap-1 shadow-sm shrink-0"
+                    >
+                      {loadingTranscriptPdf ? 'Loading...' : 'Load'}
+                    </button>
+                    
+                    {transcriptPdfUrl && (
+                      <button
+                        type="button"
+                        onClick={handleDownloadTranscript}
+                        className="px-4 py-2 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-xs transition-all flex items-center gap-1 shadow-sm shrink-0"
+                      >
+                        Download PDF
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {transcriptError && (
+                  <p className="text-xs text-red-600 font-bold bg-red-50/50 border border-red-100/50 p-3 rounded-xl">{transcriptError}</p>
+                )}
+
+                {transcriptPdfUrl && (
+                  <div className="w-full h-96 border border-slate-200 rounded-2xl overflow-hidden mt-3 shadow-inner bg-white">
+                    <iframe src={transcriptPdfUrl} className="w-full h-full border-none" title="Transcript Preview" />
+                  </div>
                 )}
               </div>
             )}

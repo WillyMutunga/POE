@@ -398,7 +398,7 @@ class CohortAnalyticsView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        if request.user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR']:
+        if request.user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR', 'CDACC']:
             return Response({"detail": "Not authorized to view analytics."}, status=403)
 
         User = get_user_model()
@@ -645,7 +645,7 @@ class AdminPoeReportsView(APIView):
 
     def get(self, request, *args, **kwargs):
         user = request.user
-        if user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR']:
+        if user.role not in ['ADMIN', 'MANAGER', 'DIRECTOR', 'CDACC']:
             return Response({"detail": "Not authorized to view POE reports analytics."}, status=403)
 
         User = get_user_model()

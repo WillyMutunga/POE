@@ -11,15 +11,23 @@ import {
   Calendar,
   CheckCircle,
   Clock,
-  BookOpen
+  BookOpen,
+  Download
 } from 'lucide-react';
 
 const CDACCStudentGlobalPortfolios = () => {
   const { studentId, unitId } = useParams();
   const [portfolios, setPortfolios] = useState([]);
   const [student, setStudent] = useState(null);
+  const [semesters, setSemesters] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Transcript states
+  const [selectedTranscriptSemesterId, setSelectedTranscriptSemesterId] = useState('');
+  const [loadingTranscriptPdf, setLoadingTranscriptPdf] = useState(false);
+  const [transcriptPdfUrl, setTranscriptPdfUrl] = useState(null);
+  const [transcriptError, setTranscriptError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -28,30 +36,37 @@ const CDACCStudentGlobalPortfolios = () => {
         const url = unitId 
           ? `/poe/portfolios/?learner=${studentId}&unit=${unitId}`
           : `/poe/portfolios/?learner=${studentId}`;
-        const response = await api.get(url);
-        setPortfolios(response.data);
         
-        // Fetch student details (assuming we can get it from a user endpoint or extract from portfolios)
-        if (response.data.length > 0) {
-          // Use learner info from the first portfolio
+        const [portfoliosRes, userRes] = await Promise.all([
+          api.get(url),
+          api.get(`/users/list-all/?id=${studentId}`)
+        ]);
+
+        setPortfolios(portfoliosRes.data);
+
+        if (userRes.data && userRes.data.length > 0) {
+          const userData = userRes.data[0];
+          const courseId = userData.course;
           setStudent({
-            name: response.data[0].learner_display,
-            registration_number: response.data[0].learner_registration_number,
-            course_name: response.data[0].course_display
+            id: studentId,
+            name: userData.full_name || `${userData.first_name} ${userData.last_name}`,
+            registration_number: userData.registration_number,
+            course: courseId,
+            course_name: userData.course_display
           });
-        } else {
-          // If no portfolios, we might need another way to get student info, 
-          // but for now let's try to get it from a generic user detail if possible
-          try {
-            const userRes = await api.get(`/users/${studentId}/`);
-            setStudent({
-                name: `${userRes.data.first_name} ${userRes.data.last_name}`,
-                registration_number: userRes.data.registration_number,
-                course_name: userRes.data.course_display
-            });
-          } catch (e) {
-            console.error("Could not fetch user details", e);
+
+          if (courseId) {
+            const semsRes = await api.get(`/academic/semesters/?course=${courseId}`);
+            setSemesters(semsRes.data);
           }
+        } else if (portfoliosRes.data.length > 0) {
+          // Fallback if userRes is empty but portfolios exist
+          setStudent({
+            id: studentId,
+            name: portfoliosRes.data[0].learner_display,
+            registration_number: portfoliosRes.data[0].learner_registration_number,
+            course_name: portfoliosRes.data[0].course_display
+          });
         }
       } catch (error) {
         console.error('Error fetching student global portfolios:', error);
@@ -61,13 +76,58 @@ const CDACCStudentGlobalPortfolios = () => {
     };
 
     fetchData();
-  }, [studentId]);
+  }, [studentId, unitId]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-[60vh]">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
     </div>
   );
+
+  const handleLoadTranscript = async () => {
+    if (!selectedTranscriptSemesterId || !student) return;
+    setLoadingTranscriptPdf(true);
+    setTranscriptError(null);
+    setTranscriptPdfUrl(null);
+    try {
+      const response = await api.get(
+        `/academic/student-marks/provisional_results_pdf/?semester_id=${selectedTranscriptSemesterId}&student_id=${student.id}`,
+        { responseType: 'blob' }
+      );
+      const file = new Blob([response.data], { type: 'application/pdf' });
+      setTranscriptPdfUrl(URL.createObjectURL(file));
+    } catch (err) {
+      console.error('Error loading transcript:', err);
+      if (err.response && err.response.data) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const parsed = JSON.parse(reader.result);
+            setTranscriptError(parsed.error || 'No graded results found for this student in this semester.');
+          } catch {
+            setTranscriptError('No approved units registered or graded for this student in this semester.');
+          }
+        };
+        reader.readAsText(err.response.data);
+      } else {
+        setTranscriptError('No approved units registered or graded for this student in this semester.');
+      }
+    } finally {
+      setLoadingTranscriptPdf(false);
+    }
+  };
+
+  const handleDownloadTranscript = () => {
+    if (!transcriptPdfUrl || !student) return;
+    const link = document.createElement('a');
+    link.href = transcriptPdfUrl;
+    const semName = semesters.find(s => s.id.toString() === selectedTranscriptSemesterId)?.name || 'Results';
+    const studentName = student.registration_number || student.username;
+    link.setAttribute('download', `ProvisionalResults_${studentName}_${semName.replace(/\s+/g, '_')}.pdf`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
 
   // Group portfolios by unit
   const groupedPortfolios = portfolios.reduce((acc, p) => {
@@ -107,8 +167,73 @@ const CDACCStudentGlobalPortfolios = () => {
               </div>
             </div>
           </div>
+
+          {student && semesters.length > 0 && (
+            <div className="flex items-center gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100/80 self-stretch md:self-auto justify-between md:justify-start">
+              <div className="flex flex-col">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5 ml-1">Provisional Transcript</span>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={selectedTranscriptSemesterId}
+                    onChange={(e) => {
+                      setSelectedTranscriptSemesterId(e.target.value);
+                      setTranscriptPdfUrl(null);
+                      setTranscriptError(null);
+                    }}
+                    className="px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-xs text-slate-700 focus:outline-none"
+                  >
+                    <option value="">Choose Module</option>
+                    {semesters.map(s => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                  
+                  <button
+                    type="button"
+                    disabled={!selectedTranscriptSemesterId || loadingTranscriptPdf}
+                    onClick={handleLoadTranscript}
+                    className="px-4 py-2 bg-[#00b074] hover:bg-[#008f5d] text-white font-black rounded-xl text-xs transition-all disabled:opacity-50 flex items-center gap-1 shadow-sm shrink-0"
+                  >
+                    {loadingTranscriptPdf ? 'Loading...' : 'Load'}
+                  </button>
+                  
+                  {transcriptPdfUrl && (
+                    <button
+                      type="button"
+                      onClick={handleDownloadTranscript}
+                      className="p-2 bg-[#0000FE] hover:bg-blue-700 text-white rounded-xl transition-all shadow-sm shrink-0"
+                      title="Download PDF"
+                    >
+                      <Download size={16} />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {transcriptError && (
+        <div className="p-4 bg-red-50 text-red-700 text-xs font-bold rounded-2xl border border-red-100">
+          {transcriptError}
+        </div>
+      )}
+
+      {transcriptPdfUrl && (
+        <div className="bg-white p-4 rounded-[32px] border border-slate-100 shadow-sm h-[550px] overflow-hidden flex flex-col">
+          <div className="flex justify-between items-center mb-3 px-2">
+            <span className="text-xs font-black text-slate-800 uppercase tracking-wider">Provisional Transcript Preview</span>
+            <button
+              onClick={() => { setTranscriptPdfUrl(null); setSelectedTranscriptSemesterId(''); }}
+              className="text-xs font-bold text-slate-400 hover:text-slate-600"
+            >
+              ✕ Close Preview
+            </button>
+          </div>
+          <iframe src={transcriptPdfUrl} className="w-full h-full border-none rounded-2xl" title="Transcript Preview" />
+        </div>
+      )}
 
       {Object.keys(groupedPortfolios).length === 0 ? (
         <div className="py-32 text-center bg-white rounded-[40px] border border-dashed border-slate-200">

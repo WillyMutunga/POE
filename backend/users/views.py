@@ -41,7 +41,10 @@ class UserListView(generics.ListAPIView):
         school_id = self.request.query_params.get('school')
         intake = self.request.query_params.get('intake')
         role = self.request.query_params.get('role')
+        user_id = self.request.query_params.get('id')
         
+        if user_id:
+            queryset = queryset.filter(id=user_id)
         if course_id:
             queryset = queryset.filter(course_id=course_id)
         if school_id:
