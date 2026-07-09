@@ -244,13 +244,14 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                 min_val = float(entry.get('min', 0))
                 max_val = float(entry.get('max', 100))
                 if min_val <= percentage <= max_val:
-                    return entry.get('grade', 'NYC')
+                    return entry.get('desc') or entry.get('grade', 'NYC')
             except (ValueError, TypeError):
                 continue
         # Fallback if not found in criteria
-        if percentage >= 80: return "AM"
-        if percentage >= 50: return "M"
-        return "NYC"
+        if percentage >= 80: return "Attained Mastery"
+        if percentage >= 65: return "Proficient"
+        if percentage >= 50: return "Competent"
+        return "Not Yet Competent"
 
     def format_score(score):
         try:
@@ -564,11 +565,11 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     for _ in range(2 + max_cams):
         averages_row.append(Paragraph("", normal_style))
     averages_row.append(Paragraph(f"<b>{term_cam_avg:.1f}%</b>", normal_bold_style))
-    averages_row.append(Paragraph(f"<b>{get_grade_for_percentage(term_cam_avg, legend_data)}</b>", normal_bold_style))
+    averages_row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(term_cam_avg, legend_data)}</b></font>", normal_bold_style))
     for _ in range(max_pracs):
         averages_row.append(Paragraph("", normal_style))
     averages_row.append(Paragraph(f"<b>{term_prac_avg:.1f}%</b>", normal_bold_style))
-    averages_row.append(Paragraph(f"<b>{get_grade_for_percentage(term_prac_avg, legend_data)}</b>", normal_bold_style))
+    averages_row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(term_prac_avg, legend_data)}</b></font>", normal_bold_style))
     results_data.append(averages_row)
 
     # 2. Overall Semester Average Row
@@ -598,13 +599,13 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
 
     # Column Widths Budgeting
     if is_landscape:
-        rem_width = 760 - (25 + 65 + 140 + 35 + 30 + 35 + 30) # remaining 400 pts
+        rem_width = 760 - (20 + 55 + 120 + 35 + 85 + 35 + 85) # remaining 325 pts
         col_w = rem_width / (max_cams + max_pracs)
-        col_widths = [25, 65, 140] + [col_w] * max_cams + [35, 30] + [col_w] * max_pracs + [35, 30]
+        col_widths = [20, 55, 120] + [col_w] * max_cams + [35, 85] + [col_w] * max_pracs + [35, 85]
     else:
-        rem_width = 515 - (20 + 55 + 100 + 30 + 25 + 30 + 25) # remaining 230 pts
+        rem_width = 515 - (20 + 50 + 90 + 30 + 75 + 30 + 75) # remaining 145 pts
         col_w = rem_width / (max_cams + max_pracs)
-        col_widths = [20, 55, 100] + [col_w] * max_cams + [30, 25] + [col_w] * max_pracs + [30, 25]
+        col_widths = [20, 50, 90] + [col_w] * max_cams + [30, 75] + [col_w] * max_pracs + [30, 75]
 
     results_table = Table(results_data, colWidths=col_widths)
     
