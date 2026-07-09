@@ -252,6 +252,15 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         if percentage >= 50: return "M"
         return "NYC"
 
+    def format_score(score):
+        try:
+            val = float(score)
+            if val.is_integer():
+                return f"{int(val)}"
+            return f"{val:.1f}"
+        except (ValueError, TypeError):
+            return str(score)
+
     # 1. Determine orientation dynamically based on number of columns
     max_cams = 0
     max_pracs = 0
@@ -485,8 +494,18 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                     try:
                         score_val = float(score)
                         pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
+        # 1. Fill CAM scores
+        cam_pcts = []
+        for i in range(max_cams):
+            if i < len(cams_list):
+                comp = cams_list[i]
+                score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
+                if score is not None:
+                    try:
+                        score_val = float(score)
+                        pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
                         cam_pcts.append(pct)
-                        row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
+                        row.append(Paragraph(f"<font size='7'>{format_score(score_val)}/{comp.weight}</font>", normal_style))
                     except ValueError:
                         row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
                 else:
@@ -515,7 +534,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                         score_val = float(score)
                         pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
                         prac_pcts.append(pct)
-                        row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
+                        row.append(Paragraph(f"<font size='7'>{format_score(score_val)}/{comp.weight}</font>", normal_style))
                     except ValueError:
                         row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
                 else:
