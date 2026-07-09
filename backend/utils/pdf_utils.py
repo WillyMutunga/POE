@@ -230,17 +230,44 @@ def generate_comprehensive_pdf_report(school_name, course_name, semesters_data, 
 
 def generate_provisional_results_pdf(student, semester, marks, legend_data):
     import os
-    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib import colors
     from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
     from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
     from io import BytesIO
     from academic.models import StudentMark
 
-    buffer = BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
-    elements = []
+    # 1. Determine orientation dynamically based on number of grade components
+    max_components_count = 0
+    for m in marks:
+        comp_count = 0
+        components = m.unit.mark_components.all()
+        groups = {}
+        standalone = []
+        for comp in components:
+            if comp.group_name:
+                g_name_upper = comp.group_name.upper().strip()
+                if g_name_upper not in groups:
+                    groups[g_name_upper] = []
+                groups[g_name_upper].append(comp)
+            else:
+                standalone.append(comp)
+        
+        for g_name, g_comps in groups.items():
+            comp_count += len(g_comps) + 1  # components in group + computed group total column
+        comp_count += len(standalone)
+        if comp_count > max_components_count:
+            max_components_count = comp_count
 
+    is_landscape = max_components_count > 3
+
+    buffer = BytesIO()
+    if is_landscape:
+        doc = SimpleDocTemplate(buffer, pagesize=landscape(A4), rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+    else:
+        doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=40, leftMargin=40, topMargin=40, bottomMargin=40)
+        
+    elements = []
     styles = getSampleStyleSheet()
 
     # Custom styles
@@ -305,7 +332,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         alignment=0 # Left
     )
 
-    # 1. Add Centered Headway Logo
+    # 2. Add Centered Headway Logo
     logo_path = os.path.join(os.path.dirname(__file__), 'logo1.png')
     if os.path.exists(logo_path):
         logo_img = Image(logo_path, width=140, height=36)
@@ -313,13 +340,13 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         elements.append(logo_img)
         elements.append(Spacer(1, 10))
 
-    # 2. Add Headers
+    # 3. Add Headers
     elements.append(Paragraph("HEADWAY COLLEGE OF PROFESSIONAL STUDIES", school_title_style))
     term_upper = semester.name.upper()
     elements.append(Paragraph(f"{term_upper} EXAM RESULTS", subtitle_style))
     elements.append(Paragraph("OFFICIAL ACADEMIC TRANSCRIPT", doc_title_style))
 
-    # 3. Student Details Grid Table
+    # 4. Student Details Grid Table
     student_name = student.get_full_name()
     year_of_study = semester.name
     
@@ -338,7 +365,11 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         ]
     ]
 
-    details_table = Table(details_data, colWidths=[250, 250])
+    if is_landscape:
+        details_table = Table(details_data, colWidths=[370, 370])
+    else:
+        details_table = Table(details_data, colWidths=[250, 250])
+
     details_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
@@ -350,7 +381,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     elements.append(details_table)
     elements.append(Spacer(1, 15))
 
-    # 4. Results Grid Table
+    # 5. Results Grid Table
     results_data = [
         [
             Paragraph("UNIT CODE", header_style),
@@ -442,7 +473,8 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
             sub_scores.append(Paragraph(f"<font size='7'>{score_str}</font>", normal_style))
 
         if sub_headers:
-            col_w = 200.0 / len(sub_headers)
+            nested_width = 360.0 if is_landscape else 200.0
+            col_w = nested_width / len(sub_headers)
             nested_table = Table([sub_headers, sub_scores], colWidths=[col_w] * len(sub_headers))
             nested_table.setStyle(TableStyle([
                 ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
@@ -493,7 +525,11 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         Paragraph(f"<b>{cum_avg:.2f}</b>", normal_bold_style)
     ])
 
-    results_table = Table(results_data, colWidths=[80, 145, 200, 50, 40])
+    if is_landscape:
+        results_table = Table(results_data, colWidths=[100, 200, 360, 50, 50])
+    else:
+        results_table = Table(results_data, colWidths=[80, 145, 200, 50, 40])
+
     results_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0000FE")),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
@@ -508,7 +544,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     elements.append(results_table)
     elements.append(Spacer(1, 20))
 
-    # 5. Legend section
+    # 6. Legend section
     legend_cells = []
     for entry in legend_data:
         range_str = f"{entry['min']}%-{entry['max']}%"
@@ -525,7 +561,11 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                 legend_cells[i+2]
             ])
 
-    legend_grid_table = Table(legend_grid_data, colWidths=[80, 50, 150])
+    if is_landscape:
+        legend_grid_table = Table(legend_grid_data, colWidths=[100, 60, 250])
+    else:
+        legend_grid_table = Table(legend_grid_data, colWidths=[80, 50, 150])
+
     legend_grid_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
@@ -541,7 +581,11 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         ]
     ]
 
-    parent_legend_table = Table(parent_legend_data, colWidths=[60, 440])
+    if is_landscape:
+        parent_legend_table = Table(parent_legend_data, colWidths=[80, 680])
+    else:
+        parent_legend_table = Table(parent_legend_data, colWidths=[60, 440])
+
     parent_legend_table.setStyle(TableStyle([
         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#94a3b8")),
