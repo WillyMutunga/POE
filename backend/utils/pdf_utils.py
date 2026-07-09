@@ -237,29 +237,46 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     from io import BytesIO
     from academic.models import StudentMark
 
-    # 1. Determine orientation dynamically based on number of grade components
-    max_components_count = 0
-    for m in marks:
-        comp_count = 0
-        components = m.unit.mark_components.all()
-        groups = {}
-        standalone = []
-        for comp in components:
-            if comp.group_name:
-                g_name_upper = comp.group_name.upper().strip()
-                if g_name_upper not in groups:
-                    groups[g_name_upper] = []
-                groups[g_name_upper].append(comp)
-            else:
-                standalone.append(comp)
-        
-        for g_name, g_comps in groups.items():
-            comp_count += len(g_comps) + 1  # components in group + computed group total column
-        comp_count += len(standalone)
-        if comp_count > max_components_count:
-            max_components_count = comp_count
+    # Helper function to look up grade from legend ranges
+    def get_grade_for_percentage(percentage, legend):
+        for entry in legend:
+            try:
+                min_val = float(entry.get('min', 0))
+                max_val = float(entry.get('max', 100))
+                if min_val <= percentage <= max_val:
+                    return entry.get('grade', 'NYC')
+            except (ValueError, TypeError):
+                continue
+        # Fallback if not found in criteria
+        if percentage >= 80: return "AM"
+        if percentage >= 50: return "M"
+        return "NYC"
 
-    is_landscape = max_components_count > 3
+    # 1. Determine orientation dynamically based on number of columns
+    max_cams = 0
+    max_pracs = 0
+    for m in marks:
+        components = m.unit.mark_components.all().order_by('id')
+        cams_list = []
+        pracs_list = []
+        for comp in components:
+            name_lower = comp.name.lower()
+            if 'prac' in name_lower or 'practical' in name_lower or 'oral' in name_lower:
+                pracs_list.append(comp)
+            else:
+                cams_list.append(comp)
+        if len(cams_list) > max_cams:
+            max_cams = len(cams_list)
+        if len(pracs_list) > max_pracs:
+            max_pracs = len(pracs_list)
+
+    if max_cams == 0:
+        max_cams = 1
+    if max_pracs == 0:
+        max_pracs = 1
+
+    Total_cols = 7 + max_cams + max_pracs
+    is_landscape = Total_cols > 6  # Wide table layout
 
     buffer = BytesIO()
     if is_landscape:
@@ -329,7 +346,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
         fontSize=9,
         leading=12,
         textColor=colors.white,
-        alignment=0 # Left
+        alignment=1 # Center
     )
 
     # 2. Add Centered Headway Logo
@@ -360,8 +377,12 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
             Paragraph(f"<b>Name:</b> {student_name.upper()}", normal_style)
         ],
         [
-            Paragraph(f"<b>Year of Study:</b> {year_of_study}", normal_style),
+            Paragraph(f"<b>CDACC Reg. Number:</b> {student.cdacc_registration_number or 'N/A'}", normal_style),
             Paragraph(f"<b>Academic Year:</b> {academic_year}", normal_style)
+        ],
+        [
+            Paragraph(f"<b>Year of Study:</b> {year_of_study}", normal_style),
+            Paragraph("", normal_style)
         ]
     ]
 
@@ -381,123 +402,147 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     elements.append(details_table)
     elements.append(Spacer(1, 15))
 
-    # 5. Results Grid Table
-    results_data = [
-        [
-            Paragraph("UNIT CODE", header_style),
-            Paragraph("UNIT TITLE", header_style),
-            Paragraph("GRADING COMPONENTS BREAKDOWN", header_style),
-            Paragraph("ACADEMIC HOURS", header_style),
-            Paragraph("GRADE", header_style)
-        ]
+    # 5. Results Grid Table Setup
+    # Row 0: General labels & grouped header labels
+    header_row_0 = [
+        Paragraph("S/N", header_style),
+        Paragraph("UNIT CODE", header_style),
+        Paragraph("UNIT TITLE", header_style),
+    ]
+    # CAM components span label
+    header_row_0.append(Paragraph("CAM COMPONENTS", header_style))
+    for _ in range(max_cams - 1):
+        header_row_0.append(Paragraph("", header_style))
+    header_row_0.append(Paragraph("CT", header_style))
+    header_row_0.append(Paragraph("CR", header_style))
+    # Practical components span label
+    header_row_0.append(Paragraph("PRACTICAL COMPONENTS", header_style))
+    for _ in range(max_pracs - 1):
+        header_row_0.append(Paragraph("", header_style))
+    header_row_0.append(Paragraph("CP", header_style))
+    header_row_0.append(Paragraph("CR", header_style))
+
+    # Row 1: Sub-column names (specific components)
+    header_row_1 = [
+        Paragraph("", header_style),
+        Paragraph("", header_style),
+        Paragraph("", header_style),
+    ]
+    # CAM sub-column names
+    for i in range(max_cams):
+        header_row_1.append(Paragraph(f"CAM {i+1}", header_style))
+    header_row_1.append(Paragraph("", header_style))
+    header_row_1.append(Paragraph("", header_style))
+    # Practical sub-column names
+    for i in range(max_pracs):
+        header_row_1.append(Paragraph(f"PRAC {i+1}", header_style))
+    header_row_1.append(Paragraph("", header_style))
+    header_row_1.append(Paragraph("", header_style))
+
+    results_data = [header_row_0, header_row_1]
+
+    # Spanning rules for header rows
+    table_spans = [
+        ('SPAN', (0, 0), (0, 1)), # S/N
+        ('SPAN', (1, 0), (1, 1)), # Unit Code
+        ('SPAN', (2, 0), (2, 1)), # Unit Title
+        ('SPAN', (3, 0), (3 + max_cams - 1, 0)), # CAM components span
+        ('SPAN', (3 + max_cams, 0), (3 + max_cams, 1)), # CT span
+        ('SPAN', (4 + max_cams, 0), (4 + max_cams, 1)), # CAM CR span
+        ('SPAN', (5 + max_cams, 0), (5 + max_cams + max_pracs - 1, 0)), # PRAC components span
+        ('SPAN', (5 + max_cams + max_pracs, 0), (5 + max_cams + max_pracs, 1)), # CP span
+        ('SPAN', (6 + max_cams + max_pracs, 0), (6 + max_cams + max_pracs, 1)), # PRAC CR span
     ]
 
-    for m in marks:
-        sub_headers = []
-        sub_scores = []
+    # Populating data rows
+    cam_term_scores = []
+    prac_term_scores = []
+    
+    for idx, m in enumerate(marks):
+        row = [
+            Paragraph(str(idx + 1), normal_style),
+            Paragraph(m.unit.code, normal_style),
+            Paragraph(m.unit.name, normal_style),
+        ]
         
         components = m.unit.mark_components.all().order_by('id')
-        
-        # Group components by group_name in Python
-        groups = {}
-        standalone = []
+        cams_list = []
+        pracs_list = []
         for comp in components:
-            if comp.group_name:
-                g_name_upper = comp.group_name.upper().strip()
-                if g_name_upper not in groups:
-                    groups[g_name_upper] = {
-                        'weight': comp.group_weight or comp.weight,
-                        'formula': comp.formula or 'SUM',
-                        'components': []
-                    }
-                groups[g_name_upper]['components'].append(comp)
+            name_lower = comp.name.lower()
+            if 'prac' in name_lower or 'practical' in name_lower or 'oral' in name_lower:
+                pracs_list.append(comp)
             else:
-                standalone.append(comp)
-                
-        # Fill data for groups
-        for g_name, g_info in groups.items():
-            comp_scores = []
-            max_marks = []
-            for comp in g_info['components']:
-                sub_headers.append(Paragraph(f"<font size='7'><b>{comp.name}</b></font>", normal_style))
+                cams_list.append(comp)
+
+        # 1. Fill CAM scores
+        cam_obtained = 0.0
+        cam_max = 0.0
+        for i in range(max_cams):
+            if i < len(cams_list):
+                comp = cams_list[i]
                 score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
-                score_str = ""
                 if score is not None:
                     try:
                         score_val = float(score)
-                        comp_scores.append(score_val)
-                        max_marks.append(comp.weight)
-                        score_str = f"{score_val:.1f}/{comp.weight}"
+                        cam_obtained += score_val
+                        cam_max += comp.weight
+                        row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
                     except ValueError:
-                        score_str = str(score)
+                        row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
                 else:
-                    score_str = f"-/{comp.weight}"
-                sub_scores.append(Paragraph(f"<font size='7'>{score_str}</font>", normal_style))
-                
-            # Add computed group score
-            if comp_scores:
-                formula = g_info['formula']
-                g_weight = float(g_info['weight'])
-                if formula == 'BEST_OF':
-                    best_pct = 0.0
-                    for s, max_m in zip(comp_scores, max_marks):
-                        pct = (s / max_m) if max_m > 0 else 0
-                        if pct > best_pct:
-                            best_pct = pct
-                    g_score = best_pct * g_weight
-                else:
-                    raw_sum = sum(comp_scores)
-                    raw_max = sum(max_marks)
-                    g_score = (raw_sum / raw_max) * g_weight if raw_max > 0 else 0.0
-                g_score = min(g_score, g_weight)
-                g_score_str = f"{g_score:.1f}/{g_info['weight']}"
+                    cam_max += comp.weight
+                    row.append(Paragraph(f"<font size='7'>-/{comp.weight}</font>", normal_style))
             else:
-                g_score_str = f"-/{g_info['weight']}"
-                
-            sub_headers.append(Paragraph(f"<font size='7'><b>{g_name}</b></font>", normal_bold_style))
-            sub_scores.append(Paragraph(f"<font size='7'><b>{g_score_str}</b></font>", normal_bold_style))
+                row.append(Paragraph("", normal_style))
 
-        # Fill data for standalone
-        for comp in standalone:
-            sub_headers.append(Paragraph(f"<font size='7'><b>{comp.name}</b></font>", normal_style))
-            score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
-            score_str = ""
-            if score is not None:
-                try:
-                    score_val = float(score)
-                    score_str = f"{score_val:.1f}/{comp.weight}"
-                except ValueError:
-                    score_str = str(score)
-            else:
-                score_str = f"-/{comp.weight}"
-            sub_scores.append(Paragraph(f"<font size='7'>{score_str}</font>", normal_style))
-
-        if sub_headers:
-            nested_width = 360.0 if is_landscape else 200.0
-            col_w = nested_width / len(sub_headers)
-            nested_table = Table([sub_headers, sub_scores], colWidths=[col_w] * len(sub_headers))
-            nested_table.setStyle(TableStyle([
-                ('GRID', (0, 0), (-1, -1), 0.25, colors.HexColor("#cbd5e1")),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-                ('TOPPADDING', (0, 0), (-1, -1), 1),
-                ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
-                ('LEFTPADDING', (0, 0), (-1, -1), 1),
-                ('RIGHTPADDING', (0, 0), (-1, -1), 1),
-            ]))
-            comp_cell = nested_table
+        # Combined CAM total (CT) & rating
+        if cam_max > 0:
+            ct_pct = (cam_obtained / cam_max) * 100.0
+            cam_term_scores.append(ct_pct)
+            row.append(Paragraph(f"<font size='7'><b>{ct_pct:.1f}%</b></font>", normal_bold_style))
+            row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(ct_pct, legend_data)}</b></font>", normal_bold_style))
         else:
-            comp_cell = Paragraph(f"<font size='8'>Raw Score: {m.total_score:.1f}/100.0</font>", normal_style)
+            row.append(Paragraph("<font size='7'>-</font>", normal_style))
+            row.append(Paragraph("<font size='7'>-</font>", normal_style))
 
-        results_data.append([
-            Paragraph(m.unit.code, normal_style),
-            Paragraph(m.unit.name, normal_style),
-            comp_cell,
-            Paragraph(str(getattr(m.unit, 'credit_hours', 45)), normal_style),
-            Paragraph(m.grade, normal_bold_style)
-        ])
+        # 2. Fill Practical scores
+        prac_obtained = 0.0
+        prac_max = 0.0
+        for i in range(max_pracs):
+            if i < len(pracs_list):
+                comp = pracs_list[i]
+                score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
+                if score is not None:
+                    try:
+                        score_val = float(score)
+                        prac_obtained += score_val
+                        prac_max += comp.weight
+                        row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
+                    except ValueError:
+                        row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
+                else:
+                    prac_max += comp.weight
+                    row.append(Paragraph(f"<font size='7'>-/{comp.weight}</font>", normal_style))
+            else:
+                row.append(Paragraph("", normal_style))
+
+        # Combined Practical total (CP) & rating
+        if prac_max > 0:
+            cp_pct = (prac_obtained / prac_max) * 100.0
+            prac_term_scores.append(cp_pct)
+            row.append(Paragraph(f"<font size='7'><b>{cp_pct:.1f}%</b></font>", normal_bold_style))
+            row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(cp_pct, legend_data)}</b></font>", normal_bold_style))
+        else:
+            row.append(Paragraph("<font size='7'>-</font>", normal_style))
+            row.append(Paragraph("<font size='7'>-</font>", normal_style))
+
+        results_data.append(row)
 
     # Calculate averages
+    term_cam_avg = sum(cam_term_scores) / len(cam_term_scores) if cam_term_scores else 0.0
+    term_prac_avg = sum(prac_term_scores) / len(prac_term_scores) if prac_term_scores else 0.0
+
     if marks.exists():
         term_avg = sum(m.total_score for m in marks) / len(marks)
     else:
@@ -509,38 +554,69 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     else:
         cum_avg = 0.0
 
-    # Append Average Rows
-    results_data.append([
-        Paragraph(f"<b>{term_upper} AVERAGE:</b>", normal_bold_style),
-        Paragraph("", normal_style),
-        Paragraph("", normal_style),
-        Paragraph("", normal_style),
-        Paragraph(f"<b>{term_avg:.2f}</b>", normal_bold_style)
-    ])
-    results_data.append([
-        Paragraph("<b>CUMMULATIVE AVERAGE:</b>", normal_bold_style),
-        Paragraph("", normal_style),
-        Paragraph("", normal_style),
-        Paragraph("", normal_style),
-        Paragraph(f"<b>{cum_avg:.2f}</b>", normal_bold_style)
+    # 1. CAM & Practical Averages Row
+    averages_row = [Paragraph(f"<b>{term_upper} AVERAGES:</b>", normal_bold_style)]
+    for _ in range(2 + max_cams):
+        averages_row.append(Paragraph("", normal_style))
+    averages_row.append(Paragraph(f"<b>{term_cam_avg:.1f}%</b>", normal_bold_style))
+    averages_row.append(Paragraph(f"<b>{get_grade_for_percentage(term_cam_avg, legend_data)}</b>", normal_bold_style))
+    for _ in range(max_pracs):
+        averages_row.append(Paragraph("", normal_style))
+    averages_row.append(Paragraph(f"<b>{term_prac_avg:.1f}%</b>", normal_bold_style))
+    averages_row.append(Paragraph(f"<b>{get_grade_for_percentage(term_prac_avg, legend_data)}</b>", normal_bold_style))
+    results_data.append(averages_row)
+
+    # 2. Overall Semester Average Row
+    term_avg_row = [Paragraph(f"<b>OVERALL {term_upper} AVERAGE:</b>", normal_bold_style)]
+    for _ in range(Total_cols - 2):
+        term_avg_row.append(Paragraph("", normal_style))
+    term_avg_row.append(Paragraph(f"<b>{term_avg:.2f}%</b>", normal_bold_style))
+    results_data.append(term_avg_row)
+
+    # 3. Cumulative Average Row
+    cum_avg_row = [Paragraph("<b>CUMULATIVE AVERAGE:</b>", normal_bold_style)]
+    for _ in range(Total_cols - 2):
+        cum_avg_row.append(Paragraph("", normal_style))
+    cum_avg_row.append(Paragraph(f"<b>{cum_avg:.2f}%</b>", normal_bold_style))
+    results_data.append(cum_avg_row)
+
+    # Add summary rows spans
+    # -3 is averages_row
+    # -2 is term_avg_row
+    # -1 is cum_avg_row
+    table_spans.extend([
+        ('SPAN', (0, -3), (2 + max_cams, -3)),
+        ('SPAN', (5 + max_cams, -3), (4 + max_cams + max_pracs, -3)),
+        ('SPAN', (0, -2), (Total_cols - 2, -2)),
+        ('SPAN', (0, -1), (Total_cols - 2, -1)),
     ])
 
+    # Column Widths Budgeting
     if is_landscape:
-        results_table = Table(results_data, colWidths=[100, 200, 360, 50, 50])
+        rem_width = 760 - (25 + 65 + 140 + 35 + 30 + 35 + 30) # remaining 400 pts
+        col_w = rem_width / (max_cams + max_pracs)
+        col_widths = [25, 65, 140] + [col_w] * max_cams + [35, 30] + [col_w] * max_pracs + [35, 30]
     else:
-        results_table = Table(results_data, colWidths=[80, 145, 200, 50, 40])
+        rem_width = 515 - (20 + 55 + 100 + 30 + 25 + 30 + 25) # remaining 230 pts
+        col_w = rem_width / (max_cams + max_pracs)
+        col_widths = [20, 55, 100] + [col_w] * max_cams + [30, 25] + [col_w] * max_pracs + [30, 25]
 
-    results_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#0000FE")),
+    results_table = Table(results_data, colWidths=col_widths)
+    
+    results_style = [
+        ('BACKGROUND', (0, 0), (-1, 1), colors.HexColor("#0000FE")),
         ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#cbd5e1")),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-        ('TOPPADDING', (0, 0), (-1, -1), 6),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-        ('LEFTPADDING', (0, 0), (-1, -1), 8),
-        ('RIGHTPADDING', (0, 0), (-1, -1), 8),
-        ('SPAN', (0, -2), (3, -2)),
-        ('SPAN', (0, -1), (3, -1)),
-    ]))
+        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ('ALIGN', (2, 2), (2, -4), 'LEFT'), # Left-align unit titles
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+    ]
+    results_style.extend(table_spans)
+    results_table.setStyle(TableStyle(results_style))
+    
     elements.append(results_table)
     elements.append(Spacer(1, 20))
 
