@@ -114,8 +114,8 @@ const MarkComponents = () => {
     });
 
     const totalWeight = Object.values(uniqueGroups).reduce((sum, w) => sum + w, 0) + standaloneWeight;
-    if (totalWeight !== 100 && components.length > 0) {
-      setError(`Aggregated weight must sum to exactly 100%. Current sum is: ${totalWeight}% (Unique group weights sum + standalone weights)`);
+    if (totalWeight !== 100 && totalWeight !== 200 && components.length > 0) {
+      setError(`Aggregated weight must sum to exactly 100% or 200% (when CAM & Practical are 100% each). Current sum is: ${totalWeight}%`);
       return;
     }
 
@@ -354,8 +354,8 @@ const MarkComponents = () => {
             {components.length > 0 && (
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex justify-between items-center text-sm font-black uppercase text-slate-700">
                 <span>Aggregated Weight sum:</span>
-                <span className={totalWeight === 100 ? 'text-green-600' : 'text-red-500'}>
-                  {totalWeight}% {totalWeight === 100 ? '(Valid)' : '(Must equal 100%)'}
+                <span className={(totalWeight === 100 || totalWeight === 200) ? 'text-green-600' : 'text-red-500'}>
+                  {totalWeight}% {(totalWeight === 100 || totalWeight === 200) ? '(Valid)' : '(Must equal 100% or 200%)'}
                 </span>
               </div>
             )}

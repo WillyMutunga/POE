@@ -1015,6 +1015,16 @@ class StudentMarkViewSet(viewsets.ModelViewSet):
                 return Response({"error": f"Mark for component {comp.name} cannot be less than 0 or exceed the component weight ({comp.weight}%)."}, status=400)
             total_score += score
 
+        # Dynamic scaling if max possible weight is not exactly 100%
+        max_possible_weight = 0.0
+        for g_name, g_info in groups.items():
+            max_possible_weight += float(g_info['weight'])
+        for comp in standalone:
+            max_possible_weight += float(comp.weight)
+
+        if max_possible_weight > 0 and max_possible_weight != 100.0:
+            total_score = (total_score / max_possible_weight) * 100.0
+
         # Query grading system for the course
         grading_system = unit.course.grading_systems.first()
         grade_assigned = "NYC" # Default
