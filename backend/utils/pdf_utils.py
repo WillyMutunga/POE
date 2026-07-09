@@ -494,16 +494,6 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                     try:
                         score_val = float(score)
                         pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
-        # 1. Fill CAM scores
-        cam_pcts = []
-        for i in range(max_cams):
-            if i < len(cams_list):
-                comp = cams_list[i]
-                score = m.component_marks.get(str(comp.id)) or m.component_marks.get(comp.name) or m.component_marks.get(comp.name.upper())
-                if score is not None:
-                    try:
-                        score_val = float(score)
-                        pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
                         cam_pcts.append(pct)
                         row.append(Paragraph(f"<font size='7'>{format_score(score_val)}/{comp.weight}</font>", normal_style))
                     except ValueError:
