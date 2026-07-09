@@ -476,8 +476,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                 cams_list.append(comp)
 
         # 1. Fill CAM scores
-        cam_obtained = 0.0
-        cam_max = 0.0
+        cam_pcts = []
         for i in range(max_cams):
             if i < len(cams_list):
                 comp = cams_list[i]
@@ -485,20 +484,19 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                 if score is not None:
                     try:
                         score_val = float(score)
-                        cam_obtained += score_val
-                        cam_max += comp.weight
+                        pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
+                        cam_pcts.append(pct)
                         row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
                     except ValueError:
                         row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
                 else:
-                    cam_max += comp.weight
                     row.append(Paragraph(f"<font size='7'>-/{comp.weight}</font>", normal_style))
             else:
                 row.append(Paragraph("", normal_style))
 
         # Combined CAM total (CT) & rating
-        if cam_max > 0:
-            ct_pct = (cam_obtained / cam_max) * 100.0
+        if cam_pcts:
+            ct_pct = sum(cam_pcts) / len(cam_pcts)
             cam_term_scores.append(ct_pct)
             row.append(Paragraph(f"<font size='7'><b>{ct_pct:.1f}%</b></font>", normal_bold_style))
             row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(ct_pct, legend_data)}</b></font>", normal_bold_style))
@@ -507,8 +505,7 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
             row.append(Paragraph("<font size='7'>-</font>", normal_style))
 
         # 2. Fill Practical scores
-        prac_obtained = 0.0
-        prac_max = 0.0
+        prac_pcts = []
         for i in range(max_pracs):
             if i < len(pracs_list):
                 comp = pracs_list[i]
@@ -516,20 +513,19 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
                 if score is not None:
                     try:
                         score_val = float(score)
-                        prac_obtained += score_val
-                        prac_max += comp.weight
+                        pct = (score_val / comp.weight) * 100.0 if comp.weight > 0 else 0.0
+                        prac_pcts.append(pct)
                         row.append(Paragraph(f"<font size='7'>{score_val:.1f}/{comp.weight}</font>", normal_style))
                     except ValueError:
                         row.append(Paragraph(f"<font size='7'>{score}</font>", normal_style))
                 else:
-                    prac_max += comp.weight
                     row.append(Paragraph(f"<font size='7'>-/{comp.weight}</font>", normal_style))
             else:
                 row.append(Paragraph("", normal_style))
 
         # Combined Practical total (CP) & rating
-        if prac_max > 0:
-            cp_pct = (prac_obtained / prac_max) * 100.0
+        if prac_pcts:
+            cp_pct = sum(prac_pcts) / len(prac_pcts)
             prac_term_scores.append(cp_pct)
             row.append(Paragraph(f"<font size='7'><b>{cp_pct:.1f}%</b></font>", normal_bold_style))
             row.append(Paragraph(f"<font size='7'><b>{get_grade_for_percentage(cp_pct, legend_data)}</b></font>", normal_bold_style))
