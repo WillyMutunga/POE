@@ -194,3 +194,30 @@ class ExamRepository(models.Model):
 
     def __str__(self):
         return f"{self.unit.code} - {self.title}"
+
+class OnlineExam(models.Model):
+    title = models.CharField(max_length=255)
+    class_name = models.CharField(max_length=255, default="Computer Studies")
+    duration_minutes = models.IntegerField(default=60)
+    is_active = models.BooleanField(default=True)
+    questions = models.JSONField(default=list)  # List of questions: [{"question_text": "", "options": ["", ...], "correct_option_index": 0}]
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.class_name} - {self.title}"
+
+class OnlineExamAttendance(models.Model):
+    exam = models.ForeignKey(OnlineExam, on_delete=models.CASCADE, related_name='attendance')
+    student_reg_no = models.CharField(max_length=100)
+    has_started = models.BooleanField(default=False)
+    started_at = models.DateTimeField(null=True, blank=True)
+    has_submitted = models.BooleanField(default=False)
+    submitted_at = models.DateTimeField(null=True, blank=True)
+    score = models.FloatField(null=True, blank=True)
+    answers = models.JSONField(default=dict)  # Selected answers: {"0": 1, "1": 3}
+
+    class Meta:
+        unique_together = ('exam', 'student_reg_no')
+
+    def __str__(self):
+        return f"{self.student_reg_no} - {self.exam.title}"

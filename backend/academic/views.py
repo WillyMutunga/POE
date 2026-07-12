@@ -1195,3 +1195,198 @@ class ExamRepositoryViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(instructor=self.request.user)
+
+from django.utils import timezone
+from .models import OnlineExam, OnlineExamAttendance
+from .serializers import OnlineExamSerializer, OnlineExamAttendanceSerializer
+
+class OnlineExamViewSet(viewsets.ModelViewSet):
+    queryset = OnlineExam.objects.all()
+    serializer_class = OnlineExamSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        # Admins see all exams. Students only see what they are registered for.
+        if self.request.user.role == 'STUDENT':
+            reg_no = getattr(self.request.user, 'registration_number', '')
+            if not reg_no:
+                return OnlineExam.objects.none()
+            exam_ids = OnlineExamAttendance.objects.filter(student_reg_no=reg_no).values_list('exam_id', flat=True)
+            return OnlineExam.objects.filter(id__in=exam_ids, is_active=True)
+        return OnlineExam.objects.all()
+
+    @action(detail=False, methods=['get'])
+    def my_pending(self, request):
+        if request.user.role != 'STUDENT':
+            return Response({"error": "Only students have pending exams."}, status=400)
+        reg_no = getattr(request.user, 'registration_number', '')
+        if not reg_no:
+            return Response([])
+        
+        # Fetch active exams where the student is in attendance and has not submitted yet
+        attendance_records = OnlineExamAttendance.objects.filter(
+            student_reg_no=reg_no,
+            exam__is_active=True,
+            has_submitted=False
+        ).select_related('exam')
+        
+        # Check time limit for those already started
+        valid_records = []
+        for r in attendance_records:
+            if r.has_started and r.started_at:
+                elapsed_minutes = (timezone.now() - r.started_at).total_seconds() / 60.0
+                if elapsed_minutes > (r.exam.duration_minutes + 1):  # 1 minute grace period
+                    # Auto-submit if time expired but not submitted
+                    r.has_submitted = True
+                    r.submitted_at = timezone.now()
+                    r.score = 0.0  # Or compute score if some answers exist
+                    r.save()
+                    continue
+            valid_records.append(r)
+            
+        serializer = OnlineExamAttendanceSerializer(valid_records, many=True)
+        return Response(serializer.data)
+
+    @action(detail=True, methods=['post'])
+    def start(self, request, pk=None):
+        exam = self.get_object()
+        if not exam.is_active:
+            return Response({"error": "This exam is not active."}, status=400)
+            
+        reg_no = getattr(request.user, 'registration_number', '')
+        if not reg_no:
+            return Response({"error": "Student registration number is required to start the exam."}, status=400)
+            
+        try:
+            attendance = OnlineExamAttendance.objects.get(exam=exam, student_reg_no=reg_no)
+        except OnlineExamAttendance.DoesNotExist:
+            return Response({"error": "You are not registered for this exam."}, status=403)
+            
+        if attendance.has_submitted:
+            return Response({"error": "You have already submitted this exam."}, status=400)
+            
+        if not attendance.has_started:
+            attendance.has_started = True
+            attendance.started_at = timezone.now()
+            attendance.save()
+            
+        # Return exam questions and duration (excluding correct_option_index for security!)
+        safe_questions = []
+        for q in exam.questions:
+            safe_questions.append({
+                "question_text": q.get("question_text", ""),
+                "options": q.get("options", [])
+            })
+            
+        return Response({
+            "exam_id": exam.id,
+            "title": exam.title,
+            "class_name": exam.class_name,
+            "duration_minutes": exam.duration_minutes,
+            "started_at": attendance.started_at,
+            "questions": safe_questions
+        })
+
+    @action(detail=True, methods=['post'])
+    def submit(self, request, pk=None):
+        exam = self.get_object()
+        reg_no = getattr(request.user, 'registration_number', '')
+        if not reg_no:
+            return Response({"error": "Student registration number is required."}, status=400)
+            
+        try:
+            attendance = OnlineExamAttendance.objects.get(exam=exam, student_reg_no=reg_no)
+        except OnlineExamAttendance.DoesNotExist:
+            return Response({"error": "Registration record not found."}, status=403)
+            
+        if attendance.has_submitted:
+            return Response({"error": "You have already submitted this exam."}, status=400)
+            
+        if not attendance.has_started:
+            return Response({"error": "You cannot submit an exam you have not started."}, status=400)
+            
+        # Optional: check if time has lapsed significantly beyond duration
+        elapsed_seconds = (timezone.now() - attendance.started_at).total_seconds()
+        max_allowed_seconds = (exam.duration_minutes * 60) + 60  # 1 min grace
+        if elapsed_seconds > max_allowed_seconds:
+            # Still grade whatever is submitted or force 0. We'll grade what's in the request.
+            pass
+            
+        submitted_answers = request.data.get("answers", {})  # e.g. {"0": 1, "1": 3}
+        attendance.answers = submitted_answers
+        
+        # Grade questions
+        correct_count = 0
+        total_questions = len(exam.questions)
+        for idx, q in enumerate(exam.questions):
+            correct_idx = q.get("correct_option_index")
+            student_ans = submitted_answers.get(str(idx)) or submitted_answers.get(idx)
+            if student_ans is not None:
+                try:
+                    if int(student_ans) == int(correct_idx):
+                        correct_count += 1
+                except (ValueError, TypeError):
+                    pass
+                    
+        score_pct = (correct_count / total_questions * 100.0) if total_questions > 0 else 0.0
+        
+        attendance.has_submitted = True
+        attendance.submitted_at = timezone.now()
+        attendance.score = score_pct
+        attendance.save()
+        
+        return Response({
+            "score": score_pct,
+            "correct_count": correct_count,
+            "total_questions": total_questions
+        })
+
+    @action(detail=True, methods=['get', 'post'], url_path='attendance')
+    def attendance_list(self, request, pk=None):
+        exam = self.get_object()
+        if request.method == 'GET':
+            # View attendance list and results
+            records = OnlineExamAttendance.objects.filter(exam=exam)
+            serializer = OnlineExamAttendanceSerializer(records, many=True)
+            return Response(serializer.data)
+        elif request.method == 'POST':
+            # Add or update attendance list
+            reg_numbers = request.data.get("registration_numbers", [])  # list of strings
+            created_count = 0
+            
+            from notifications.models import Notification
+            from django.contrib.auth import get_user_model
+            User = get_user_model()
+            
+            for reg in reg_numbers:
+                reg_clean = reg.strip().upper()
+                if reg_clean:
+                    attendance, created = OnlineExamAttendance.objects.get_or_create(
+                        exam=exam,
+                        student_reg_no=reg_clean
+                    )
+                    if created:
+                        created_count += 1
+                        # Find student user to send popup notification
+                        student_user = User.objects.filter(registration_number=reg_clean, role='STUDENT').first()
+                        if student_user:
+                            Notification.objects.create(
+                                user=student_user,
+                                title="New Online Exam Assigned",
+                                message=f"You have been registered for the online exam: {exam.title} for class {exam.class_name}. Please complete it before expiration.",
+                                notification_type=Notification.NotificationType.SYSTEM_ALERT
+                            )
+            return Response({
+                "status": "success",
+                "created_count": created_count
+            })
+
+    @action(detail=True, methods=['delete'], url_path='remove-attendance')
+    def remove_attendance(self, request, pk=None):
+        exam = self.get_object()
+        reg_no = request.query_params.get("student_reg_no")
+        if not reg_no:
+            return Response({"error": "student_reg_no query param is required."}, status=400)
+            
+        OnlineExamAttendance.objects.filter(exam=exam, student_reg_no=reg_no.upper()).delete()
+        return Response({"status": "student removed from attendance list"})
