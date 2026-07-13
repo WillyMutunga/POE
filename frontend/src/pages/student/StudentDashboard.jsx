@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import SEO from '../../components/SEO';
+import OnlineExamModal from '../../components/OnlineExamModal';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -31,11 +32,7 @@ const StudentDashboard = () => {
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc', 'desc'
 
   const [pendingExams, setPendingExams] = useState([]);
-  const [activeExam, setActiveExam] = useState(null);
-  const [examAnswers, setExamAnswers] = useState({});
-  const [timeLeft, setTimeLeft] = useState(0);
   const [showExamModal, setShowExamModal] = useState(false);
-  const [examResult, setExamResult] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -48,62 +45,6 @@ const StudentDashboard = () => {
       setPendingExams(response.data);
     } catch (err) {
       console.error('Error fetching pending exams:', err);
-    }
-  };
-
-  useEffect(() => {
-    if (!showExamModal || timeLeft <= 0) {
-      if (showExamModal && timeLeft === 0) {
-        handleSubmitExam(true);
-      }
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [showExamModal, timeLeft]);
-
-  const handleStartExam = async (attendanceRecord) => {
-    if (!window.confirm(`Start the online exam: "${attendanceRecord.exam_title}"? The timer will start immediately and you cannot pause it.`)) {
-      return;
-    }
-    try {
-      const response = await api.post(`/academic/online-exams/${attendanceRecord.exam}/start/`);
-      const data = response.data;
-      setActiveExam(data);
-      setExamAnswers({});
-      setExamResult(null);
-      
-      const startedAt = new Date(data.started_at);
-      const now = new Date();
-      const elapsedSeconds = Math.floor((now - startedAt) / 1000);
-      const totalSeconds = data.duration_minutes * 60;
-      const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
-      
-      setTimeLeft(remainingSeconds);
-      setShowExamModal(true);
-    } catch (err) {
-      console.error('Error starting exam:', err);
-      alert(err.response?.data?.error || 'Failed to start exam.');
-    }
-  };
-
-  const handleSubmitExam = async (isAuto = false) => {
-    if (!isAuto && !window.confirm('Are you sure you want to submit your exam answers?')) {
-      return;
-    }
-    try {
-      const response = await api.post(`/academic/online-exams/${activeExam.exam_id}/submit/`, {
-        answers: examAnswers
-      });
-      setExamResult(response.data);
-      fetchPendingExams();
-    } catch (err) {
-      console.error('Error submitting exam:', err);
-      alert('Failed to submit exam. Please try again.');
     }
   };
 
@@ -259,7 +200,7 @@ const StudentDashboard = () => {
             </div>
           </div>
           <button
-            onClick={() => handleStartExam(pendingExams[0])}
+            onClick={() => setShowExamModal(true)}
             className="w-full md:w-auto px-6 py-3 bg-white text-blue-600 hover:bg-slate-50 font-black rounded-xl text-xs uppercase tracking-wider transition-all shrink-0 active:scale-95 shadow"
           >
             Start Exam Now
@@ -508,152 +449,17 @@ const StudentDashboard = () => {
       )}
 
       {/* Online Exam Modal */}
-      {showExamModal && activeExam && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-[32px] w-full max-w-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            
-            {/* Header */}
-            <div className="p-8 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10 animate-in slide-in-from-top duration-300">
-              <div>
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-wider">
-                  {activeExam.class_name}
-                </span>
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight mt-2">{activeExam.title}</h2>
-              </div>
-              
-              {/* Timer */}
-              <div className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border font-black text-sm transition-all ${
-                timeLeft < 60 
-                  ? 'bg-red-50 border-red-100 text-red-600 animate-bounce' 
-                  : 'bg-slate-50 border-slate-100 text-slate-700'
-              }`}>
-                <Clock size={16} />
-                <span>
-                  {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}
-                </span>
-              </div>
-            </div>
-
-            {/* Questions Content */}
-            <div className="flex-1 overflow-y-auto p-8 space-y-8">
-              {examResult ? (
-                // Score Result View
-                <div className="py-12 text-center space-y-6 animate-in zoom-in-95 duration-500">
-                  <div className="w-20 h-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                    <Award size={44} />
-                  </div>
-                  <div className="space-y-2">
-                    <h3 className="text-3xl font-black text-slate-800">Exam Submitted!</h3>
-                    <p className="text-slate-400 font-bold text-sm">Here is your grading score response:</p>
-                  </div>
-                  
-                  <div className="bg-slate-50 border border-slate-100 rounded-3xl p-8 max-w-sm mx-auto space-y-4">
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Score Percentage</span>
-                      <h4 className="text-5xl font-black text-[#0000FE] mt-1">{examResult.score.toFixed(1)}%</h4>
-                    </div>
-                    <div className="border-t border-slate-100 pt-4 flex justify-between text-xs font-bold text-slate-500">
-                      <span>Correct Answers:</span>
-                      <span className="font-black text-slate-700">{examResult.correct_count} / {examResult.total_questions}</span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={() => {
-                      setShowExamModal(false);
-                      setActiveExam(null);
-                      setExamResult(null);
-                    }}
-                    className="px-8 py-3.5 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow-lg transition-all"
-                  >
-                    Close Portal
-                  </button>
-                </div>
-              ) : (
-                // Exam Quiz Form
-                <div className="space-y-8 animate-in fade-in duration-300">
-                  <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl flex items-start gap-3">
-                    <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
-                    <p className="text-[11px] text-amber-800 leading-relaxed font-bold">
-                      DO NOT close this page or click away. If you leave or the timer runs out, your current answers will be submitted automatically.
-                    </p>
-                  </div>
-
-                  {activeExam.questions?.map((q, qIdx) => (
-                    <div key={qIdx} className="space-y-4 border-b border-slate-50 pb-6">
-                      <h3 className="text-sm font-black text-slate-800 leading-relaxed">
-                        <span className="text-slate-400 mr-1.5 font-bold">Question {qIdx + 1}:</span>
-                        {q.question_text}
-                      </h3>
-
-                      {q.question_type === 'text' ? (
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Response</label>
-                          <input
-                            type="text"
-                            value={examAnswers[qIdx] || ''}
-                            onChange={(e) => {
-                              setExamAnswers({
-                                ...examAnswers,
-                                [qIdx]: e.target.value
-                              });
-                            }}
-                            placeholder="Type your response here..."
-                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-xs"
-                          />
-                        </div>
-                      ) : (
-                        <div className="grid grid-cols-1 gap-3">
-                          {q.options?.map((opt, optIdx) => {
-                            const isSelected = examAnswers[qIdx] === optIdx;
-                            return (
-                              <button
-                                key={optIdx}
-                                type="button"
-                                onClick={() => {
-                                  setExamAnswers({
-                                    ...examAnswers,
-                                    [qIdx]: optIdx
-                                  });
-                                }}
-                                className={`w-full text-left p-4 rounded-2xl border font-bold text-xs flex justify-between items-center transition-all ${
-                                  isSelected
-                                    ? 'bg-blue-50/50 border-[#0000FE] text-[#0000FE] scale-[1.01]'
-                                    : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
-                                }`}
-                              >
-                                <span>{opt}</span>
-                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                                  isSelected ? 'bg-[#0000FE] border-[#0000FE] text-white' : 'border-slate-300'
-                                }`}>
-                                  {isSelected && <CheckCircle size={12} />}
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Footer */}
-            {!examResult && (
-              <div className="p-6 border-t border-slate-100 bg-slate-50 flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => handleSubmitExam(false)}
-                  className="w-full py-4 bg-[#0000FE] hover:bg-blue-700 text-white font-black rounded-2xl text-xs uppercase tracking-widest shadow transition-all active:scale-95"
-                >
-                  Submit Exam
-                </button>
-              </div>
-            )}
-
-          </div>
-        </div>
+      {showExamModal && pendingExams && pendingExams.length > 0 && (
+        <OnlineExamModal
+          examId={pendingExams[0].exam}
+          examTitle={pendingExams[0].exam_title}
+          examClass={pendingExams[0].exam_class}
+          examDuration={pendingExams[0].exam_duration}
+          onClose={() => {
+            setShowExamModal(false);
+            fetchPendingExams();
+          }}
+        />
       )}
     </div>
   );

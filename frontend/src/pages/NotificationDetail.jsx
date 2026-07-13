@@ -2,12 +2,31 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Bell, Clock, ChevronLeft, ArrowRight } from 'lucide-react';
 import api from '../api';
+import { useAuth } from '../context/AuthContext';
+import OnlineExamModal from '../components/OnlineExamModal';
 
 const NotificationDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [notification, setNotification] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const [pendingExams, setPendingExams] = useState([]);
+  const [showExamModal, setShowExamModal] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role === 'STUDENT') {
+      const fetchPending = async () => {
+        try {
+          const res = await api.get('/academic/online-exams/my-pending/');
+          setPendingExams(res.data);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      fetchPending();
+    }
+  }, [user]);
 
   useEffect(() => {
     const fetchNotification = async () => {
@@ -74,24 +93,53 @@ const NotificationDetail = () => {
           {notification.message}
         </p>
 
-        {notification.target_url ? (
+        {notification.target_url === '/dashboard' && pendingExams.length > 0 ? (
+          <button 
+            onClick={() => setShowExamModal(true)}
+            className="w-full bg-[#0000FE] hover:bg-blue-700 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 animate-pulse"
+          >
+            Start Exam Now
+            <ArrowRight size={20} />
+          </button>
+        ) : notification.target_url ? (
           <button 
             onClick={() => navigate(notification.target_url)}
-            className="w-full bg-[#0000FE] hover:bg-[#0000FE]/90 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+            className="w-full bg-[#0000FE] hover:bg-blue-700 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
           >
             {notification.action_text || 'Take Action'}
             <ArrowRight size={20} />
           </button>
         ) : (notification.title === 'New Online Exam Assigned' || notification.message.toLowerCase().includes('online exam')) ? (
           <button 
-            onClick={() => navigate('/dashboard')}
-            className="w-full bg-[#0000FE] hover:bg-[#0000FE]/90 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+            onClick={() => {
+              if (pendingExams.length > 0) {
+                setShowExamModal(true);
+              } else {
+                navigate('/dashboard');
+              }
+            }}
+            className="w-full bg-[#0000FE] hover:bg-blue-700 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3 animate-pulse"
           >
-            Go to Dashboard to Start Exam
+            {pendingExams.length > 0 ? 'Start Exam Now' : 'Go to Dashboard to Start Exam'}
             <ArrowRight size={20} />
           </button>
         ) : null}
       </div>
+
+      {showExamModal && pendingExams.length > 0 && (
+        <OnlineExamModal
+          examId={pendingExams[0].exam}
+          examTitle={pendingExams[0].exam_title}
+          examClass={pendingExams[0].exam_class}
+          examDuration={pendingExams[0].exam_duration}
+          onClose={() => {
+            setShowExamModal(false);
+            if (user && user.role === 'STUDENT') {
+              api.get('/academic/online-exams/my-pending/').then(res => setPendingExams(res.data));
+            }
+          }}
+        />
+      )}
     </div>
   );
 };
