@@ -1321,7 +1321,9 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
         total_questions = len(exam.questions)
         for idx, q in enumerate(exam.questions):
             q_type = q.get("question_type", "multiple_choice")
-            student_ans = submitted_answers.get(str(idx)) or submitted_answers.get(idx)
+            student_ans = submitted_answers.get(str(idx))
+            if student_ans is None:
+                student_ans = submitted_answers.get(idx)
             if student_ans is not None:
                 if q_type == "text":
                     correct_text = q.get("correct_answer_text") or ""
