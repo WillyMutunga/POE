@@ -55,8 +55,10 @@ const OnlineExams = () => {
     setQuestions([
       {
         question_text: '',
+        question_type: 'multiple_choice',
         options: ['', ''],
-        correct_option_index: 0
+        correct_option_index: 0,
+        correct_answer_text: ''
       }
     ]);
     setShowModal(true);
@@ -77,8 +79,10 @@ const OnlineExams = () => {
       ...questions,
       {
         question_text: '',
+        question_type: 'multiple_choice',
         options: ['', ''],
-        correct_option_index: 0
+        correct_option_index: 0,
+        correct_answer_text: ''
       }
     ]);
   };
@@ -123,6 +127,27 @@ const OnlineExams = () => {
     setQuestions(updated);
   };
 
+  const handleQuestionTypeChange = (qIdx, type) => {
+    const updated = [...questions];
+    updated[qIdx].question_type = type;
+    if (type === 'text') {
+      updated[qIdx].options = [];
+      updated[qIdx].correct_option_index = 0;
+      updated[qIdx].correct_answer_text = updated[qIdx].correct_answer_text || '';
+    } else {
+      updated[qIdx].options = updated[qIdx].options?.length ? updated[qIdx].options : ['', ''];
+      updated[qIdx].correct_option_index = updated[qIdx].correct_option_index || 0;
+      updated[qIdx].correct_answer_text = '';
+    }
+    setQuestions(updated);
+  };
+
+  const handleCorrectAnswerTextChange = (qIdx, val) => {
+    const updated = [...questions];
+    updated[qIdx].correct_answer_text = val;
+    setQuestions(updated);
+  };
+
   const handleSaveExam = async (e) => {
     e.preventDefault();
     if (!examTitle.trim()) {
@@ -134,14 +159,26 @@ const OnlineExams = () => {
       return;
     }
     for (let i = 0; i < questions.length; i++) {
-      if (!questions[i].question_text.trim()) {
+      const q = questions[i];
+      if (!q.question_text.trim()) {
         alert(`Please fill in the text for question #${i + 1}.`);
         return;
       }
-      for (let j = 0; j < questions[i].options.length; j++) {
-        if (!questions[i].options[j].trim()) {
-          alert(`Option #${j + 1} for question #${i + 1} cannot be empty.`);
+      if (q.question_type === 'text') {
+        if (!q.correct_answer_text || !q.correct_answer_text.trim()) {
+          alert(`Please fill in the correct answer response for question #${i + 1}.`);
           return;
+        }
+      } else {
+        if (!q.options || q.options.length < 2) {
+          alert(`Please add at least 2 options for question #${i + 1}.`);
+          return;
+        }
+        for (let j = 0; j < q.options.length; j++) {
+          if (!q.options[j].trim()) {
+            alert(`Option #${j + 1} for question #${i + 1} cannot be empty.`);
+            return;
+          }
         }
       }
     }
@@ -406,21 +443,22 @@ const OnlineExams = () => {
                 <div className="space-y-8">
                   {questions.map((q, qIdx) => (
                     <div key={qIdx} className="p-6 bg-slate-50/50 border border-slate-100 rounded-2xl space-y-5 relative">
-                      <div className="flex justify-between items-start gap-4">
-                        <span className="w-8 h-8 rounded-full bg-[#0000FE] text-white flex items-center justify-center font-black text-xs">
-                          {qIdx + 1}
-                        </span>
-                        
-                        <div className="flex-1 space-y-2">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Question Text</label>
-                          <textarea
-                            required
-                            rows="2"
-                            value={q.question_text}
-                            onChange={(e) => handleQuestionTextChange(qIdx, e.target.value)}
-                            placeholder="Type the question details..."
-                            className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-slate-700"
-                          />
+                      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                        <div className="flex items-center gap-3">
+                          <span className="w-8 h-8 rounded-full bg-[#0000FE] text-white flex items-center justify-center font-black text-xs shrink-0">
+                            {qIdx + 1}
+                          </span>
+                          <div className="flex items-center gap-2 bg-white border border-slate-100 rounded-xl px-3 py-1.5 shadow-xs">
+                            <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Style</span>
+                            <select
+                              value={q.question_type || 'multiple_choice'}
+                              onChange={(e) => handleQuestionTypeChange(qIdx, e.target.value)}
+                              className="bg-transparent font-bold text-xs text-slate-700 focus:outline-none cursor-pointer"
+                            >
+                              <option value="multiple_choice">Multiple Choice</option>
+                              <option value="text">Written response (Text)</option>
+                            </select>
+                          </div>
                         </div>
 
                         {questions.length > 1 && (
@@ -435,62 +473,88 @@ const OnlineExams = () => {
                         )}
                       </div>
 
-                      {/* Options Section */}
-                      <div className="pl-12 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Options & Correct Answer</label>
-                          <button
-                            type="button"
-                            onClick={() => handleAddOption(qIdx)}
-                            className="text-[10px] font-black text-[#0000FE] uppercase tracking-wider hover:underline"
-                          >
-                            + Add Option
-                          </button>
-                        </div>
-
-                        <div className="space-y-2.5">
-                          {q.options.map((opt, optIdx) => (
-                            <div key={optIdx} className="flex items-center gap-3">
-                              {/* Radio for correct answer */}
-                              <label className="flex items-center justify-center cursor-pointer shrink-0" title="Mark as correct answer">
-                                <input
-                                  type="radio"
-                                  name={`correct_${qIdx}`}
-                                  checked={q.correct_option_index === optIdx}
-                                  onChange={() => handleCorrectOptionChange(qIdx, optIdx)}
-                                  className="sr-only"
-                                />
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                                  q.correct_option_index === optIdx 
-                                    ? 'bg-[#0000FE] border-[#0000FE] text-white scale-110' 
-                                    : 'border-slate-300 hover:border-slate-400 bg-white'
-                                }`}>
-                                  {q.correct_option_index === optIdx && <Check size={12} strokeWidth={3} />}
-                                </div>
-                              </label>
-
-                              <input
-                                type="text"
-                                required
-                                value={opt}
-                                onChange={(e) => handleOptionTextChange(qIdx, optIdx, e.target.value)}
-                                placeholder={`Option ${optIdx + 1}`}
-                                className="flex-1 px-4 py-2.5 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-xs"
-                              />
-
-                              {q.options.length > 2 && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveOption(qIdx, optIdx)}
-                                  className="text-slate-400 hover:text-red-500 transition-all p-1"
-                                >
-                                  <X size={14} />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Question Text</label>
+                        <textarea
+                          required
+                          rows="2"
+                          value={q.question_text}
+                          onChange={(e) => handleQuestionTextChange(qIdx, e.target.value)}
+                          placeholder="Type the question details..."
+                          className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-slate-700"
+                        />
                       </div>
+
+                      {/* Options or Text Correct Response Section */}
+                      {q.question_type === 'text' ? (
+                        <div className="pl-12 space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Correct Response (Case Insensitive)</label>
+                          <input
+                            type="text"
+                            required
+                            value={q.correct_answer_text || ''}
+                            onChange={(e) => handleCorrectAnswerTextChange(qIdx, e.target.value)}
+                            placeholder="Type the expected correct response text..."
+                            className="w-full px-4 py-3 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-xs"
+                          />
+                        </div>
+                      ) : (
+                        <div className="pl-12 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Options & Correct Answer</label>
+                            <button
+                              type="button"
+                              onClick={() => handleAddOption(qIdx)}
+                              className="text-[10px] font-black text-[#0000FE] uppercase tracking-wider hover:underline"
+                            >
+                              + Add Option
+                            </button>
+                          </div>
+
+                          <div className="space-y-2.5">
+                            {(q.options || []).map((opt, optIdx) => (
+                              <div key={optIdx} className="flex items-center gap-3">
+                                {/* Radio for correct answer */}
+                                <label className="flex items-center justify-center cursor-pointer shrink-0" title="Mark as correct answer">
+                                  <input
+                                    type="radio"
+                                    name={`correct_${qIdx}`}
+                                    checked={q.correct_option_index === optIdx}
+                                    onChange={() => handleCorrectOptionChange(qIdx, optIdx)}
+                                    className="sr-only"
+                                  />
+                                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                                    q.correct_option_index === optIdx 
+                                      ? 'bg-[#0000FE] border-[#0000FE] text-white scale-110' 
+                                      : 'border-slate-300 hover:border-slate-400 bg-white'
+                                  }`}>
+                                    {q.correct_option_index === optIdx && <Check size={12} strokeWidth={3} />}
+                                  </div>
+                                </label>
+
+                                <input
+                                  type="text"
+                                  required
+                                  value={opt}
+                                  onChange={(e) => handleOptionTextChange(qIdx, optIdx, e.target.value)}
+                                  placeholder={`Option ${optIdx + 1}`}
+                                  className="flex-1 px-4 py-2.5 bg-white border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-xs"
+                                />
+
+                                {(q.options || []).length > 2 && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveOption(qIdx, optIdx)}
+                                    className="text-slate-400 hover:text-red-500 transition-all p-1"
+                                  >
+                                    <X size={14} />
+                                  </button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

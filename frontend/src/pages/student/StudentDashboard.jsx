@@ -586,35 +586,53 @@ const StudentDashboard = () => {
                         {q.question_text}
                       </h3>
 
-                      <div className="grid grid-cols-1 gap-3">
-                        {q.options?.map((opt, optIdx) => {
-                          const isSelected = examAnswers[qIdx] === optIdx;
-                          return (
-                            <button
-                              key={optIdx}
-                              type="button"
-                              onClick={() => {
-                                setExamAnswers({
-                                  ...examAnswers,
-                                  [qIdx]: optIdx
-                                });
-                              }}
-                              className={`w-full text-left p-4 rounded-2xl border font-bold text-xs flex justify-between items-center transition-all ${
-                                isSelected
-                                  ? 'bg-blue-50/50 border-[#0000FE] text-[#0000FE] scale-[1.01]'
-                                  : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
-                              }`}
-                            >
-                              <span>{opt}</span>
-                              <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
-                                isSelected ? 'bg-[#0000FE] border-[#0000FE] text-white' : 'border-slate-300'
-                              }`}>
-                                {isSelected && <CheckCircle size={12} />}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
+                      {q.question_type === 'text' ? (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">Your Response</label>
+                          <input
+                            type="text"
+                            value={examAnswers[qIdx] || ''}
+                            onChange={(e) => {
+                              setExamAnswers({
+                                ...examAnswers,
+                                [qIdx]: e.target.value
+                              });
+                            }}
+                            placeholder="Type your response here..."
+                            className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold text-xs"
+                          />
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                          {q.options?.map((opt, optIdx) => {
+                            const isSelected = examAnswers[qIdx] === optIdx;
+                            return (
+                              <button
+                                key={optIdx}
+                                type="button"
+                                onClick={() => {
+                                  setExamAnswers({
+                                    ...examAnswers,
+                                    [qIdx]: optIdx
+                                  });
+                                }}
+                                className={`w-full text-left p-4 rounded-2xl border font-bold text-xs flex justify-between items-center transition-all ${
+                                  isSelected
+                                    ? 'bg-blue-50/50 border-[#0000FE] text-[#0000FE] scale-[1.01]'
+                                    : 'bg-white border-slate-100 text-slate-600 hover:bg-slate-50'
+                                }`}
+                              >
+                                <span>{opt}</span>
+                                <div className={`w-5 h-5 rounded-full border flex items-center justify-center shrink-0 ${
+                                  isSelected ? 'bg-[#0000FE] border-[#0000FE] text-white' : 'border-slate-300'
+                                }`}>
+                                  {isSelected && <CheckCircle size={12} />}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

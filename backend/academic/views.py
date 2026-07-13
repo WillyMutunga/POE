@@ -1270,11 +1270,12 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
             attendance.started_at = timezone.now()
             attendance.save()
             
-        # Return exam questions and duration (excluding correct_option_index for security!)
+        # Return exam questions and duration (excluding correct_option_index and correct_answer_text for security!)
         safe_questions = []
         for q in exam.questions:
             safe_questions.append({
                 "question_text": q.get("question_text", ""),
+                "question_type": q.get("question_type", "multiple_choice"),
                 "options": q.get("options", [])
             })
             
@@ -1312,21 +1313,27 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
             # Still grade whatever is submitted or force 0. We'll grade what's in the request.
             pass
             
-        submitted_answers = request.data.get("answers", {})  # e.g. {"0": 1, "1": 3}
+        submitted_answers = request.data.get("answers", {})  # e.g. {"0": "my text"} or {"0": 1}
         attendance.answers = submitted_answers
         
         # Grade questions
         correct_count = 0
         total_questions = len(exam.questions)
         for idx, q in enumerate(exam.questions):
-            correct_idx = q.get("correct_option_index")
+            q_type = q.get("question_type", "multiple_choice")
             student_ans = submitted_answers.get(str(idx)) or submitted_answers.get(idx)
             if student_ans is not None:
-                try:
-                    if int(student_ans) == int(correct_idx):
+                if q_type == "text":
+                    correct_text = q.get("correct_answer_text") or ""
+                    if str(student_ans).strip().lower() == str(correct_text).strip().lower():
                         correct_count += 1
-                except (ValueError, TypeError):
-                    pass
+                else:
+                    correct_idx = q.get("correct_option_index")
+                    try:
+                        if int(student_ans) == int(correct_idx):
+                            correct_count += 1
+                    except (ValueError, TypeError):
+                        pass
                     
         score_pct = (correct_count / total_questions * 100.0) if total_questions > 0 else 0.0
         
