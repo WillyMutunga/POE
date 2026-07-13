@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import api from '../../api';
 import { 
   LayoutDashboard, 
   BookOpen, 
@@ -27,6 +28,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
   const [courseMgmtOpen, setCourseMgmtOpen] = useState(false);
 
   const closeSidebar = () => setIsOpen(false);
+  const [hasPendingExams, setHasPendingExams] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role === 'STUDENT') {
+      const checkPending = async () => {
+        try {
+          const res = await api.get('/academic/online-exams/my-pending/');
+          setHasPendingExams(res.data.length > 0);
+        } catch (e) {
+          console.error(e);
+        }
+      };
+      checkPending();
+      const interval = setInterval(checkPending, 60000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   const studentLinks = [
     { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -134,6 +152,23 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               <FileText size={22} />
               <span>My Portfolios</span>
             </NavLink>
+
+            {hasPendingExams && (
+              <NavLink
+                to="/student/online-exams"
+                className={({ isActive }) => 
+                  `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
+                    isActive 
+                    ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
+                    : 'bg-red-500/10 text-red-600 border border-red-500/20 hover:bg-red-500/20'
+                  }`
+                }
+              >
+                <FileText size={22} />
+                <span>Online Exams</span>
+                <span className="ml-auto w-2 h-2 bg-red-500 rounded-full animate-ping"></span>
+              </NavLink>
+            )}
 
             {/* Collapsible Academics Section */}
             <div className="space-y-1">

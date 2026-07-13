@@ -33,6 +33,7 @@ import NotificationDetail from './pages/NotificationDetail';
 import Landing from './pages/Landing';
 import ProvisionalResults from './pages/student/ProvisionalResults';
 import StudentDownloads from './pages/student/StudentDownloads';
+import StudentOnlineExams from './pages/student/StudentOnlineExams';
 import Gradebook from './pages/instructor/Gradebook';
 import ExamRepository from './pages/instructor/ExamRepository';
 import GradingCriteria from './pages/admin/GradingCriteria';
@@ -161,6 +162,17 @@ function App() {
               <ProtectedRoute allowedRoles={['STUDENT']}>
                 <DashboardLayout>
                   <StudentDownloads />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/student/online-exams" 
+            element={
+              <ProtectedRoute allowedRoles={['STUDENT']}>
+                <DashboardLayout>
+                  <StudentOnlineExams />
                 </DashboardLayout>
               </ProtectedRoute>
             } 
