@@ -74,7 +74,7 @@ const NotificationDetail = () => {
           {notification.message}
         </p>
 
-        {notification.target_url && (
+        {notification.target_url ? (
           <button 
             onClick={() => navigate(notification.target_url)}
             className="w-full bg-[#0000FE] hover:bg-[#0000FE]/90 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
@@ -82,7 +82,15 @@ const NotificationDetail = () => {
             {notification.action_text || 'Take Action'}
             <ArrowRight size={20} />
           </button>
-        )}
+        ) : (notification.title === 'New Online Exam Assigned' || notification.message.toLowerCase().includes('online exam')) ? (
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="w-full bg-[#0000FE] hover:bg-[#0000FE]/90 text-white p-6 rounded-3xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-3"
+          >
+            Go to Dashboard to Start Exam
+            <ArrowRight size={20} />
+          </button>
+        ) : null}
       </div>
     </div>
   );

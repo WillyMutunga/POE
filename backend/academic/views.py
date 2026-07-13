@@ -1383,7 +1383,9 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
                                 user=student_user,
                                 title="New Online Exam Assigned",
                                 message=f"You have been registered for the online exam: {exam.title} for class {exam.class_name}. Please complete it before expiration.",
-                                notification_type=Notification.NotificationType.SYSTEM_ALERT
+                                notification_type=Notification.NotificationType.SYSTEM_ALERT,
+                                target_url="/dashboard",
+                                action_text="Start Exam Now"
                             )
             return Response({
                 "status": "success",
