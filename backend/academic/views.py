@@ -1215,7 +1215,7 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
             return OnlineExam.objects.filter(id__in=exam_ids, is_active=True)
         return OnlineExam.objects.all()
 
-    @action(detail=False, methods=['get'])
+    @action(detail=False, methods=['get'], url_path='my-pending')
     def my_pending(self, request):
         if request.user.role != 'STUDENT':
             return Response({"error": "Only students have pending exams."}, status=400)
