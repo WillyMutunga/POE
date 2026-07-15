@@ -278,7 +278,8 @@ const Certificates = () => {
   };
 
   const handleDownloadPDF = (id) => {
-    window.open(`https://poe.headwaycollege.ac.ke/api/academic/certificates/${id}/download-pdf/`, '_blank');
+    const token = localStorage.getItem('access_token');
+    window.open(`https://poe.headwaycollege.ac.ke/api/academic/certificates/${id}/download-pdf/?token=${token}`, '_blank');
   };
 
   const filteredCertificates = certificates.filter(c => 

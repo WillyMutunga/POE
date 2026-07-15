@@ -1435,8 +1435,23 @@ class CertificateViewSet(viewsets.ModelViewSet):
             return Certificate.objects.filter(student=user).order_by('-created_at')
         return Certificate.objects.none()
 
-    @action(detail=True, methods=['get'], url_path='download-pdf')
+    @action(detail=True, methods=['get'], permission_classes=[permissions.AllowAny], url_path='download-pdf')
     def download_pdf(self, request, pk=None):
+        if not request.user or request.user.is_anonymous:
+            token = request.query_params.get('token')
+            if token:
+                from rest_framework_simplejwt.authentication import JWTAuthentication
+                from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
+                try:
+                    validated_token = JWTAuthentication().get_validated_token(token)
+                    user = JWTAuthentication().get_user(validated_token)
+                    request.user = user
+                except (InvalidToken, TokenError):
+                    return Response({"detail": "Invalid or expired download token."}, status=401)
+
+        if not request.user or request.user.is_anonymous:
+            return Response({"detail": "Authentication credentials were not provided."}, status=401)
+
         certificate = self.get_object()
         if request.user.role != 'ADMIN':
             reg_no = getattr(request.user, 'registration_number', '')
