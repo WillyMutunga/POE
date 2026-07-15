@@ -32,7 +32,16 @@ const Certificates = () => {
     modules_heading: "Modules Covered",
     footnote_text: "This Certificate was issued without any erasure or alterations whatsoever and Invalid without an Official Seal",
     director_title: "Director of Studies",
-    principal_title: "Principal"
+    principal_title: "Principal",
+    logo_size: 70,
+    primary_color: "#0000FE",
+    secondary_color: "#dc2626",
+    college_name_font_size: 20,
+    title_font_size: 24,
+    student_name_font_size: 22,
+    award_title_font_size: 14,
+    modules_font_size: 10,
+    spacing_multiplier: 1.0
   });
   
   // Roster management
@@ -561,6 +570,132 @@ const Certificates = () => {
             </div>
           </div>
 
+          <div className="border-t border-slate-100 pt-6 space-y-4">
+            <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider">Visual Design & Layout Styling</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-slate-700">
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Primary Color (Hex)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={template.primary_color || "#0000FE"}
+                    onChange={(e) => setTemplate({ ...template, primary_color: e.target.value })}
+                    className="h-10 w-12 border border-slate-200 rounded-xl cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={template.primary_color || "#0000FE"}
+                    onChange={(e) => setTemplate({ ...template, primary_color: e.target.value })}
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Secondary Color (Hex)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={template.secondary_color || "#dc2626"}
+                    onChange={(e) => setTemplate({ ...template, secondary_color: e.target.value })}
+                    className="h-10 w-12 border border-slate-200 rounded-xl cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={template.secondary_color || "#dc2626"}
+                    onChange={(e) => setTemplate({ ...template, secondary_color: e.target.value })}
+                    className="flex-1 px-4 py-2 border border-slate-200 rounded-xl focus:outline-none focus:border-blue-500 text-sm font-semibold"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Logo Size: {template.logo_size || 70}px</label>
+                <input
+                  type="range"
+                  min="40"
+                  max="120"
+                  value={template.logo_size || 70}
+                  onChange={(e) => setTemplate({ ...template, logo_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Spacing Multiplier: {template.spacing_multiplier || 1.0}x</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="1.5"
+                  step="0.1"
+                  value={template.spacing_multiplier || 1.0}
+                  onChange={(e) => setTemplate({ ...template, spacing_multiplier: parseFloat(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">College Name Font: {template.college_name_font_size || 20}px</label>
+                <input
+                  type="range"
+                  min="12"
+                  max="32"
+                  value={template.college_name_font_size || 20}
+                  onChange={(e) => setTemplate({ ...template, college_name_font_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Certificate Title Font: {template.title_font_size || 24}px</label>
+                <input
+                  type="range"
+                  min="16"
+                  max="40"
+                  value={template.title_font_size || 24}
+                  onChange={(e) => setTemplate({ ...template, title_font_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Student Name Font: {template.student_name_font_size || 22}px</label>
+                <input
+                  type="range"
+                  min="14"
+                  max="36"
+                  value={template.student_name_font_size || 22}
+                  onChange={(e) => setTemplate({ ...template, student_name_font_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Award Title Font: {template.award_title_font_size || 14}px</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="24"
+                  value={template.award_title_font_size || 14}
+                  onChange={(e) => setTemplate({ ...template, award_title_font_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-slate-700 text-xs font-bold uppercase tracking-wider">Modules List Font: {template.modules_font_size || 10}px</label>
+                <input
+                  type="range"
+                  min="8"
+                  max="16"
+                  value={template.modules_font_size || 10}
+                  onChange={(e) => setTemplate({ ...template, modules_font_size: parseInt(e.target.value) })}
+                  className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+
           <div className="flex justify-end pt-4 border-t border-slate-100">
             <button
               type="submit"
@@ -577,17 +712,24 @@ const Certificates = () => {
       {activeTab === 'preview' && (
         <div className="bg-slate-100 p-8 rounded-3xl border border-slate-200 flex justify-center overflow-x-auto">
           {/* Certificate Mock HTML Visual Layout */}
-          <div className="bg-white border-8 border-double border-blue-900 p-12 w-[600px] min-h-[820px] rounded-sm relative text-center flex flex-col justify-between shadow-2xl overflow-hidden">
+          <div 
+            className="bg-white border-8 border-double p-12 w-[600px] min-h-[820px] rounded-sm relative text-center flex flex-col justify-between shadow-2xl overflow-hidden"
+            style={{ 
+              borderColor: template.primary_color || '#0000FE',
+              paddingTop: `${24 * (template.spacing_multiplier || 1.0)}px`,
+              paddingBottom: `${24 * (template.spacing_multiplier || 1.0)}px`
+            }}
+          >
             {/* Watermark Logo */}
             <div className="absolute inset-0 flex items-center justify-center opacity-[0.04] pointer-events-none">
               <img src="/logo1.png" alt="" className="w-80 h-80 object-contain" onError={(e) => e.target.style.display = 'none'} />
             </div>
 
             {/* Stars Corner Ornaments */}
-            <div className="absolute top-4 left-4 text-red-600 font-bold text-xl">★</div>
-            <div className="absolute top-4 right-4 text-red-600 font-bold text-xl">★</div>
-            <div className="absolute bottom-4 left-4 text-red-600 font-bold text-xl">★</div>
-            <div className="absolute bottom-4 right-4 text-red-600 font-bold text-xl">★</div>
+            <div className="absolute top-4 left-4 font-bold text-xl" style={{ color: template.secondary_color || '#dc2626' }}>★</div>
+            <div className="absolute top-4 right-4 font-bold text-xl" style={{ color: template.secondary_color || '#dc2626' }}>★</div>
+            <div className="absolute bottom-4 left-4 font-bold text-xl" style={{ color: template.secondary_color || '#dc2626' }}>★</div>
+            <div className="absolute bottom-4 right-4 font-bold text-xl" style={{ color: template.secondary_color || '#dc2626' }}>★</div>
 
             {/* Ref / Reg Line */}
             <div className="flex justify-between items-center text-[9px] font-bold text-slate-500">
@@ -596,63 +738,124 @@ const Certificates = () => {
             </div>
 
             {/* Logo placeholder */}
-            <div className="mt-2 flex justify-center">
-              <div className="w-14 h-14 bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center">
-                <Award className="text-indigo-800" size={24} />
+            <div className="mt-2 flex justify-center" style={{ marginTop: `${4 * (template.spacing_multiplier || 1.0)}px`, marginBottom: `${4 * (template.spacing_multiplier || 1.0)}px` }}>
+              <div 
+                className="bg-indigo-50 border border-indigo-100 rounded-full flex items-center justify-center transition-all duration-200"
+                style={{ 
+                  width: `${template.logo_size || 70}px`, 
+                  height: `${template.logo_size || 70}px` 
+                }}
+              >
+                <Award className="text-indigo-800" size={Math.min(36, Math.max(18, (template.logo_size || 70) * 0.35))} />
               </div>
             </div>
 
             {/* Heading Headers */}
-            <div className="space-y-1">
-              <h2 className="text-blue-950 font-black text-base tracking-wide leading-none">{template.college_name}</h2>
-              <h3 className="text-red-600 font-bold text-xs tracking-wider leading-none">OF PROFESSIONAL STUDIES</h3>
+            <div className="space-y-1" style={{ marginBottom: `${4 * (template.spacing_multiplier || 1.0)}px` }}>
+              <h2 
+                className="font-black tracking-wide leading-none"
+                style={{ 
+                  color: template.primary_color || '#0000FE',
+                  fontSize: `${template.college_name_font_size || 20}px`
+                }}
+              >
+                {template.college_name}
+              </h2>
+              <h3 
+                className="font-bold text-xs tracking-wider leading-none"
+                style={{ color: template.secondary_color || '#dc2626' }}
+              >
+                OF PROFESSIONAL STUDIES
+              </h3>
               <p className="text-slate-500 italic text-[8px]">{template.college_motto}</p>
             </div>
 
             {/* Title */}
-            <div>
-              <h1 className="text-red-700 font-serif font-extrabold text-2xl tracking-normal">{template.title}</h1>
+            <div style={{ marginBottom: `${4 * (template.spacing_multiplier || 1.0)}px` }}>
+              <h1 
+                className="font-serif font-extrabold tracking-normal"
+                style={{ 
+                  color: template.secondary_color || '#dc2626',
+                  fontSize: `${template.title_font_size || 24}px`
+                }}
+              >
+                {template.title}
+              </h1>
               <p className="text-slate-800 italic text-xs font-serif mt-1">{template.sub_title}</p>
-              <div className="text-red-600 text-xs mt-1">♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦</div>
+              <div className="text-xs mt-1" style={{ color: template.secondary_color || '#dc2626' }}>♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦ ♦</div>
             </div>
 
             {/* Intro text */}
-            <div className="space-y-2">
+            <div className="space-y-2" style={{ marginBottom: `${4 * (template.spacing_multiplier || 1.0)}px` }}>
               <p className="text-slate-700 text-[10px] leading-tight max-w-[420px] mx-auto">{template.intro_text}</p>
-              <h3 className="text-red-600 font-bold text-sm tracking-wide">{awardTitle}</h3>
-              <h2 className="text-blue-900 font-black font-serif text-lg tracking-wide underline decoration-double decoration-indigo-200">
+              <h3 
+                className="font-bold tracking-wide"
+                style={{ 
+                  color: template.secondary_color || '#dc2626',
+                  fontSize: `${template.award_title_font_size || 14}px`
+                }}
+              >
+                {awardTitle}
+              </h3>
+              <h2 
+                className="font-black font-serif tracking-wide underline decoration-double decoration-indigo-200"
+                style={{ 
+                  color: template.primary_color || '#0000FE',
+                  fontSize: `${template.student_name_font_size || 22}px`
+                }}
+              >
                 {studentName || '{name}'}
               </h2>
             </div>
 
             {/* Modules Title */}
-            <div>
-              <h4 className="text-blue-900 font-extrabold text-xs tracking-wider uppercase">{template.modules_heading}</h4>
+            <div style={{ marginBottom: `${4 * (template.spacing_multiplier || 1.0)}px` }}>
+              <h4 
+                className="font-extrabold text-xs tracking-wider uppercase"
+                style={{ color: template.primary_color || '#0000FE' }}
+              >
+                {template.modules_heading}
+              </h4>
             </div>
 
             {/* Modules Grid */}
-            <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-[9px] font-bold text-slate-800 text-left max-w-md mx-auto">
+            <div 
+              className="grid grid-cols-2 gap-x-4 gap-y-1.5 font-bold text-slate-800 text-left max-w-md mx-auto w-full"
+              style={{ 
+                fontSize: `${template.modules_font_size || 10}px`,
+                marginBottom: `${10 * (template.spacing_multiplier || 1.0)}px`
+              }}
+            >
               {modulesCovered.filter(m => m.checked).map((mod, i) => (
                 <div key={i} className="flex items-center gap-1.5 truncate">
-                  <span className="text-red-600 text-[9px] font-bold">✔</span>
+                  <span className="font-bold" style={{ color: template.secondary_color || '#dc2626', fontSize: `${template.modules_font_size || 10}px` }}>✔</span>
                   <span>{mod.name}</span>
                 </div>
               ))}
             </div>
 
             {/* Earned Section */}
-            <div>
-              <p className="text-blue-800 italic font-serif text-[10px]">This Certification Earned on</p>
-              <p className="text-blue-900 font-extrabold text-xs underline decoration-blue-500/30">{dateEarned}</p>
+            <div style={{ marginBottom: `${15 * (template.spacing_multiplier || 1.0)}px` }}>
+              <p className="italic font-serif text-[10px]" style={{ color: template.primary_color || '#0000FE' }}>This Certification Earned on</p>
+              <p className="font-extrabold text-xs underline decoration-blue-500/30" style={{ color: template.primary_color || '#0000FE' }}>{dateEarned}</p>
             </div>
 
             {/* Signatures & Seal */}
-            <div className="flex justify-between items-end mt-4 border-t border-slate-100 pt-4 relative">
+            <div 
+              className="flex justify-between items-end border-t border-slate-100 pt-4 relative"
+              style={{ marginTop: `${15 * (template.spacing_multiplier || 1.0)}px` }}
+            >
               {/* Seal placement visual */}
               <div className="absolute left-1/2 bottom-0 -translate-x-1/2 flex flex-col items-center">
-                <div className="w-14 h-14 bg-red-600 border-2 border-red-700 rounded-full flex items-center justify-center shadow-lg relative">
+                <div 
+                  className="w-14 h-14 border-2 rounded-full flex items-center justify-center shadow-lg relative"
+                  style={{ 
+                    backgroundColor: template.secondary_color || '#dc2626',
+                    borderColor: template.secondary_color || '#dc2626'
+                  }}
+                >
                   <div className="w-10 h-10 border border-white/20 rounded-full border-dashed"></div>
-                  {/* QR widget mockup */}
+                  {/* QR mockup */}
                   <div className="absolute bottom-1 bg-white p-0.5 rounded-sm">
                     <div className="w-3.5 h-3.5 bg-slate-900"></div>
                   </div>
@@ -660,16 +863,16 @@ const Certificates = () => {
               </div>
 
               <div className="text-slate-800 text-[9px] text-center border-t border-slate-400 pt-1 w-36">
-                Director of Studies
+                {template.director_title}
               </div>
 
               <div className="text-slate-800 text-[9px] text-center border-t border-slate-400 pt-1 w-36">
-                Principal
+                {template.principal_title}
               </div>
             </div>
 
             {/* Footnote */}
-            <div className="mt-4 space-y-1">
+            <div className="mt-4 space-y-1" style={{ marginTop: `${10 * (template.spacing_multiplier || 1.0)}px` }}>
               <p className="text-[7px] text-slate-500 italic max-w-sm mx-auto">{template.footnote_text}</p>
               <p className="text-[9px] text-slate-500 font-bold">Date: {printDate}</p>
             </div>

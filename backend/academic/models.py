@@ -232,6 +232,17 @@ class CertificateTemplate(models.Model):
     footnote_text = models.TextField(default="This Certificate was issued without any erasure or alterations whatsoever and Invalid without an Official Seal")
     director_title = models.CharField(max_length=255, default="Director of Studies")
     principal_title = models.CharField(max_length=255, default="Principal")
+    
+    # Styling parameters
+    logo_size = models.IntegerField(default=70)
+    primary_color = models.CharField(max_length=10, default="#0000FE") # Headway Blue
+    secondary_color = models.CharField(max_length=10, default="#dc2626") # Headway Red
+    college_name_font_size = models.IntegerField(default=20)
+    title_font_size = models.IntegerField(default=24)
+    student_name_font_size = models.IntegerField(default=22)
+    award_title_font_size = models.IntegerField(default=14)
+    modules_font_size = models.IntegerField(default=10)
+    spacing_multiplier = models.FloatField(default=1.0)
 
     def __str__(self):
         return f"Template: {self.college_name}"

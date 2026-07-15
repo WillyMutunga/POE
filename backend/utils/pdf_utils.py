@@ -710,22 +710,33 @@ def generate_certificate_pdf(certificate, template):
     
     width, height = A4
     
+    # Extract template styles or fall back to defaults
+    logo_sz = getattr(template, 'logo_size', 70)
+    p_color = getattr(template, 'primary_color', '#0000FE')
+    s_color = getattr(template, 'secondary_color', '#dc2626')
+    col_fs = getattr(template, 'college_name_font_size', 20)
+    tit_fs = getattr(template, 'title_font_size', 24)
+    name_fs = getattr(template, 'student_name_font_size', 22)
+    awd_fs = getattr(template, 'award_title_font_size', 14)
+    mod_fs = getattr(template, 'modules_font_size', 10)
+    sp_mul = getattr(template, 'spacing_multiplier', 1.0)
+    
     # Custom Canvas Drawer for Background border, watermark, stars, and seal
     def draw_background(canvas, doc):
         canvas.saveState()
         
-        # 1. Draw outer blue border (thick)
-        canvas.setStrokeColor(colors.HexColor("#0000FE")) # Headway Blue
+        # 1. Draw outer primary border (thick)
+        canvas.setStrokeColor(colors.HexColor(p_color))
         canvas.setLineWidth(3)
         canvas.rect(20, 20, width - 40, height - 40)
         
-        # 2. Draw inner red border (thin)
-        canvas.setStrokeColor(colors.HexColor("#dc2626")) # Red
+        # 2. Draw inner secondary border (thin)
+        canvas.setStrokeColor(colors.HexColor(s_color))
         canvas.setLineWidth(1)
         canvas.rect(25, 25, width - 50, height - 50)
         
-        # 3. Draw border stripes / corner ornaments (blue and red corners)
-        canvas.setFillColor(colors.HexColor("#0000FE"))
+        # 3. Draw border stripes / corner ornaments
+        canvas.setFillColor(colors.HexColor(p_color))
         # Top-left corner lines
         canvas.rect(20, height - 35, 15, 3, fill=True, stroke=False)
         canvas.rect(20, height - 35, 3, 15, fill=True, stroke=False)
@@ -757,10 +768,10 @@ def generate_certificate_pdf(certificate, template):
             canvas.drawPath(path, fill=True, stroke=True)
             canvas.restoreState()
             
-        draw_star(canvas, 45, height - 45, 12, colors.HexColor("#dc2626"))
-        draw_star(canvas, width - 45, height - 45, 12, colors.HexColor("#dc2626"))
-        draw_star(canvas, 45, 45, 12, colors.HexColor("#dc2626"))
-        draw_star(canvas, width - 45, 45, 12, colors.HexColor("#dc2626"))
+        draw_star(canvas, 45, height - 45, 12, colors.HexColor(s_color))
+        draw_star(canvas, width - 45, height - 45, 12, colors.HexColor(s_color))
+        draw_star(canvas, 45, 45, 12, colors.HexColor(s_color))
+        draw_star(canvas, width - 45, 45, 12, colors.HexColor(s_color))
         
         # 5. Draw faded watermark logo in the center
         logo_path = os.path.join(settings.BASE_DIR, 'utils', 'logo1.png')
@@ -771,9 +782,9 @@ def generate_certificate_pdf(certificate, template):
             canvas.drawImage(logo_path, width/2 - 175, height/2 - 150, width=350, height=350, mask='auto')
             canvas.restoreState()
             
-        # 6. Draw red jagged seal at the bottom center
-        canvas.setFillColor(colors.HexColor("#dc2626"))
-        canvas.setStrokeColor(colors.HexColor("#991b1b"))
+        # 6. Draw secondary color jagged seal at the bottom center
+        canvas.setFillColor(colors.HexColor(s_color))
+        canvas.setStrokeColor(colors.HexColor(s_color).clone(luminance=0.4))
         canvas.setLineWidth(1.5)
         points = []
         cx, cy = width / 2, 110
@@ -808,19 +819,19 @@ def generate_certificate_pdf(certificate, template):
     style_ref_left = ParagraphStyle('RefLeft', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor("#475569"))
     style_ref_right = ParagraphStyle('RefRight', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor("#475569"))
     
-    style_college_name = ParagraphStyle('CollegeName', fontName='Helvetica-Bold', fontSize=20, leading=24, textColor=colors.HexColor("#0000FE"), alignment=1)
-    style_college_dept = ParagraphStyle('CollegeDept', fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_college_name = ParagraphStyle('CollegeName', fontName='Helvetica-Bold', fontSize=col_fs, leading=col_fs + 4, textColor=colors.HexColor(p_color), alignment=1)
+    style_college_dept = ParagraphStyle('CollegeDept', fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor(s_color), alignment=1)
     style_college_motto = ParagraphStyle('CollegeMotto', fontName='Helvetica-Oblique', fontSize=8, leading=10, textColor=colors.HexColor("#475569"), alignment=1)
     
-    style_title = ParagraphStyle('CertTitle', fontName='Times-Bold', fontSize=24, leading=28, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_title = ParagraphStyle('CertTitle', fontName='Times-Bold', fontSize=tit_fs, leading=tit_fs + 4, textColor=colors.HexColor(s_color), alignment=1)
     style_certify = ParagraphStyle('Certify', fontName='Times-Italic', fontSize=15, leading=18, textColor=colors.HexColor("#0f172a"), alignment=1)
     
-    style_name = ParagraphStyle('StudentName', fontName='Times-Bold', fontSize=22, leading=26, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_name = ParagraphStyle('StudentName', fontName='Times-Bold', fontSize=name_fs, leading=name_fs + 4, textColor=colors.HexColor(p_color), alignment=1)
     style_intro = ParagraphStyle('Intro', fontName='Helvetica', fontSize=10, leading=14, textColor=colors.HexColor("#0f172a"), alignment=1)
-    style_award = ParagraphStyle('Award', fontName='Helvetica-Bold', fontSize=14, leading=18, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_award = ParagraphStyle('Award', fontName='Helvetica-Bold', fontSize=awd_fs, leading=awd_fs + 4, textColor=colors.HexColor(s_color), alignment=1)
     
-    style_modules_title = ParagraphStyle('ModulesTitle', fontName='Times-Bold', fontSize=12, leading=14, textColor=colors.HexColor("#0000FE"), alignment=1)
-    style_module_item = ParagraphStyle('ModuleItem', fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.HexColor("#0f172a"))
+    style_modules_title = ParagraphStyle('ModulesTitle', fontName='Times-Bold', fontSize=12, leading=14, textColor=colors.HexColor(p_color), alignment=1)
+    style_module_item = ParagraphStyle('ModuleItem', fontName='Helvetica-Bold', fontSize=mod_fs, leading=mod_fs + 2, textColor=colors.HexColor("#0f172a"))
     
     style_signature = ParagraphStyle('Sig', fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.HexColor("#0f172a"), alignment=1)
     style_footnote = ParagraphStyle('Footnote', fontName='Helvetica-Bold', fontSize=7, leading=9, textColor=colors.HexColor("#475569"), alignment=1)
@@ -842,45 +853,45 @@ def generate_certificate_pdf(certificate, template):
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     elements.append(ref_table)
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, int(10 * sp_mul)))
     
     # 2. Logo Row
     logo_path = os.path.join(settings.BASE_DIR, 'utils', 'logo1.png')
     if os.path.exists(logo_path):
-        elements.append(Image(logo_path, width=70, height=70, hAlign='CENTER'))
+        elements.append(Image(logo_path, width=logo_sz, height=logo_sz, hAlign='CENTER'))
     else:
-        elements.append(Spacer(1, 70))
+        elements.append(Spacer(1, logo_sz))
         
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, int(10 * sp_mul)))
     
     # 3. College Headers
     elements.append(Paragraph(template.college_name, style_college_name))
     elements.append(Paragraph("OF PROFESSIONAL STUDIES", style_college_dept))
     elements.append(Paragraph(template.college_motto, style_college_motto))
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, int(20 * sp_mul)))
     
     # 4. Title & Certify
     elements.append(Paragraph(template.title, style_title))
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, int(15 * sp_mul)))
     elements.append(Paragraph(template.sub_title, style_certify))
     
     # 5. Red Dots Divider
     dots_text = "♦ " * 28
-    style_dots = ParagraphStyle('Dots', fontName='Helvetica', fontSize=10, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_dots = ParagraphStyle('Dots', fontName='Helvetica', fontSize=10, textColor=colors.HexColor(s_color), alignment=1)
     elements.append(Paragraph(dots_text, style_dots))
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, int(15 * sp_mul)))
     
     # 6. Intro text & Student Name
     elements.append(Paragraph(template.intro_text, style_intro))
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, int(15 * sp_mul)))
     elements.append(Paragraph(certificate.award_title, style_award))
-    elements.append(Spacer(1, 10))
+    elements.append(Spacer(1, int(10 * sp_mul)))
     elements.append(Paragraph(certificate.student_name, style_name))
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, int(15 * sp_mul)))
     
     # 7. Modules Covered Title
     elements.append(Paragraph(template.modules_heading, style_modules_title))
-    elements.append(Spacer(1, 15))
+    elements.append(Spacer(1, int(15 * sp_mul)))
     
     # 8. Modules 2-Column Grid
     modules = certificate.modules_covered or []
@@ -890,7 +901,7 @@ def generate_certificate_pdf(certificate, template):
     modules_table_data = []
     def get_checkmark_flowable():
         d = Drawing(12, 12)
-        p = Path(strokeColor=colors.HexColor("#dc2626"), strokeWidth=2, fillColor=None)
+        p = Path(strokeColor=colors.HexColor(s_color), strokeWidth=2, fillColor=None)
         p.moveTo(2, 5)
         p.lineTo(5, 2)
         p.lineTo(10, 9)
@@ -924,18 +935,18 @@ def generate_certificate_pdf(certificate, template):
         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
     ]))
     elements.append(modules_table)
-    elements.append(Spacer(1, 20))
+    elements.append(Spacer(1, int(20 * sp_mul)))
     
     # 9. Certification Earned Date
-    style_earned = ParagraphStyle('Earned', fontName='Times-BoldItalic', fontSize=10, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_earned = ParagraphStyle('Earned', fontName='Times-BoldItalic', fontSize=10, textColor=colors.HexColor(p_color), alignment=1)
     elements.append(Paragraph("This Certification Earned on", style_earned))
     
     decor_dots = "═" * 32
-    style_decor = ParagraphStyle('Decor', fontName='Helvetica', fontSize=8, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_decor = ParagraphStyle('Decor', fontName='Helvetica', fontSize=8, textColor=colors.HexColor(p_color), alignment=1)
     elements.append(Paragraph(certificate.date_earned, style_earned))
     elements.append(Paragraph(decor_dots, style_decor))
     
-    elements.append(Spacer(1, 60))
+    elements.append(Spacer(1, int(60 * sp_mul)))
     
     # 10. Signatures Row
     sig_table_data = [
@@ -953,11 +964,11 @@ def generate_certificate_pdf(certificate, template):
     ]))
     elements.append(sig_table)
     
-    elements.append(Spacer(1, 45))
+    elements.append(Spacer(1, int(45 * sp_mul)))
     
     # 11. Footnote & Print Date
     elements.append(Paragraph(template.footnote_text, style_footnote))
-    elements.append(Spacer(1, 5))
+    elements.append(Spacer(1, int(5 * sp_mul)))
     elements.append(Paragraph(f"Date {certificate.print_date}", style_date))
 
     doc.build(elements, onFirstPage=draw_background)
