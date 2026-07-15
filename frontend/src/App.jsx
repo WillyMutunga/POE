@@ -42,6 +42,7 @@ import AdminExams from './pages/admin/AdminExams';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OnlineExams from './pages/admin/OnlineExams';
+import Certificates from './pages/admin/Certificates';
 
 
 // Placeholder components
@@ -295,6 +296,17 @@ function App() {
               <ProtectedRoute allowedRoles={['ADMIN']}>
                 <DashboardLayout>
                   <OnlineExams />
+                </DashboardLayout>
+              </ProtectedRoute>
+            } 
+          />
+
+          <Route 
+            path="/admin/certificates" 
+            element={
+              <ProtectedRoute allowedRoles={['ADMIN']}>
+                <DashboardLayout>
+                  <Certificates />
                 </DashboardLayout>
               </ProtectedRoute>
             } 

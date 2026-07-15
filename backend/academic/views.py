@@ -1401,3 +1401,57 @@ class OnlineExamViewSet(viewsets.ModelViewSet):
             
         OnlineExamAttendance.objects.filter(exam=exam, student_reg_no=reg_no.upper()).delete()
         return Response({"status": "student removed from attendance list"})
+
+from .models import CertificateTemplate, Certificate
+from .serializers import CertificateTemplateSerializer, CertificateSerializer
+from django.http import HttpResponse
+
+class CertificateTemplateViewSet(viewsets.ModelViewSet):
+    queryset = CertificateTemplate.objects.all()
+    serializer_class = CertificateTemplateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return [permissions.IsAuthenticated()]
+        # Only admins can create/update/delete templates
+        return [permissions.IsAuthenticated(), permissions.IsAdminUser()]
+
+class CertificateViewSet(viewsets.ModelViewSet):
+    queryset = Certificate.objects.all().order_by('-created_at')
+    serializer_class = CertificateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'ADMIN':
+            return Certificate.objects.all().order_by('-created_at')
+        elif user.role == 'STUDENT':
+            reg_no = getattr(user, 'registration_number', '')
+            if reg_no:
+                return Certificate.objects.filter(
+                    models.Q(student=user) | models.Q(registration_no=reg_no)
+                ).order_by('-created_at')
+            return Certificate.objects.filter(student=user).order_by('-created_at')
+        return Certificate.objects.none()
+
+    @action(detail=True, methods=['get'], url_path='download-pdf')
+    def download_pdf(self, request, pk=None):
+        certificate = self.get_object()
+        if request.user.role != 'ADMIN':
+            reg_no = getattr(request.user, 'registration_number', '')
+            is_owner = (certificate.student == request.user) or (reg_no and certificate.registration_no == reg_no)
+            if not is_owner:
+                return Response({"detail": "You do not have permission to download this certificate."}, status=403)
+        
+        template = CertificateTemplate.objects.first()
+        if not template:
+            template = CertificateTemplate.objects.create()
+            
+        from utils.pdf_utils import generate_certificate_pdf
+        pdf_bytes = generate_certificate_pdf(certificate, template)
+        
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        filename = f"Certificate_{certificate.cert_ref_no}_{certificate.student_name.replace(' ', '_')}.pdf"
+        response['Content-Disposition'] = f'inline; filename="{filename}"'
+        return response

@@ -458,7 +458,7 @@ class ExamRepositorySerializer(serializers.ModelSerializer):
     def get_instructor_name(self, obj):
         return obj.instructor.get_full_name()
 
-from .models import OnlineExam, OnlineExamAttendance
+from .models import OnlineExam, OnlineExamAttendance, CertificateTemplate, Certificate
 
 class OnlineExamSerializer(serializers.ModelSerializer):
     attendance_count = serializers.IntegerField(source='attendance.count', read_only=True)
@@ -475,3 +475,16 @@ class OnlineExamAttendanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = OnlineExamAttendance
         fields = ('id', 'exam', 'exam_title', 'exam_class', 'exam_duration', 'student_reg_no', 'has_started', 'started_at', 'has_submitted', 'submitted_at', 'score', 'answers')
+
+class CertificateTemplateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CertificateTemplate
+        fields = '__all__'
+
+class CertificateSerializer(serializers.ModelSerializer):
+    student_username = serializers.ReadOnlyField(source='student.username')
+    student_display_name = serializers.ReadOnlyField(source='student.get_full_name')
+
+    class Meta:
+        model = Certificate
+        fields = '__all__'

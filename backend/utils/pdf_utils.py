@@ -684,3 +684,284 @@ def generate_provisional_results_pdf(student, semester, marks, legend_data):
     pdf_bytes = buffer.getvalue()
     buffer.close()
     return pdf_bytes
+
+def generate_certificate_pdf(certificate, template):
+    import os
+    import math
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.graphics.shapes import Drawing, Path
+    from reportlab.graphics.barcode.qr import QrCodeWidget
+    from django.conf import settings
+    
+    buffer = BytesIO()
+    
+    # We will use exactly A4 size in portrait: width=595.27, height=841.89
+    doc = SimpleDocTemplate(
+        buffer, 
+        pagesize=A4, 
+        rightMargin=50, 
+        leftMargin=50, 
+        topMargin=50, 
+        bottomMargin=50
+    )
+    
+    width, height = A4
+    
+    # Custom Canvas Drawer for Background border, watermark, stars, and seal
+    def draw_background(canvas, doc):
+        canvas.saveState()
+        
+        # 1. Draw outer blue border (thick)
+        canvas.setStrokeColor(colors.HexColor("#0000FE")) # Headway Blue
+        canvas.setLineWidth(3)
+        canvas.rect(20, 20, width - 40, height - 40)
+        
+        # 2. Draw inner red border (thin)
+        canvas.setStrokeColor(colors.HexColor("#dc2626")) # Red
+        canvas.setLineWidth(1)
+        canvas.rect(25, 25, width - 50, height - 50)
+        
+        # 3. Draw border stripes / corner ornaments (blue and red corners)
+        canvas.setFillColor(colors.HexColor("#0000FE"))
+        # Top-left corner lines
+        canvas.rect(20, height - 35, 15, 3, fill=True, stroke=False)
+        canvas.rect(20, height - 35, 3, 15, fill=True, stroke=False)
+        # Top-right corner lines
+        canvas.rect(width - 35, height - 35, 15, 3, fill=True, stroke=False)
+        canvas.rect(width - 23, height - 35, 3, 15, fill=True, stroke=False)
+        # Bottom-left corner lines
+        canvas.rect(20, 32, 15, 3, fill=True, stroke=False)
+        canvas.rect(20, 20, 3, 15, fill=True, stroke=False)
+        # Bottom-right corner lines
+        canvas.rect(width - 35, 32, 15, 3, fill=True, stroke=False)
+        canvas.rect(width - 23, 20, 3, 15, fill=True, stroke=False)
+        
+        # 4. Draw stars in the 4 corners
+        def draw_star(canvas, x, y, radius, color):
+            canvas.saveState()
+            canvas.setFillColor(color)
+            canvas.setStrokeColor(color)
+            path = canvas.beginPath()
+            for i in range(5):
+                angle = i * 4 * math.pi / 5 - math.pi / 2
+                px = x + radius * math.cos(angle)
+                py = y + radius * math.sin(angle)
+                if i == 0:
+                    path.moveTo(px, py)
+                else:
+                    path.lineTo(px, py)
+            path.close()
+            canvas.drawPath(path, fill=True, stroke=True)
+            canvas.restoreState()
+            
+        draw_star(canvas, 45, height - 45, 12, colors.HexColor("#dc2626"))
+        draw_star(canvas, width - 45, height - 45, 12, colors.HexColor("#dc2626"))
+        draw_star(canvas, 45, 45, 12, colors.HexColor("#dc2626"))
+        draw_star(canvas, width - 45, 45, 12, colors.HexColor("#dc2626"))
+        
+        # 5. Draw faded watermark logo in the center
+        logo_path = os.path.join(settings.BASE_DIR, 'utils', 'logo1.png')
+        if os.path.exists(logo_path):
+            canvas.saveState()
+            canvas.setFillAlpha(0.06)
+            canvas.setStrokeAlpha(0.06)
+            canvas.drawImage(logo_path, width/2 - 175, height/2 - 150, width=350, height=350, mask='auto')
+            canvas.restoreState()
+            
+        # 6. Draw red jagged seal at the bottom center
+        canvas.setFillColor(colors.HexColor("#dc2626"))
+        canvas.setStrokeColor(colors.HexColor("#991b1b"))
+        canvas.setLineWidth(1.5)
+        points = []
+        cx, cy = width / 2, 110
+        r1, r2 = 36, 40
+        num_teeth = 60
+        for i in range(num_teeth * 2):
+            angle = i * math.pi / num_teeth
+            r = r1 if i % 2 == 0 else r2
+            points.append((cx + r * math.cos(angle), cy + r * math.sin(angle)))
+        path = canvas.beginPath()
+        path.moveTo(*points[0])
+        for pt in points[1:]:
+            path.lineTo(*pt)
+        path.close()
+        canvas.drawPath(path, fill=True, stroke=True)
+        
+        # Draw dynamic QR code centered over the seal
+        qr = QrCodeWidget(value=certificate.qr_code_text or f"https://poe.headwaycollege.ac.ke/verify/{certificate.cert_ref_no}")
+        qr.barWidth = 1.5
+        qr.barHeight = 1.5
+        qr_draw = Drawing(45, 45)
+        qr_draw.add(qr)
+        from reportlab.graphics import renderPDF
+        renderPDF.draw(qr_draw, canvas, cx - 22, cy - 22)
+        
+        canvas.restoreState()
+
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Custom Paragraph Styles
+    style_ref_left = ParagraphStyle('RefLeft', fontName='Helvetica-Bold', fontSize=8, textColor=colors.HexColor("#475569"))
+    style_ref_right = ParagraphStyle('RefRight', fontName='Helvetica-Bold', fontSize=8, alignment=2, textColor=colors.HexColor("#475569"))
+    
+    style_college_name = ParagraphStyle('CollegeName', fontName='Helvetica-Bold', fontSize=20, leading=24, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_college_dept = ParagraphStyle('CollegeDept', fontName='Helvetica-Bold', fontSize=12, leading=14, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_college_motto = ParagraphStyle('CollegeMotto', fontName='Helvetica-Oblique', fontSize=8, leading=10, textColor=colors.HexColor("#475569"), alignment=1)
+    
+    style_title = ParagraphStyle('CertTitle', fontName='Times-Bold', fontSize=24, leading=28, textColor=colors.HexColor("#dc2626"), alignment=1)
+    style_certify = ParagraphStyle('Certify', fontName='Times-Italic', fontSize=15, leading=18, textColor=colors.HexColor("#0f172a"), alignment=1)
+    
+    style_name = ParagraphStyle('StudentName', fontName='Times-Bold', fontSize=22, leading=26, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_intro = ParagraphStyle('Intro', fontName='Helvetica', fontSize=10, leading=14, textColor=colors.HexColor("#0f172a"), alignment=1)
+    style_award = ParagraphStyle('Award', fontName='Helvetica-Bold', fontSize=14, leading=18, textColor=colors.HexColor("#dc2626"), alignment=1)
+    
+    style_modules_title = ParagraphStyle('ModulesTitle', fontName='Times-Bold', fontSize=12, leading=14, textColor=colors.HexColor("#0000FE"), alignment=1)
+    style_module_item = ParagraphStyle('ModuleItem', fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.HexColor("#0f172a"))
+    
+    style_signature = ParagraphStyle('Sig', fontName='Helvetica-Bold', fontSize=10, leading=12, textColor=colors.HexColor("#0f172a"), alignment=1)
+    style_footnote = ParagraphStyle('Footnote', fontName='Helvetica-Bold', fontSize=7, leading=9, textColor=colors.HexColor("#475569"), alignment=1)
+    style_date = ParagraphStyle('PrintDate', fontName='Helvetica-Bold', fontSize=8, leading=10, textColor=colors.HexColor("#475569"), alignment=1)
+
+    # 1. Header Row (Cert Ref No and Registration No)
+    ref_table_data = [
+        [
+            Paragraph(f"Cert Ref No: {certificate.cert_ref_no}", style_ref_left),
+            Paragraph(f"Registration No: {certificate.registration_no}", style_ref_right)
+        ]
+    ]
+    ref_table = Table(ref_table_data, colWidths=[240, 245])
+    ref_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(ref_table)
+    elements.append(Spacer(1, 10))
+    
+    # 2. Logo Row
+    logo_path = os.path.join(settings.BASE_DIR, 'utils', 'logo1.png')
+    if os.path.exists(logo_path):
+        elements.append(Image(logo_path, width=70, height=70, hAlign='CENTER'))
+    else:
+        elements.append(Spacer(1, 70))
+        
+    elements.append(Spacer(1, 10))
+    
+    # 3. College Headers
+    elements.append(Paragraph(template.college_name, style_college_name))
+    elements.append(Paragraph("OF PROFESSIONAL STUDIES", style_college_dept))
+    elements.append(Paragraph(template.college_motto, style_college_motto))
+    elements.append(Spacer(1, 20))
+    
+    # 4. Title & Certify
+    elements.append(Paragraph(template.title, style_title))
+    elements.append(Spacer(1, 15))
+    elements.append(Paragraph(template.sub_title, style_certify))
+    
+    # 5. Red Dots Divider
+    dots_text = "♦ " * 28
+    style_dots = ParagraphStyle('Dots', fontName='Helvetica', fontSize=10, textColor=colors.HexColor("#dc2626"), alignment=1)
+    elements.append(Paragraph(dots_text, style_dots))
+    elements.append(Spacer(1, 15))
+    
+    # 6. Intro text & Student Name
+    elements.append(Paragraph(template.intro_text, style_intro))
+    elements.append(Spacer(1, 15))
+    elements.append(Paragraph(certificate.award_title, style_award))
+    elements.append(Spacer(1, 10))
+    elements.append(Paragraph(certificate.student_name, style_name))
+    elements.append(Spacer(1, 15))
+    
+    # 7. Modules Covered Title
+    elements.append(Paragraph(template.modules_heading, style_modules_title))
+    elements.append(Spacer(1, 15))
+    
+    # 8. Modules 2-Column Grid
+    modules = certificate.modules_covered or []
+    if len(modules) % 2 != 0:
+        modules.append("")
+        
+    modules_table_data = []
+    def get_checkmark_flowable():
+        d = Drawing(12, 12)
+        p = Path(strokeColor=colors.HexColor("#dc2626"), strokeWidth=2, fillColor=None)
+        p.moveTo(2, 5)
+        p.lineTo(5, 2)
+        p.lineTo(10, 9)
+        d.add(p)
+        return d
+
+    half = len(modules) // 2
+    for i in range(half):
+        m1 = modules[i]
+        m2 = modules[i + half]
+        
+        row = []
+        if m1:
+            row.extend([get_checkmark_flowable(), Paragraph(m1, style_module_item)])
+        else:
+            row.extend(["", ""])
+            
+        if m2:
+            row.extend([get_checkmark_flowable(), Paragraph(m2, style_module_item)])
+        else:
+            row.extend(["", ""])
+            
+        modules_table_data.append(row)
+        
+    modules_table = Table(modules_table_data, colWidths=[15, 215, 15, 215])
+    modules_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(modules_table)
+    elements.append(Spacer(1, 20))
+    
+    # 9. Certification Earned Date
+    style_earned = ParagraphStyle('Earned', fontName='Times-BoldItalic', fontSize=10, textColor=colors.HexColor("#0000FE"), alignment=1)
+    elements.append(Paragraph("This Certification Earned on", style_earned))
+    
+    decor_dots = "═" * 32
+    style_decor = ParagraphStyle('Decor', fontName='Helvetica', fontSize=8, textColor=colors.HexColor("#0000FE"), alignment=1)
+    elements.append(Paragraph(certificate.date_earned, style_earned))
+    elements.append(Paragraph(decor_dots, style_decor))
+    
+    elements.append(Spacer(1, 60))
+    
+    # 10. Signatures Row
+    sig_table_data = [
+        [
+            Paragraph(f"<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u><br/>{template.director_title}", style_signature),
+            "", 
+            Paragraph(f"<u>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u><br/>{template.principal_title}", style_signature)
+        ]
+    ]
+    sig_table = Table(sig_table_data, colWidths=[200, 95, 200])
+    sig_table.setStyle(TableStyle([
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+        ('TOPPADDING', (0, 0), (-1, -1), 0),
+    ]))
+    elements.append(sig_table)
+    
+    elements.append(Spacer(1, 45))
+    
+    # 11. Footnote & Print Date
+    elements.append(Paragraph(template.footnote_text, style_footnote))
+    elements.append(Spacer(1, 5))
+    elements.append(Paragraph(f"Date {certificate.print_date}", style_date))
+
+    doc.build(elements, onFirstPage=draw_background)
+    
+    pdf_bytes = buffer.getvalue()
+    buffer.close()
+    return pdf_bytes

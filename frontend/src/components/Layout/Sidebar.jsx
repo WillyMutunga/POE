@@ -402,6 +402,19 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                     <div className="w-2 h-2 rounded-full border-2 border-current"></div>
                     <span>Online Exams</span>
                   </NavLink>
+                  <NavLink
+                    to="/admin/certificates"
+                    className={({ isActive }) => 
+                      `flex items-center gap-4 px-4 py-3 rounded-2xl font-bold transition-all ${
+                        isActive 
+                        ? 'bg-blue-50 text-[#0000FE]' 
+                        : 'text-slate-400 hover:bg-slate-50 hover:text-[#0000FE]'
+                      }`
+                    }
+                  >
+                    <div className="w-2 h-2 rounded-full border-2 border-current"></div>
+                    <span>Certificates</span>
+                  </NavLink>
                 </div>
               )}
             </div>

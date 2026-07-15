@@ -221,3 +221,32 @@ class OnlineExamAttendance(models.Model):
 
     def __str__(self):
         return f"{self.student_reg_no} - {self.exam.title}"
+
+class CertificateTemplate(models.Model):
+    college_name = models.CharField(max_length=255, default="HEADWAY COLLEGE OF PROFESSIONAL STUDIES")
+    college_motto = models.CharField(max_length=255, default="Learning for Global Relevance")
+    title = models.CharField(max_length=255, default="Certificate of Competence")
+    sub_title = models.CharField(max_length=255, default="This is to Certify that")
+    intro_text = models.TextField(default="Has successfully completed and passed all the prescribed modules per requirement and the award of")
+    modules_heading = models.CharField(max_length=255, default="Modules Covered")
+    footnote_text = models.TextField(default="This Certificate was issued without any erasure or alterations whatsoever and Invalid without an Official Seal")
+    director_title = models.CharField(max_length=255, default="Director of Studies")
+    principal_title = models.CharField(max_length=255, default="Principal")
+
+    def __str__(self):
+        return f"Template: {self.college_name}"
+
+class Certificate(models.Model):
+    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True, related_name='certificates')
+    cert_ref_no = models.CharField(max_length=100)
+    registration_no = models.CharField(max_length=100)
+    student_name = models.CharField(max_length=255)
+    award_title = models.CharField(max_length=255, default="Proficiency Certificate in Computer Applications")
+    modules_covered = models.JSONField(default=list)  # e.g., ["Ms Word", "Ms Excel"]
+    date_earned = models.CharField(max_length=100)  # e.g. "12th July 2026"
+    print_date = models.CharField(max_length=100)  # e.g. "13th July 2026"
+    qr_code_text = models.CharField(max_length=255, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.cert_ref_no} - {self.student_name}"
