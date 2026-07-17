@@ -867,6 +867,7 @@ const Landing = () => {
               </div>
             </div>
           ))}
+        </div>
       </section>
 
       {/* FAQ Section */}
