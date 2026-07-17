@@ -37,6 +37,11 @@ const Landing = () => {
   // Counter states for the stats section
   const [stats, setStats] = useState({ courses: 0, bodies: 0, depts: 0 });
 
+  // Interactive UI states
+  const [activeDeptTab, setActiveDeptTab] = useState('it');
+  const [activePortalTab, setActivePortalTab] = useState('dashboard');
+  const [faqOpenIndex, setFaqOpenIndex] = useState(null);
+
   const slides = [
     {
       title: "Welcome To Headway College",
@@ -148,7 +153,7 @@ const Landing = () => {
       </div>
 
       {/* Main Sticky Header */}
-      <header className="sticky top-0 z-50 bg-white shadow-md border-b border-slate-100 transition-all h-24">
+      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-md border-b border-slate-100/50 transition-all h-24">
         <div className="w-full px-4 sm:px-6 lg:px-12 h-full flex items-center justify-between">
           {/* Logo Section */}
           <a href="#home" onClick={(e) => handleNavClick(e, '#home')} className="flex items-center select-none shrink-0 h-full py-1.5">
@@ -451,6 +456,110 @@ const Landing = () => {
         </div>
       </section>
 
+      {/* Interactive Course Finder & Department Filter */}
+      <section className="py-20 bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+        <div className="text-center space-y-3 max-w-2xl mx-auto">
+          <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Find Your Path</span>
+          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Explore Our Professional Courses</h2>
+          <p className="text-slate-500 font-medium text-sm md:text-base">
+            Select a department to view featured programs accredited by national and global certification boards.
+          </p>
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="flex justify-center gap-4 border-b border-slate-100 pb-4 max-w-md mx-auto">
+          {[
+            { id: 'it', label: 'IT & Digital' },
+            { id: 'business', label: 'Business & Finance' },
+            { id: 'technical', label: 'Technical & Beauty' }
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveDeptTab(tab.id)}
+              className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer border-none bg-transparent ${
+                activeDeptTab === tab.id
+                  ? 'border-[#0000FE] text-[#0000FE]'
+                  : 'border-transparent text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Course Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {activeDeptTab === 'it' && [
+            { name: "Diploma in ICT (Level 6)", body: "TVET CDACC", duration: "2 Years", desc: "Advanced training in systems development, networking, and IT infrastructure administration." },
+            { name: "Certificate in ICT (Level 5)", body: "TVET CDACC", duration: "1 Year", desc: "Foundation training in computer applications, databases, and software support." },
+            { name: "International Computer Driving License (ICDL)", body: "ICDL Foundation", duration: "3 Months", desc: "Globally accredited standard certification for essential work computing skills." }
+          ].map((course, i) => (
+            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+              </div>
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                <button 
+                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                >
+                  Apply <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {activeDeptTab === 'business' && [
+            { name: "KASNEB Professional Courses (CPA)", body: "KASNEB", duration: "2.5 Years", desc: "Professional accounting training covering taxation, audit, and financial management." },
+            { name: "Diploma in Business Management", body: "KNEC / ICM", duration: "2 Years", desc: "Comprehensive business administration studies covering operations, HR, and marketing." },
+            { name: "Certificate in Hospitality Management", body: "ICM / KNEC", duration: "1.5 Years", desc: "Foundational training in food & beverage management, catering, and front office operations." }
+          ].map((course, i) => (
+            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+              </div>
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                <button 
+                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                >
+                  Apply <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {activeDeptTab === 'technical' && [
+            { name: "Diploma in Fashion Design", body: "KNEC / NITA", duration: "2 Years", desc: "Creative garment styling, pattern construction, textile sciences, and clothing technology." },
+            { name: "Certificate in Hairdressing & Beauty Therapy", body: "NITA / KNEC", duration: "1 Year", desc: "Comprehensive training in salon work, hair styling, cosmetology, and skin care aesthetics." },
+            { name: "NITA Grade III/II/I Trade Test Preparations", body: "NITA Board", duration: "6 Months", desc: "Practical hands-on bootcamps preparing learners for government trades assessments." }
+          ].map((course, i) => (
+            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+              <div className="space-y-4">
+                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+              </div>
+              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                <button 
+                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                >
+                  Apply <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Facilities/Notification Section */}
       <section className="py-20 bg-slate-100 border-y border-slate-200" id="facilities">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
@@ -508,6 +617,133 @@ const Landing = () => {
                 Our hostels offer a safe, affordable, and convenient environment for students who need accommodation while studying at the college with fully furnished and spacious rooms.
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* "Inside the PoE Portal" Mockup Preview Section */}
+      <section className="py-20 bg-slate-50 border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Digital Innovation</span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Our Modern Student PoE Portal</h2>
+            <p className="text-slate-500 font-medium text-sm md:text-base">
+              A sneak peek inside our state-of-the-art student management portal. Experience learning, exam participation, and evidence submission digitized.
+            </p>
+          </div>
+
+          {/* Portal Switcher Tabs */}
+          <div className="flex justify-center gap-4 bg-white p-2 rounded-2xl border border-slate-100 max-w-lg mx-auto shadow-sm">
+            {[
+              { id: 'dashboard', label: 'Trainee Dashboard' },
+              { id: 'exam', label: 'Online Exam Portal' },
+              { id: 'verification', label: 'Certificate Verification' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActivePortalTab(tab.id)}
+                className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider rounded-xl transition-all border-none cursor-pointer ${
+                  activePortalTab === tab.id
+                    ? 'bg-[#0000FE] text-white shadow-md'
+                    : 'text-slate-500 hover:text-[#0000FE] hover:bg-slate-50'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Interactive Screen Display */}
+          <div className="max-w-4xl mx-auto bg-[#1E293B] rounded-3xl p-6 md:p-8 shadow-2xl border border-slate-800 text-white relative">
+            <div className="absolute top-4 left-6 flex gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-red-500" />
+              <span className="w-3 h-3 rounded-full bg-yellow-500" />
+              <span className="w-3 h-3 rounded-full bg-green-500" />
+            </div>
+
+            {/* Dashboard Screen */}
+            {activePortalTab === 'dashboard' && (
+              <div className="space-y-6 pt-6">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
+                  <div>
+                    <h4 className="text-lg font-black">Student Dashboard Overview</h4>
+                    <p className="text-xs text-slate-400">Welcome back, John Doe (Trainee ID: 0890)</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase rounded-lg">Active Session</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="p-6 bg-slate-800 rounded-2xl border border-slate-700/50 space-y-2">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Registered Units</p>
+                    <p className="text-3xl font-black text-[#0000FE]">4 Units</p>
+                  </div>
+                  <div className="p-6 bg-slate-800 rounded-2xl border border-slate-700/50 space-y-2">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Submitted Evidence</p>
+                    <p className="text-3xl font-black text-emerald-400">12 Files</p>
+                  </div>
+                  <div className="p-6 bg-slate-800 rounded-2xl border border-slate-700/50 space-y-2">
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Online Exams Assigned</p>
+                    <p className="text-3xl font-black text-[#EF1B1B]">1 Active</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Exam Screen */}
+            {activePortalTab === 'exam' && (
+              <div className="space-y-6 pt-6">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
+                  <div>
+                    <h4 className="text-lg font-black">Online Assessment: Computer Applications</h4>
+                    <p className="text-xs text-slate-400">Read the questions carefully before submitting.</p>
+                  </div>
+                  <div className="flex items-center gap-2 px-3 py-1 bg-red-500/15 text-red-400 border border-red-500/25 rounded-lg text-xs font-bold animate-pulse">
+                    <Clock size={14} /> Time Remaining: 44:12
+                  </div>
+                </div>
+
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700/50 space-y-4 text-left">
+                  <span className="text-[10px] font-black uppercase tracking-widest text-[#EF1B1B]">Question 3 of 40</span>
+                  <p className="font-bold text-sm md:text-base text-slate-200">Which Microsoft Office tool is primarily used for constructing spreadsheet data and performing calculations?</p>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                    {['Microsoft Word', 'Microsoft Excel', 'Microsoft Access', 'Microsoft Publisher'].map((opt, i) => (
+                      <div key={i} className={`p-4 rounded-xl border text-xs font-bold transition-all ${
+                        opt === 'Microsoft Excel'
+                          ? 'border-[#0000FE] bg-[#0000FE]/5 text-white'
+                          : 'border-slate-700 bg-slate-900/40 text-slate-400'
+                      }`}>
+                        {opt}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Verification Screen */}
+            {activePortalTab === 'verification' && (
+              <div className="space-y-6 pt-6">
+                <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
+                  <div>
+                    <h4 className="text-lg font-black">Digital Credential Verification</h4>
+                    <p className="text-xs text-slate-400">Tamper-proof verifiable credentials powered by PoE Systems.</p>
+                  </div>
+                  <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold uppercase rounded-lg">Verified</span>
+                </div>
+
+                <div className="bg-slate-800 rounded-2xl p-6 border border-slate-700/50 flex flex-col md:flex-row items-center gap-6 text-left">
+                  <div className="w-20 h-20 bg-white p-2 rounded-2xl flex items-center justify-center">
+                    <div className="w-16 h-16 bg-slate-900 rounded-lg" /> {/* QR Mock */}
+                  </div>
+                  <div className="space-y-2 flex-1">
+                    <h5 className="font-black text-sm text-slate-100">Certificate Reference: HEADWAY-2026-0890</h5>
+                    <p className="text-xs text-slate-400">Recipient Trainee: <span className="text-white font-bold">John Doe</span></p>
+                    <p className="text-xs text-slate-400">Awarded: <span className="text-white font-bold">Proficiency in Computer Applications</span></p>
+                    <p className="text-xs text-slate-400">Authentic Signature verified: <span className="text-emerald-400 font-bold">Director of Studies</span></p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -631,6 +867,62 @@ const Landing = () => {
               </div>
             </div>
           ))}
+      </section>
+
+      {/* FAQ Section */}
+      <section className="py-20 bg-slate-100 border-t border-slate-200">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">FAQ</span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Frequently Asked Questions</h2>
+            <p className="text-slate-500 font-medium text-sm md:text-base">
+              Got questions? We have answers. Find general details regarding our curriculum formats, accreditations, and portal access below.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {[
+              {
+                q: "What is a Portfolio of Evidence (PoE) and how does it work?",
+                a: "A Portfolio of Evidence (PoE) is a cumulative compile of all your academic assignments, lab reports, and assessments showing your competencies. Rather than depending on a single terminal exam, instructors evaluate your learning milestones continuously through the portal."
+              },
+              {
+                q: "Are Headway College courses accredited by TVETA and CDACC?",
+                a: "Yes! Headway College is a fully TVETA-registered institution. Our courses are certified by national examination bodies including TVET CDACC, KASNEB, NITA, and the globally recognized ICDL Foundation."
+              },
+              {
+                q: "Can I choose between online learning and on-campus classes?",
+                a: "Absolutely. We offer day, evening, Saturday, and distance learning online classes to cater to different students' schedules and needs."
+              },
+              {
+                q: "How do I verify the authenticity of a Headway College certificate?",
+                a: "Every certificate has a unique Reference Number and an official QR code. Employers and students can scan the QR code to verify the certificate's validity instantly against our database records."
+              }
+            ].map((faq, index) => {
+              const isOpen = faqOpenIndex === index;
+              return (
+                <div 
+                  key={index} 
+                  className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden transition-all duration-300"
+                >
+                  <button
+                    onClick={() => setFaqOpenIndex(isOpen ? null : index)}
+                    className="w-full flex items-center justify-between p-6 text-left font-black text-slate-950 hover:text-[#0000FE] transition-colors bg-transparent border-none cursor-pointer"
+                  >
+                    <span className="text-sm md:text-base pr-4">{faq.q}</span>
+                    <span className={`text-slate-400 font-bold transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`}>
+                      <ChevronDown size={20} />
+                    </span>
+                  </button>
+                  {isOpen && (
+                    <div className="p-6 pt-0 border-t border-slate-50 text-slate-600 text-xs md:text-sm font-medium leading-relaxed bg-slate-50/30">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
