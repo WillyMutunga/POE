@@ -31,50 +31,13 @@ const Landing = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileDropdownOpen, setMobileDropdownOpen] = useState(null); // 'courses' or 'services' or null
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [whatsappOpen, setWhatsappOpen] = useState(false);
 
-  // Counter states for the stats section
+  // Counter and visual states
   const [stats, setStats] = useState({ courses: 0, bodies: 0, depts: 0 });
-
-  // Interactive UI states
   const [activeDeptTab, setActiveDeptTab] = useState('it');
   const [activePortalTab, setActivePortalTab] = useState('dashboard');
   const [faqOpenIndex, setFaqOpenIndex] = useState(null);
-
-  const slides = [
-    {
-      title: "Welcome To Headway College",
-      subtitle: "Where Excellence Meets Opportunity",
-      text: "Unlock Your Potential. Build Your Career. Transform Your Future.",
-      bg: "https://headwaycollege.ac.ke/uploads/frontend/slider/home-slider-1735224955.jpg",
-      primaryBtn: "Enter Portal",
-      secondaryBtn: "Apply Online",
-      primaryAction: () => navigate(isAuthenticated ? '/dashboard' : '/login'),
-      secondaryAction: () => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')
-    },
-    {
-      title: "Why Headway College?",
-      subtitle: "Discover the Headway Advantage",
-      text: "Industry-Focused Programs, Expert Faculty, Modern Learning Facilities, Flexible Class Schedules.",
-      bg: "https://headwaycollege.ac.ke/uploads/frontend/slider/home-slider-1735225032.jpg",
-      primaryBtn: "Apply Online Now",
-      secondaryBtn: "Learn More",
-      primaryAction: () => window.open('https://headwaycollege.ac.ke/home/admission', '_blank'),
-      secondaryAction: () => {
-        const welcomeSec = document.getElementById('welcome-section');
-        if (welcomeSec) welcomeSec.scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-  ];
-
-  // Auto-slide effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Animate counters on component mount
   useEffect(() => {
@@ -103,13 +66,6 @@ const Landing = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const handlePrevSlide = () => {
-    setCurrentSlide((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
-  };
-
-  const handleNextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % slides.length);
-  };
 
 
   const menuItems = [
@@ -320,136 +276,173 @@ const Landing = () => {
       </header>
 
 
-      {/* Hero Carousel Section */}
-      <section className="relative h-[480px] md:h-[600px] overflow-hidden bg-slate-900 select-none">
-        {slides.map((slide, idx) => (
-          <div
-            key={idx}
-            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
-              idx === currentSlide ? 'opacity-100 z-10' : 'opacity-0 z-0'
-            }`}
-          >
-            {/* Background image with overlay */}
-            <div 
-              className="absolute inset-0 bg-cover bg-center transition-transform duration-10000 scale-105"
-              style={{ 
-                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.65)), url(${slide.bg})` 
-              }}
-            />
-            
-            {/* Slide Content */}
-            <div className="absolute inset-0 flex items-center">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full text-center md:text-left">
-                <div className="max-w-3xl space-y-6">
-                  <span className="inline-block px-4 py-1.5 bg-[#EF1B1B] text-white text-xs font-black uppercase tracking-widest rounded-full shadow-lg">
-                    Admissions Open
-                  </span>
-                  <h1 className="text-4xl md:text-6xl font-black text-white leading-tight tracking-tight">
-                    {slide.title}
-                  </h1>
-                  <h2 className="text-xl md:text-2xl font-bold text-[#0000FE] tracking-wide">
-                    {slide.subtitle}
-                  </h2>
-                  <p className="text-slate-300 text-sm md:text-lg leading-relaxed font-medium">
-                    {slide.text}
-                  </p>
-                  
-                  {/* Hero Actions */}
-                  <div className="flex flex-col sm:flex-row items-center gap-4 justify-center md:justify-start pt-4">
-                    <button
-                      onClick={slide.primaryAction}
-                      className="w-full sm:w-auto px-8 py-4 bg-[#0000FE] hover:bg-[#EF1B1B] text-white text-base font-black rounded-2xl shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      {slide.primaryBtn} <ArrowRight size={18} />
-                    </button>
-                    <button
-                      onClick={slide.secondaryAction}
-                      className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/20 text-white text-base font-bold rounded-2xl border border-white/20 hover:border-white/40 transition-all backdrop-blur-sm flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      {slide.secondaryBtn}
-                    </button>
+      {/* Premium Split-Screen Hero Section */}
+      <section className="relative min-h-[550px] lg:min-h-[640px] flex items-center bg-slate-900 overflow-hidden py-16 lg:py-24">
+        {/* Soft Background Radial/Linear Gradients */}
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
+        <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0000FE]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#EF1B1B]/5 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+            {/* Left Column: Heading, Tagline, Actions */}
+            <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EF1B1B]/15 text-[#EF1B1B] text-xs font-black uppercase tracking-widest rounded-full border border-[#EF1B1B]/35 shadow-sm">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#EF1B1B] animate-pulse" />
+                Admissions Open
+              </span>
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-none tracking-tight">
+                Verifiable Competency-Based Education, <span className="text-[#0000FE] bg-gradient-to-r from-blue-500 to-[#0000FE] bg-clip-text text-transparent">Digitised</span>
+              </h1>
+              <p className="text-slate-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
+                Access your student Portfolio of Evidence (PoE) portal, sit assessments online, and download verified digital certificates directly from the Headway College portal.
+              </p>
+              
+              {/* Primary Actions */}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
+                <button
+                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
+                  className="w-full sm:w-auto px-8 py-4 bg-[#0000FE] hover:bg-[#EF1B1B] text-white text-sm font-black rounded-2xl shadow-lg shadow-blue-900/20 hover:shadow-red-600/10 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-300 flex items-center justify-center gap-2 cursor-pointer border-none"
+                >
+                  Enter Student Portal <ArrowRight size={16} />
+                </button>
+                <button
+                  onClick={() => {
+                    const bodiesSec = document.getElementById('exam-bodies');
+                    if (bodiesSec) bodiesSec.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/15 text-white text-sm font-bold rounded-2xl border border-white/15 hover:border-white/35 transition-all backdrop-blur-sm flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  Explore Accreditations
+                </button>
+              </div>
+            </div>
+
+            {/* Right Column: Portal Showcase Mockup Card */}
+            <div className="lg:col-span-5 relative flex justify-center">
+              <div className="absolute -inset-2 bg-gradient-to-r from-[#0000FE]/20 to-[#EF1B1B]/20 rounded-3xl blur-xl opacity-60 pointer-events-none" />
+              
+              {/* Portal UI Preview Card */}
+              <div className="relative w-full max-w-sm bg-slate-900/80 backdrop-blur-lg rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-5 text-left text-slate-200">
+                {/* Header Window Buttons */}
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <div className="flex gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
                   </div>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">headway_poe_v2.0</span>
+                </div>
+
+                {/* Trainee Card */}
+                <div className="space-y-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#0000FE]/10 border border-[#0000FE]/20 flex items-center justify-center text-[#0000FE]">
+                      <Users size={18} />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-white leading-none">John Doe</h4>
+                      <p className="text-[10px] text-slate-500 font-bold mt-1">Trainee Reg No: 0890</p>
+                    </div>
+                  </div>
+
+                  {/* Registered Units Progress */}
+                  <div className="p-3.5 bg-slate-950/40 rounded-2xl border border-slate-800/80 space-y-2">
+                    <div className="flex justify-between items-center text-[10px] font-bold">
+                      <span className="text-slate-400">ICT Portfolio Submissions</span>
+                      <span className="text-emerald-400">12 / 12 Submitted</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div className="w-full h-full bg-emerald-500 rounded-full" />
+                    </div>
+                  </div>
+
+                  {/* Assessment Center Badge */}
+                  <div className="p-3.5 bg-slate-950/40 rounded-2xl border border-slate-800/80 flex items-center justify-between">
+                    <div className="space-y-1">
+                      <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Assigned Online Exam</p>
+                      <p className="text-[11px] font-black text-white">Computer Applications</p>
+                    </div>
+                    <span className="px-2 py-1 bg-red-500/10 text-red-500 border border-red-500/20 text-[9px] font-black uppercase rounded-lg animate-pulse">
+                      Live
+                    </span>
+                  </div>
+                </div>
+
+                {/* Trust Accreditation Footer inside Mockup */}
+                <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-[9px] text-slate-500 font-bold">
+                  <span className="flex items-center gap-1"><Award size={10} className="text-[#0000FE]" /> TVET CDACC Accredited</span>
+                  <span>100% Verifiable</span>
                 </div>
               </div>
             </div>
           </div>
-        ))}
-
-        {/* Carousel Prev/Next Buttons */}
-        <button
-          onClick={handlePrevSlide}
-          className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/30 hover:bg-black/60 text-white transition-all backdrop-blur-xs hover:scale-105 cursor-pointer"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <button
-          onClick={handleNextSlide}
-          className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-3 rounded-full bg-black/30 hover:bg-black/60 text-white transition-all backdrop-blur-xs hover:scale-105 cursor-pointer"
-        >
-          <ChevronRight size={20} />
-        </button>
-
-        {/* Carousel Indicators */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-          {slides.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrentSlide(idx)}
-              className={`w-3.5 h-3.5 rounded-full transition-all cursor-pointer ${
-                idx === currentSlide 
-                  ? 'bg-[#0000FE] w-8' 
-                  : 'bg-white/40 hover:bg-white/70'
-              }`}
-            />
-          ))}
         </div>
       </section>
 
-      {/* Welcome Section */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="about">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center" id="welcome-section">
-          {/* Welcome Text */}
-          <div className="space-y-6">
-            <div className="space-y-2">
-              <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">About Headway</span>
-              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900">
-                Welcome Message
-              </h2>
-              <h3 className="text-lg font-bold text-[#0000FE]">
-                Dear Students, Parents, and Stakeholders,
-              </h3>
-              <div className="w-16 h-1 bg-[#EF1B1B] rounded-full" />
-            </div>
-            
-            <div className="text-slate-600 space-y-4 leading-relaxed font-medium text-sm md:text-base text-justify">
-              <p>
-                Welcome to Headway College of Professional Studies, where excellence in education meets innovation and opportunity. 
-                At Headway College, we are committed to nurturing talent, fostering creativity, and equipping our students with the skills and knowledge needed to excel in today’s dynamic world. Our programs are tailored to meet industry demands, ensuring that every learner is prepared to face the challenges and opportunities of the professional landscape.
-              </p>
-              <p>
-                Education is not just about acquiring knowledge but also about building character, confidence, and a sense of purpose. At our institution, we strive to create a supportive and inspiring learning environment where students can discover their potential and pursue their dreams.
-              </p>
-              <p>
-                I invite you to join our community of learners, educators, and professionals dedicated to lifelong learning and success. Together, let us embark on a journey of transformation and achievement.
-              </p>
-              <p className="font-extrabold text-slate-800 italic">
-                Once again, welcome to Headway College—where your future begins.
-              </p>
-            </div>
+      {/* Accreditations Trust Badge strip */}
+      <div className="bg-slate-950 border-y border-slate-900 py-8 select-none">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.25em]">Accredited Examination & Assessment Bodies</p>
+          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
+            {['TVET CDACC', 'KASNEB', 'NITA', 'ICDL Foundation', 'ICM UK', 'TVETA Kenya'].map((body) => (
+              <span 
+                key={body} 
+                className="text-slate-400 font-extrabold text-xs sm:text-sm tracking-widest hover:text-white transition-colors cursor-default"
+              >
+                {body}
+              </span>
+            ))}
           </div>
+        </div>
+      </div>
 
-          {/* Welcome Image/Card */}
-          <div className="relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#0000FE]/20 to-[#EF1B1B]/20 rounded-3xl blur-2xl opacity-70" />
-            <div className="relative bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-100 group">
+      {/* Modern Executive Welcome & Director Quote Section */}
+      <section className="py-24 bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="about">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center" id="welcome-section">
+          {/* Welcome Card & Image on Left */}
+          <div className="lg:col-span-5 relative">
+            <div className="absolute -inset-4 bg-gradient-to-r from-[#0000FE]/10 to-[#EF1B1B]/10 rounded-[32px] blur-2xl opacity-60 pointer-events-none" />
+            <div className="relative bg-white rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 group">
               <img 
                 src="https://headwaycollege.ac.ke/uploads/frontend/home_page/wellcome1.jpeg" 
                 alt="Headway College campus environment" 
-                className="w-full h-[400px] object-cover group-hover:scale-102 transition-transform duration-700"
+                className="w-full h-[380px] object-cover group-hover:scale-103 transition-transform duration-700"
               />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent p-6 text-white">
-                <p className="text-lg font-black tracking-tight">Embakasi Campus, Nairobi</p>
-                <p className="text-xs text-slate-300 font-semibold mt-1">Airport View Plaza, Eastern Bypass</p>
+              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-6 text-white">
+                <p className="text-sm font-black tracking-wider uppercase text-[#EF1B1B]">Embakasi Campus</p>
+                <p className="text-xs text-slate-300 font-semibold mt-1">Airport View Plaza, Eastern Bypass, Nairobi</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Welcome Quote Content on Right */}
+          <div className="lg:col-span-7 space-y-6 text-left">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Director's Message</span>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+              Leading the Future of Professional Competence
+            </h2>
+            <div className="w-12 h-1 bg-[#0000FE] rounded-full" />
+            
+            {/* Blockquote Quote */}
+            <div className="relative pl-6 border-l-4 border-[#EF1B1B]/30 space-y-4">
+              <p className="text-slate-600 font-bold italic text-base md:text-lg leading-relaxed">
+                "Welcome to Headway College of Professional Studies. We nurture talent, foster creativity, and equip students with job-ready competencies in today's digital landscape. Our Portfolio of Evidence (PoE) portal is a testament to our commitment to innovation and educational integrity."
+              </p>
+            </div>
+            
+            <p className="text-slate-500 font-medium text-xs md:text-sm leading-relaxed text-justify">
+              At Headway College, we prioritize hands-on skill-building over standard theoretical models. Our programs are closely integrated with exam bodies like TVET CDACC, KASNEB, and NITA, guaranteeing accredited, industry-focused qualifications. We guide each student through structured learning outcomes, helping them build proof of their knowledge dynamically.
+            </p>
+
+            {/* Signature Title */}
+            <div className="pt-4 flex items-center gap-4">
+              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-extrabold text-[#0000FE] border border-slate-200">
+                HW
+              </div>
+              <div>
+                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Office of the Director</h4>
+                <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">Headway College of Professional Studies</p>
               </div>
             </div>
           </div>
