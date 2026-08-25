@@ -18,12 +18,14 @@ import {
   Home, 
   Menu, 
   X, 
-  ChevronLeft, 
-  ChevronRight, 
   Star, 
   ExternalLink,
   MessageSquare,
-  ChevronDown
+  ChevronDown,
+  CheckCircle,
+  XCircle,
+  FileText,
+  Check
 } from 'lucide-react';
 
 const Landing = () => {
@@ -66,17 +68,13 @@ const Landing = () => {
     return () => clearInterval(timer);
   }, []);
 
-
-
   const menuItems = [
     { label: 'Home', href: '#home' },
     { label: 'About Us', href: '#about' },
-    { label: 'Facilities', href: '#facilities' },
-    { label: 'Exam Bodies', href: '#exam-bodies' }
-  ];
-
-  const navItems = [
-    { label: 'Home', href: '#home', type: 'link' }
+    { label: 'Why e-PoE', href: '#why-epoe' },
+    { label: 'How It Works', href: '#how-it-works' },
+    { label: 'Courses', href: '#courses' },
+    { label: 'FAQ', href: '#faq' }
   ];
 
   const handleNavClick = (e, href) => {
@@ -95,10 +93,11 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-slate-50 text-[#141313] font-sans antialiased scroll-smooth animate-fade-in" id="home">
       <SEO 
-        title="Portfolio of Evidence | Headway College POE Portal"
-        description="Access the official Headway College Portfolio of Evidence (POE) Portal. Log in to manage your student profile, course units, exams, and academic evidence submissions."
+        title="Digital Portfolio of Evidence | Headway College POE Portal"
+        description="Access the official Headway College e-PoE Portal. Track assessment units, upload competency evidence, receive instructor feedback, and sit exams online."
         keywords="Headway College POE, Portfolio of Evidence, Headway College Portfolio of Evidence, Headway Student Portal, POE Portal Headway College, headway college, poe headway, headway college ac ke"
       />
+
       {/* Top Announcement Alert Bar */}
       <div className="bg-[#EF1B1B] text-white text-xs md:text-sm font-extrabold py-2.5 px-4 text-center select-none border-b border-red-700 relative z-50">
         <div className="max-w-7xl mx-auto flex items-center justify-center gap-2.5 tracking-wide uppercase">
@@ -122,145 +121,62 @@ const Landing = () => {
           </a>
 
           {/* Desktop Nav */}
-          <nav className="hidden lg:flex items-center gap-x-3 xl:gap-x-5 h-full">
-            {navItems.map((item) => {
-              if (item.type === 'link') {
-                const isActive = item.label === 'Home';
-                return (
-                  <a 
-                    key={item.label}
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item.href)}
-                    className={`font-bold text-xs xl:text-[13px] transition-colors duration-150 py-2 ${
-                      isActive 
-                        ? 'text-[#7B849C]' 
-                        : 'text-[#1E293B] hover:text-[#0000FE]'
-                    }`}
-                  >
-                    {item.label}
-                  </a>
-                );
-              } else {
-                return (
-                  <div key={item.label} className="relative group flex items-center h-full">
-                    <button className="flex items-center gap-0.5 text-[#1E293B] hover:text-[#0000FE] font-bold text-xs xl:text-[13px] transition-colors duration-150 py-2 bg-transparent border-none cursor-pointer">
-                      <span>{item.label}</span>
-                      <ChevronDown size={12} className="text-slate-400 group-hover:text-[#0000FE] transition-colors mt-0.5" />
-                    </button>
-                    {/* Dropdown Menu */}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 w-72 bg-white shadow-xl border border-slate-100 rounded-b-2xl py-3 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto transition-all duration-200 transform translate-y-1 group-hover:translate-y-0 z-50">
-                      {item.items.map((subItem) => {
-                        if (subItem.href) {
-                          return (
-                            <a 
-                              key={subItem.label}
-                              href={subItem.href}
-                              target={subItem.href.startsWith('http') ? "_blank" : undefined}
-                              rel={subItem.href.startsWith('http') ? "noreferrer" : undefined}
-                              className="block px-6 py-2.5 text-xs xl:text-sm font-bold text-slate-700 hover:text-[#0000FE] hover:bg-slate-50 transition-colors"
-                            >
-                              {subItem.label}
-                            </a>
-                          );
-                        } else {
-                          return (
-                            <button
-                              key={subItem.label}
-                              onClick={subItem.action}
-                              className="w-full text-left block px-6 py-2.5 text-xs xl:text-sm font-bold text-slate-700 hover:text-[#0000FE] hover:bg-slate-50 transition-colors bg-transparent border-none cursor-pointer"
-                            >
-                              {subItem.label}
-                            </button>
-                          );
-                        }
-                      })}
-                    </div>
-                  </div>
-                );
-              }
-            })}
-            
-            {/* Login CTA */}
-            <button
-              onClick={() => navigate('/login')}
-              className="ml-2 px-5 py-2.5 bg-[#0000FE] hover:bg-[#EF1B1B] text-white font-extrabold text-xs xl:text-sm rounded-xl transition-all shadow-md hover:shadow-blue-500/10 active:scale-95 cursor-pointer border-none"
-            >
-              Login
-            </button>
+          <nav className="hidden lg:flex items-center gap-x-5 h-full">
+            {menuItems.map((item) => (
+              <a 
+                key={item.label}
+                href={item.href}
+                onClick={(e) => handleNavClick(e, item.href)}
+                className="text-slate-600 hover:text-[#0000FE] text-sm font-black uppercase tracking-wider transition-colors py-2 cursor-pointer"
+              >
+                {item.label}
+              </a>
+            ))}
           </nav>
 
-          {/* Mobile Menu Toggle */}
+          {/* Auth Actions */}
+          <div className="hidden lg:flex items-center gap-4">
+            <button
+              onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
+              className="px-6 py-3 bg-[#0000FE] hover:bg-[#EF1B1B] text-white text-xs font-black uppercase tracking-widest rounded-xl shadow-md hover:-translate-y-0.5 transition-all duration-300 cursor-pointer border-none"
+            >
+              Student Login
+            </button>
+            <a 
+              href="https://headwaycollege.ac.ke/home/admission" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-800 text-xs font-black uppercase tracking-widest rounded-xl border border-slate-200 shadow-xs hover:-translate-y-0.5 transition-all duration-300"
+            >
+              Apply Online
+            </a>
+          </div>
+
+          {/* Mobile Menu Button */}
           <button 
-            className="lg:hidden p-2 text-slate-600 hover:text-[#0000FE] transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="lg:hidden p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border-none cursor-pointer"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Dropdown Menu */}
         {mobileMenuOpen && (
-          <div className="lg:hidden border-t border-slate-100 bg-white px-4 py-4 space-y-3 shadow-inner">
-            {navItems.map((item) => {
-              if (item.type === 'link') {
-                return (
-                  <a
-                    key={item.label}
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item.href)}
-                    className="block py-2 text-base font-bold text-slate-600 hover:text-[#0000FE] rounded-lg px-3 hover:bg-slate-50 transition-colors"
-                  >
-                    {item.label}
-                  </a>
-                );
-              } else {
-                const isOpen = mobileDropdownOpen === item.dropdownType;
-                return (
-                  <div key={item.label} className="space-y-1">
-                    <button
-                      onClick={() => setMobileDropdownOpen(isOpen ? null : item.dropdownType)}
-                      className="w-full flex items-center justify-between py-2 text-base font-bold text-slate-600 hover:text-[#0000FE] rounded-lg px-3 hover:bg-slate-50 transition-colors bg-transparent border-none cursor-pointer"
-                    >
-                      <span>{item.label}</span>
-                      <ChevronDown size={16} className={`text-slate-400 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-                    </button>
-                    {isOpen && (
-                      <div className="pl-6 border-l border-slate-100 py-1 space-y-1">
-                        {item.items.map((subItem) => {
-                          if (subItem.href) {
-                            return (
-                              <a
-                                key={subItem.label}
-                                href={subItem.href}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="block py-2 text-sm font-bold text-slate-500 hover:text-[#0000FE] transition-colors"
-                              >
-                                {subItem.label}
-                              </a>
-                            );
-                          } else {
-                            return (
-                              <button
-                                key={subItem.label}
-                                onClick={() => {
-                                  setMobileMenuOpen(false);
-                                  subItem.action();
-                                }}
-                                className="w-full text-left block py-2 text-sm font-bold text-slate-500 hover:text-[#0000FE] transition-colors bg-transparent border-none cursor-pointer"
-                              >
-                                {subItem.label}
-                              </button>
-                            );
-                          }
-                        })}
-                      </div>
-                    )}
-                  </div>
-                );
-              }
-            })}
-            <div className="pt-4 border-t border-slate-100">
+          <div className="lg:hidden absolute top-24 left-0 w-full bg-white border-b border-slate-100 shadow-xl py-6 px-4 space-y-4 z-40 transition-all">
+            <nav className="flex flex-col gap-3">
+              {menuItems.map((item) => (
+                <a 
+                  key={item.label}
+                  href={item.href}
+                  onClick={(e) => handleNavClick(e, item.href)}
+                  className="text-slate-700 hover:text-[#0000FE] text-xs font-black uppercase tracking-wider py-2 transition-colors border-b border-slate-50 cursor-pointer"
+                >
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
               <button
                 onClick={() => {
                   setMobileMenuOpen(false);
@@ -268,37 +184,42 @@ const Landing = () => {
                 }}
                 className="w-full py-3 bg-[#0000FE] text-white font-bold rounded-xl text-center shadow-md active:scale-98 cursor-pointer border-none"
               >
-                Login
+                Student Login
               </button>
+              <a
+                href="https://headwaycollege.ac.ke/home/admission"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full py-3 bg-white text-slate-800 font-bold rounded-xl text-center border border-slate-200 shadow-xs active:scale-98"
+              >
+                Apply Online
+              </a>
             </div>
           </div>
         )}
       </header>
 
-
-      {/* Premium Split-Screen Hero Section */}
-      <section className="relative min-h-[550px] lg:min-h-[640px] flex items-center bg-slate-900 overflow-hidden py-16 lg:py-24">
-        {/* Soft Background Radial/Linear Gradients */}
+      {/* Hero Section: SaaS Split-Screen Style */}
+      <section className="relative min-h-[580px] lg:min-h-[660px] flex items-center bg-slate-900 overflow-hidden py-16 lg:py-24">
         <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950" />
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-[#0000FE]/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-[#EF1B1B]/5 rounded-full blur-3xl pointer-events-none" />
 
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-            {/* Left Column: Heading, Tagline, Actions */}
+            {/* Left Column: Headline and Call-To-Action */}
             <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
               <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#EF1B1B]/15 text-[#EF1B1B] text-xs font-black uppercase tracking-widest rounded-full border border-[#EF1B1B]/35 shadow-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#EF1B1B] animate-pulse" />
-                Admissions Open
+                e-PoE Assessment Center
               </span>
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-none tracking-tight">
-                Verifiable Competency-Based Education, <span className="text-[#0000FE] bg-gradient-to-r from-blue-500 to-[#0000FE] bg-clip-text text-transparent">Digitised</span>
+                Get Your e-PoE Ready For <span className="text-[#0000FE] bg-gradient-to-r from-blue-500 to-[#0000FE] bg-clip-text text-transparent">Assessment & Verification</span>
               </h1>
               <p className="text-slate-400 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto lg:mx-0 font-medium leading-relaxed">
-                Access your student Portfolio of Evidence (PoE) portal, sit assessments online, and download verified digital certificates directly from the Headway College portal.
+                Headway College helps trainees check registered assessment units, upload project documents, receive direct lecturer feedback early, and sit online competency modules exams smoothly.
               </p>
               
-              {/* Primary Actions */}
               <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-4">
                 <button
                   onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
@@ -308,23 +229,21 @@ const Landing = () => {
                 </button>
                 <button
                   onClick={() => {
-                    const bodiesSec = document.getElementById('exam-bodies');
-                    if (bodiesSec) bodiesSec.scrollIntoView({ behavior: 'smooth' });
+                    const whySec = document.getElementById('why-epoe');
+                    if (whySec) whySec.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="w-full sm:w-auto px-8 py-4 bg-white/10 hover:bg-white/15 text-white text-sm font-bold rounded-2xl border border-white/15 hover:border-white/35 transition-all backdrop-blur-sm flex items-center justify-center gap-2 cursor-pointer"
                 >
-                  Explore Accreditations
+                  Why e-PoE?
                 </button>
               </div>
             </div>
 
-            {/* Right Column: Portal Showcase Mockup Card */}
+            {/* Right Column: High-Fidelity e-PoE Portal Preview */}
             <div className="lg:col-span-5 relative flex justify-center">
               <div className="absolute -inset-2 bg-gradient-to-r from-[#0000FE]/20 to-[#EF1B1B]/20 rounded-3xl blur-xl opacity-60 pointer-events-none" />
               
-              {/* Portal UI Preview Card */}
               <div className="relative w-full max-w-sm bg-slate-900/80 backdrop-blur-lg rounded-3xl p-6 border border-slate-800 shadow-2xl space-y-5 text-left text-slate-200">
-                {/* Header Window Buttons */}
                 <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                   <div className="flex gap-1.5">
                     <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
@@ -334,7 +253,6 @@ const Landing = () => {
                   <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">headway_poe_v2.0</span>
                 </div>
 
-                {/* Trainee Card */}
                 <div className="space-y-3.5">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-[#0000FE]/10 border border-[#0000FE]/20 flex items-center justify-center text-[#0000FE]">
@@ -346,7 +264,6 @@ const Landing = () => {
                     </div>
                   </div>
 
-                  {/* Registered Units Progress */}
                   <div className="p-3.5 bg-slate-950/40 rounded-2xl border border-slate-800/80 space-y-2">
                     <div className="flex justify-between items-center text-[10px] font-bold">
                       <span className="text-slate-400">ICT Portfolio Submissions</span>
@@ -357,7 +274,6 @@ const Landing = () => {
                     </div>
                   </div>
 
-                  {/* Assessment Center Badge */}
                   <div className="p-3.5 bg-slate-950/40 rounded-2xl border border-slate-800/80 flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Assigned Online Exam</p>
@@ -369,7 +285,6 @@ const Landing = () => {
                   </div>
                 </div>
 
-                {/* Trust Accreditation Footer inside Mockup */}
                 <div className="flex items-center justify-between pt-4 border-t border-slate-800 text-[9px] text-slate-500 font-bold">
                   <span className="flex items-center gap-1"><Award size={10} className="text-[#0000FE]" /> TVET CDACC Accredited</span>
                   <span>100% Verifiable</span>
@@ -380,10 +295,10 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Accreditations Trust Badge strip */}
-      <div className="bg-slate-950 border-y border-slate-900 py-8 select-none">
+      {/* Accreditations Trust Badge Strip */}
+      <div className="bg-slate-950 border-y border-slate-900 py-8 select-none" id="exam-bodies">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-4">
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.25em]">Accredited Examination & Assessment Bodies</p>
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.25em]">Accredited Examination & Assessment Partners</p>
           <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-6 opacity-60">
             {['TVET CDACC', 'KASNEB', 'NITA', 'ICDL Foundation', 'ICM UK', 'TVETA Kenya'].map((body) => (
               <span 
@@ -397,52 +312,177 @@ const Landing = () => {
         </div>
       </div>
 
-      {/* Modern Executive Welcome & Director Quote Section */}
-      <section className="py-24 bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id="about">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center" id="welcome-section">
-          {/* Welcome Card & Image on Left */}
-          <div className="lg:col-span-5 relative">
-            <div className="absolute -inset-4 bg-gradient-to-r from-[#0000FE]/10 to-[#EF1B1B]/10 rounded-[32px] blur-2xl opacity-60 pointer-events-none" />
-            <div className="relative bg-white rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 group">
-              <img 
-                src="https://headwaycollege.ac.ke/uploads/frontend/home_page/wellcome1.jpeg" 
-                alt="Headway College campus environment" 
-                className="w-full h-[380px] object-cover group-hover:scale-103 transition-transform duration-700"
-              />
-              <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-6 text-white">
-                <p className="text-sm font-black tracking-wider uppercase text-[#EF1B1B]">Embakasi Campus</p>
-                <p className="text-xs text-slate-300 font-semibold mt-1">Airport View Plaza, Eastern Bypass, Nairobi</p>
+      {/* Section: The Problem We Solve (Box Files vs. e-PoE Portal) */}
+      <section className="py-24 bg-slate-50 border-b border-slate-200" id="why-epoe">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">The e-PoE Edge</span>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">Your Portfolio Should Not Be Trapped In Box Files</h2>
+            <p className="text-slate-500 font-medium text-sm md:text-base leading-relaxed">
+              Traditional physical files get damaged, misplaced, or forgotten. Move from cluttered box folders to a structured digital workflow.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* The Old Way: Paper Files */}
+            <div className="bg-white p-8 md:p-10 rounded-[32px] border border-slate-200 shadow-sm space-y-6">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                <span className="w-8 h-8 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-bold">
+                  <XCircle size={20} />
+                </span>
+                <h3 className="text-lg font-black text-slate-900">The Old Way (Box Files & WhatsApp)</h3>
               </div>
+              <ul className="space-y-4">
+                {[
+                  "Box files get damaged, stained, or lost.",
+                  "Phone photos and evidence files disappear when needed most.",
+                  "WhatsApp evidence gets buried in old chats and threads.",
+                  "Instructors struggle to review scattered folders and logs early.",
+                  "Trainees discover gaps in unit coverage too late during assessment week."
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-slate-500 text-xs md:text-sm font-medium leading-relaxed">
+                    <span className="text-red-500 pt-0.5 font-bold"><X size={16} /></span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* The New Way: Headway Portal */}
+            <div className="bg-slate-900 p-8 md:p-10 rounded-[32px] border border-slate-800 shadow-xl space-y-6 text-slate-300">
+              <div className="flex items-center gap-3 pb-4 border-b border-slate-800">
+                <span className="w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center font-bold">
+                  <CheckCircle size={20} />
+                </span>
+                <h3 className="text-lg font-black text-white">The Headway Way (Digital e-PoE Portal)</h3>
+              </div>
+              <ul className="space-y-4">
+                {[
+                  "100% secure cloud storage of all your competence files.",
+                  "Zero print costs — upload files directly from your phone or PC.",
+                  "Direct instructor comments and early milestone reviews.",
+                  "Structured checklist of modules and registered units.",
+                  "Immediate readiness status indicators before official assessments start."
+                ].map((item, idx) => (
+                  <li key={idx} className="flex items-start gap-3 text-slate-400 text-xs md:text-sm font-medium leading-relaxed">
+                    <span className="text-emerald-400 pt-0.5 font-bold"><Check size={16} /></span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
           </div>
 
-          {/* Welcome Quote Content on Right */}
-          <div className="lg:col-span-7 space-y-6 text-left">
-            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Director's Message</span>
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
-              Leading the Future of Professional Competence
-            </h2>
-            <div className="w-12 h-1 bg-[#0000FE] rounded-full" />
-            
-            {/* Blockquote Quote */}
-            <div className="relative pl-6 border-l-4 border-[#EF1B1B]/30 space-y-4">
-              <p className="text-slate-600 font-bold italic text-base md:text-lg leading-relaxed">
-                "Welcome to Headway College of Professional Studies. We nurture talent, foster creativity, and equip students with job-ready competencies in today's digital landscape. Our Portfolio of Evidence (PoE) portal is a testament to our commitment to innovation and educational integrity."
-              </p>
-            </div>
-            
-            <p className="text-slate-500 font-medium text-xs md:text-sm leading-relaxed text-justify">
-              At Headway College, we prioritize hands-on skill-building over standard theoretical models. Our programs are closely integrated with exam bodies like TVET CDACC, KASNEB, and NITA, guaranteeing accredited, industry-focused qualifications. We guide each student through structured learning outcomes, helping them build proof of their knowledge dynamically.
+          {/* Highlight Banner */}
+          <div className="bg-[#0000FE]/5 border border-[#0000FE]/10 rounded-2xl p-6 text-center max-w-4xl mx-auto">
+            <p className="text-slate-700 text-xs md:text-sm lg:text-base font-bold leading-relaxed">
+              👉 <span className="text-[#0000FE] font-black">Pro Tip:</span> Uploading evidence early gives lecturers time to review and guide you, minimizing last-minute pressure.
             </p>
+          </div>
+        </div>
+      </section>
 
-            {/* Signature Title */}
-            <div className="pt-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-extrabold text-[#0000FE] border border-slate-200">
-                HW
+      {/* Section: How It Works (Step by Step) */}
+      <section className="py-24 bg-white" id="how-it-works">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Trainee Path</span>
+            <h2 className="text-3xl md:text-4xl font-black text-slate-900 tracking-tight">How Your e-PoE Journey Flows</h2>
+            <p className="text-slate-500 font-medium text-sm md:text-base leading-relaxed">
+              Experience a streamlined, step-by-step digital process from unit registration to certified outcomes.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Upload Evidence",
+                desc: "Upload photos, videos, and documents for your competency units directly from your phone or computer."
+              },
+              {
+                step: "02",
+                title: "Get Reviewed",
+                desc: "Instructors inspect your submissions online and provide direct feedback and grading outcomes."
+              },
+              {
+                step: "03",
+                title: "Sit Assessments",
+                desc: "Participate in integrated online exams and practical tests right inside the secure portal environment."
+              },
+              {
+                step: "04",
+                title: "Receive Certificates",
+                desc: "Download high-resolution, secure Certificate of Competence files complete with digital QR verification seals."
+              }
+            ].map((item, idx) => (
+              <div 
+                key={idx} 
+                className="bg-slate-50 p-8 rounded-3xl border border-slate-100 shadow-sm relative group hover:border-[#0000FE] hover:shadow-md hover:-translate-y-1 transition-all duration-300"
+              >
+                <span className="absolute top-4 right-6 text-4xl font-black text-slate-200/80 group-hover:text-[#0000FE]/20 transition-colors">
+                  {item.step}
+                </span>
+                <div className="space-y-4 pt-4">
+                  <h3 className="text-lg font-black text-slate-900">{item.title}</h3>
+                  <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed">
+                    {item.desc}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Office of the Director</h4>
-                <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">Headway College of Professional Studies</p>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Modern Executive Welcome & Director Quote Section */}
+      <section className="py-24 bg-slate-50 border-y border-slate-200" id="about">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center" id="welcome-section">
+            {/* Welcome Card & Image on Left */}
+            <div className="lg:col-span-5 relative">
+              <div className="absolute -inset-4 bg-gradient-to-r from-[#0000FE]/10 to-[#EF1B1B]/10 rounded-[32px] blur-2xl opacity-60 pointer-events-none" />
+              <div className="relative bg-white rounded-[32px] overflow-hidden shadow-2xl border border-slate-100 group">
+                <img 
+                  src="https://headwaycollege.ac.ke/uploads/frontend/home_page/wellcome1.jpeg" 
+                  alt="Headway College campus environment" 
+                  className="w-full h-[380px] object-cover group-hover:scale-103 transition-transform duration-700"
+                />
+                <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950 via-slate-900/40 to-transparent p-6 text-white">
+                  <p className="text-sm font-black tracking-wider uppercase text-[#EF1B1B]">Embakasi Campus</p>
+                  <p className="text-xs text-slate-300 font-semibold mt-1">Airport View Plaza, Eastern Bypass, Nairobi</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Welcome Quote Content on Right */}
+            <div className="lg:col-span-7 space-y-6 text-left">
+              <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Director's Message</span>
+              <h2 className="text-3xl md:text-4xl font-black tracking-tight text-slate-900 leading-tight">
+                Leading the Future of Professional Competence
+              </h2>
+              <div className="w-12 h-1 bg-[#0000FE] rounded-full" />
+              
+              {/* Blockquote Quote */}
+              <div className="relative pl-6 border-l-4 border-[#EF1B1B]/30 space-y-4">
+                <p className="text-slate-600 font-bold italic text-base md:text-lg leading-relaxed">
+                  "Welcome to Headway College of Professional Studies. We nurture talent, foster creativity, and equip students with job-ready competencies in today's digital landscape. Our Portfolio of Evidence (PoE) portal is a testament to our commitment to innovation and educational integrity."
+                </p>
+              </div>
+              
+              <p className="text-slate-500 font-medium text-xs md:text-sm leading-relaxed text-justify">
+                At Headway College, we prioritize hands-on skill-building over standard theoretical models. Our programs are closely integrated with exam bodies like TVET CDACC, KASNEB, and NITA, guaranteeing accredited, industry-focused qualifications. We guide each student through structured learning outcomes, helping them build proof of their knowledge dynamically.
+              </p>
+
+              {/* Signature Title */}
+              <div className="pt-4 flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-extrabold text-[#0000FE] border border-slate-200">
+                  HW
+                </div>
+                <div>
+                  <h4 className="text-xs font-black text-slate-900 uppercase tracking-wide">Office of the Director</h4>
+                  <p className="text-[10px] text-slate-400 font-semibold uppercase mt-0.5">Headway College of Professional Studies</p>
+                </div>
               </div>
             </div>
           </div>
@@ -450,164 +490,160 @@ const Landing = () => {
       </section>
 
       {/* Interactive Course Finder & Department Filter */}
-      <section className="py-20 bg-white max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Find Your Path</span>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">Explore Our Professional Courses</h2>
-          <p className="text-slate-500 font-medium text-sm md:text-base">
-            Select a department to view featured programs accredited by national and global certification boards.
-          </p>
-        </div>
+      <section className="py-24 bg-white" id="courses">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          <div className="text-center space-y-3 max-w-2xl mx-auto">
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Find Your Path</span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Explore Our Professional Courses</h2>
+            <p className="text-slate-500 font-medium text-sm md:text-base">
+              Select a department to view featured programs accredited by national and global certification boards.
+            </p>
+          </div>
 
-        {/* Tab Buttons */}
-        <div className="flex justify-center gap-4 border-b border-slate-100 pb-4 max-w-md mx-auto">
-          {[
-            { id: 'it', label: 'IT & Digital' },
-            { id: 'business', label: 'Business & Finance' },
-            { id: 'technical', label: 'Technical & Beauty' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveDeptTab(tab.id)}
-              className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer border-none bg-transparent ${
-                activeDeptTab === tab.id
-                  ? 'border-[#0000FE] text-[#0000FE]'
-                  : 'border-transparent text-slate-400 hover:text-slate-600'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          {/* Tab Buttons */}
+          <div className="flex justify-center gap-4 border-b border-slate-100 pb-4 max-w-md mx-auto">
+            {[
+              { id: 'it', label: 'IT & Digital' },
+              { id: 'business', label: 'Business & Finance' },
+              { id: 'technical', label: 'Technical & Beauty' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveDeptTab(tab.id)}
+                className={`pb-2 text-sm font-bold uppercase tracking-wider transition-all border-b-2 cursor-pointer border-none bg-transparent ${
+                  activeDeptTab === tab.id
+                    ? 'border-[#0000FE] text-[#0000FE]'
+                    : 'border-transparent text-slate-400 hover:text-slate-600'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
 
-        {/* Course Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {activeDeptTab === 'it' && [
-            { name: "Diploma in ICT (Level 6)", body: "TVET CDACC", duration: "2 Years", desc: "Advanced training in systems development, networking, and IT infrastructure administration." },
-            { name: "Certificate in ICT (Level 5)", body: "TVET CDACC", duration: "1 Year", desc: "Foundation training in computer applications, databases, and software support." },
-            { name: "International Computer Driving License (ICDL)", body: "ICDL Foundation", duration: "3 Months", desc: "Globally accredited standard certification for essential work computing skills." }
-          ].map((course, i) => (
-            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
-              <div className="space-y-4">
-                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
-                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
-                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+          {/* Course Cards Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {activeDeptTab === 'it' && [
+              { name: "Diploma in ICT (Level 6)", body: "TVET CDACC", duration: "2 Years", desc: "Advanced training in systems development, networking, and IT infrastructure administration." },
+              { name: "Certificate in ICT (Level 5)", body: "TVET CDACC", duration: "1 Year", desc: "Foundation training in computer applications, databases, and software support." },
+              { name: "International Computer Driving License (ICDL)", body: "ICDL Foundation", duration: "3 Months", desc: "Globally accredited standard certification for essential work computing skills." }
+            ].map((course, i) => (
+              <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+                <div className="space-y-4">
+                  <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                  <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                  <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+                </div>
+                <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                  <button 
+                    onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                    className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                  >
+                    Apply <ArrowRight size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
-                <button 
-                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
-                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
-                >
-                  Apply <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {activeDeptTab === 'business' && [
-            { name: "KASNEB Professional Courses (CPA)", body: "KASNEB", duration: "2.5 Years", desc: "Professional accounting training covering taxation, audit, and financial management." },
-            { name: "Diploma in Business Management", body: "KNEC / ICM", duration: "2 Years", desc: "Comprehensive business administration studies covering operations, HR, and marketing." },
-            { name: "Certificate in Hospitality Management", body: "ICM / KNEC", duration: "1.5 Years", desc: "Foundational training in food & beverage management, catering, and front office operations." }
-          ].map((course, i) => (
-            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
-              <div className="space-y-4">
-                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
-                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
-                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+            {activeDeptTab === 'business' && [
+              { name: "KASNEB Professional Courses (CPA)", body: "KASNEB", duration: "2.5 Years", desc: "Professional accounting training covering taxation, audit, and financial management." },
+              { name: "Diploma in Business Management", body: "KNEC / ICM", duration: "2 Years", desc: "Comprehensive business administration studies covering operations, HR, and marketing." },
+              { name: "Certificate in Hospitality Management", body: "ICM / KNEC", duration: "1.5 Years", desc: "Foundational training in food & beverage management, catering, and front office operations." }
+            ].map((course, i) => (
+              <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+                <div className="space-y-4">
+                  <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                  <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                  <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+                </div>
+                <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                  <button 
+                    onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                    className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                  >
+                    Apply <ArrowRight size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
-                <button 
-                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
-                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
-                >
-                  Apply <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
 
-          {activeDeptTab === 'technical' && [
-            { name: "Diploma in Fashion Design", body: "KNEC / NITA", duration: "2 Years", desc: "Creative garment styling, pattern construction, textile sciences, and clothing technology." },
-            { name: "Certificate in Hairdressing & Beauty Therapy", body: "NITA / KNEC", duration: "1 Year", desc: "Comprehensive training in salon work, hair styling, cosmetology, and skin care aesthetics." },
-            { name: "NITA Grade III/II/I Trade Test Preparations", body: "NITA Board", duration: "6 Months", desc: "Practical hands-on bootcamps preparing learners for government trades assessments." }
-          ].map((course, i) => (
-            <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
-              <div className="space-y-4">
-                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
-                <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
-                <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+            {activeDeptTab === 'technical' && [
+              { name: "Diploma in Fashion Design", body: "KNEC / NITA", duration: "2 Years", desc: "Creative garment styling, pattern construction, textile sciences, and clothing technology." },
+              { name: "Certificate in Hairdressing & Beauty Therapy", body: "NITA / KNEC", duration: "1 Year", desc: "Comprehensive training in salon work, hair styling, cosmetology, and skin care aesthetics." },
+              { name: "NITA Grade III/II/I Trade Test Preparations", body: "NITA Board", duration: "6 Months", desc: "Practical hands-on bootcamps preparing learners for government trades assessments." }
+            ].map((course, i) => (
+              <div key={i} className="bg-slate-50 rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#0000FE] hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group">
+                <div className="space-y-4">
+                  <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">{course.body}</span>
+                  <h3 className="text-lg font-black text-slate-900 leading-snug">{course.name}</h3>
+                  <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{course.desc}</p>
+                </div>
+                <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
+                  <button 
+                    onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
+                    className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
+                  >
+                    Apply <ArrowRight size={14} />
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center justify-between pt-6 border-t border-slate-200/60 mt-6">
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">Duration: {course.duration}</span>
-                <button 
-                  onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
-                  className="text-xs font-black uppercase text-[#0000FE] hover:text-[#EF1B1B] transition-colors flex items-center gap-1 bg-transparent border-none cursor-pointer"
-                >
-                  Apply <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Facilities/Notification Section */}
-      <section className="py-20 bg-slate-100 border-y border-slate-200" id="facilities">
+      {/* Facilities Section */}
+      <section className="py-24 bg-slate-50 border-t border-slate-200" id="facilities">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Facilities & Support</span>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-              Why Learn With Us?
-            </h2>
+            <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Support Services</span>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Why Learn With Us?</h2>
             <p className="text-slate-500 font-medium text-sm md:text-base">
               Providing modern facilities and holistic assistance to support students academically and logistically.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Online Classes */}
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#EF1B1B] hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-14 h-14 rounded-2xl bg-[#0000FE]/5 group-hover:bg-[#0000FE]/10 flex items-center justify-center text-[#0000FE] mb-6 transition-colors">
                 <Laptop size={28} />
               </div>
               <h3 className="text-lg font-black text-slate-900 mb-3">Online Classes</h3>
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">
-                Our online classes are designed to provide the same high-quality education as our on-campus programs, allowing you to learn at your own pace from the comfort of your home.
+                Flexible online classes designed to fit your busy professional schedule, keeping you on track from home.
               </p>
             </div>
 
-            {/* Scholarships */}
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#EF1B1B] hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-14 h-14 rounded-2xl bg-[#0000FE]/5 group-hover:bg-[#0000FE]/10 flex items-center justify-center text-[#0000FE] mb-6 transition-colors">
                 <GraduationCap size={28} />
               </div>
               <h3 className="text-lg font-black text-slate-900 mb-3">Scholarships</h3>
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">
-                We believe in making education accessible to everyone. Our scholarship programs are designed to support deserving students who may need financial assistance for their studies.
+                Assisting deserving trainees with merit-based tuition support to lower barriers to entry.
               </p>
             </div>
 
-            {/* Books & Library */}
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#EF1B1B] hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-14 h-14 rounded-2xl bg-[#0000FE]/5 group-hover:bg-[#0000FE]/10 flex items-center justify-center text-[#0000FE] mb-6 transition-colors">
                 <Library size={28} />
               </div>
               <h3 className="text-lg font-black text-slate-900 mb-3">Books & Library</h3>
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">
-                Our well-equipped library and vast collection of books, journals, and digital resources ensure that you have everything you need for a rich and successful academic journey.
+                Vast physical and digital research archives ensuring students have access to verified study texts.
               </p>
             </div>
 
-            {/* Hostels */}
             <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-xl hover:border-[#EF1B1B] hover:-translate-y-1 transition-all duration-300 group">
               <div className="w-14 h-14 rounded-2xl bg-[#0000FE]/5 group-hover:bg-[#0000FE]/10 flex items-center justify-center text-[#0000FE] mb-6 transition-colors">
                 <Home size={28} />
               </div>
               <h3 className="text-lg font-black text-slate-900 mb-3">Hostels</h3>
               <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">
-                Our hostels offer a safe, affordable, and convenient environment for students who need accommodation while studying at the college with fully furnished and spacious rooms.
+                Safe, comfortable, and affordable student housing blocks adjacent to the Embakasi campus.
               </p>
             </div>
           </div>
@@ -615,7 +651,7 @@ const Landing = () => {
       </section>
 
       {/* "Inside the PoE Portal" Mockup Preview Section */}
-      <section className="py-20 bg-slate-50 border-b border-slate-200">
+      <section className="py-24 bg-white border-t border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Digital Innovation</span>
@@ -626,7 +662,7 @@ const Landing = () => {
           </div>
 
           {/* Portal Switcher Tabs */}
-          <div className="flex justify-center gap-4 bg-white p-2 rounded-2xl border border-slate-100 max-w-lg mx-auto shadow-sm">
+          <div className="flex justify-center gap-4 bg-slate-50 p-2 rounded-2xl border border-slate-100 max-w-lg mx-auto shadow-sm">
             {[
               { id: 'dashboard', label: 'Trainee Dashboard' },
               { id: 'exam', label: 'Online Exam Portal' },
@@ -638,7 +674,7 @@ const Landing = () => {
                 className={`flex-1 py-3 text-xs font-extrabold uppercase tracking-wider rounded-xl transition-all border-none cursor-pointer ${
                   activePortalTab === tab.id
                     ? 'bg-[#0000FE] text-white shadow-md'
-                    : 'text-slate-500 hover:text-[#0000FE] hover:bg-slate-50'
+                    : 'text-slate-500 hover:text-[#0000FE] hover:bg-slate-100'
                 }`}
               >
                 {tab.label}
@@ -741,7 +777,6 @@ const Landing = () => {
         </div>
       </section>
 
-
       {/* Counters & Statistics Section */}
       <section 
         className="py-20 relative bg-cover bg-center text-white"
@@ -751,120 +786,58 @@ const Landing = () => {
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-12">
           <div className="space-y-3">
-            <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-              Let The Numbers Speak
-            </h2>
+            <h2 className="text-3xl md:text-4xl font-black tracking-tight">Let The Numbers Speak</h2>
             <p className="text-blue-100 font-semibold max-w-xl mx-auto text-sm">
               Headway College continues to excel in professional studies across multiple disciplines.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            {/* Courses Stats */}
             <div className="bg-slate-900/30 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-lg space-y-4">
               <p className="text-blue-200 text-xs font-black uppercase tracking-widest">Courses Offered</p>
-              <p className="text-5xl font-black text-white tracking-tight">
-                {stats.courses}+
-              </p>
+              <p className="text-5xl font-black text-white tracking-tight">{stats.courses}+</p>
               <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                <div 
-                  className="bg-[#EF1B1B] h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(stats.courses / 96) * 100}%` }}
-                />
+                <div className="bg-white h-full" style={{ width: `${(stats.courses / 96) * 100}%` }} />
               </div>
             </div>
 
-            {/* Exam Bodies Stats */}
             <div className="bg-slate-900/30 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-lg space-y-4">
-              <p className="text-blue-200 text-xs font-black uppercase tracking-widest">Accredited Exam Bodies</p>
-              <p className="text-5xl font-black text-white tracking-tight">
-                {stats.bodies}+
-              </p>
+              <p className="text-blue-200 text-xs font-black uppercase tracking-widest">Assessing Bodies</p>
+              <p className="text-5xl font-black text-white tracking-tight">{stats.bodies}+</p>
               <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                <div 
-                  className="bg-[#EF1B1B] h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(stats.bodies / 8) * 100}%` }}
-                />
+                <div className="bg-white h-full" style={{ width: `${(stats.bodies / 8) * 100}%` }} />
               </div>
             </div>
 
-            {/* Departments Stats */}
             <div className="bg-slate-900/30 backdrop-blur-md rounded-2xl p-8 border border-white/10 shadow-lg space-y-4">
               <p className="text-blue-200 text-xs font-black uppercase tracking-widest">Departments</p>
-              <p className="text-5xl font-black text-white tracking-tight">
-                {stats.depts}+
-              </p>
+              <p className="text-5xl font-black text-white tracking-tight">{stats.depts}+</p>
               <div className="w-full bg-white/20 h-2 rounded-full overflow-hidden">
-                <div 
-                  className="bg-[#EF1B1B] h-full rounded-full transition-all duration-300"
-                  style={{ width: `${(stats.depts / 6) * 100}%` }}
-                />
+                <div className="bg-white h-full" style={{ width: `${(stats.depts / 6) * 100}%` }} />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Exam Bodies Section */}
-      <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12" id="exam-bodies">
-        <div className="text-center space-y-3 max-w-2xl mx-auto">
-          <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Accreditations</span>
-          <h2 className="text-3xl font-black text-slate-900 tracking-tight">
-            Our Certified Examination Bodies
-          </h2>
-          <p className="text-slate-500 font-medium text-sm md:text-base">
-            We partner with leading local and global certification and regulatory boards to ensure valid, accredited credentials.
+      {/* Teachers / Description Section */}
+      <section 
+        className="py-24 relative bg-cover bg-center text-white"
+        style={{ 
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(https://headwaycollege.ac.ke/uploads/frontend/home_page/featured-parallax1.jpg)`
+        }}
+      >
+        <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
+          <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Expert Faculty</span>
+          <h2 className="text-3xl md:text-4xl font-black tracking-tight">Experienced Teaching Team</h2>
+          <p className="text-slate-300 text-sm md:text-base leading-relaxed font-medium text-justify md:text-center">
+            At Headway College of Professional Studies, we take pride in our team of dedicated and highly skilled educators who bring a wealth of knowledge and expertise to every class. Our faculty members hold advanced degrees and certifications in their respective fields, ensuring top-notch education for our students. With years of experience in both academia and industry, our teachers blend theory with practical insights, making learning relevant and engaging.
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[
-            {
-              abbr: "CDACC",
-              name: "Curriculum Development Assessment and Certification Council",
-              desc: "Assesses learners through a competency-based assessment framework and issues certifications recognized by employers and industries."
-            },
-            {
-              abbr: "KASNEB",
-              name: "Kenya Accountants and Secretaries National Examinations Board",
-              desc: "Offers professional certifications such as CPA, ATD, and other accounting, finance, and information technology qualifications."
-            },
-            {
-              abbr: "NITA",
-              name: "National Industrial Training Authority",
-              desc: "Certifies technical and vocational training programs, including hairdressing, beauty therapy, fashion design, and other skilled trades."
-            },
-            {
-              abbr: "ICDL",
-              name: "International Computer Driving License",
-              desc: "Offers globally recognized certification in computer proficiency, digital literacy, and essential work computing skills."
-            },
-            {
-              abbr: "ICM",
-              name: "Institute of Commercial Management",
-              desc: "Provides internationally recognized qualifications in hospitality, business studies, engineering, media, and vocational training."
-            },
-            {
-              abbr: "TVETA",
-              name: "Technical and Vocational Education and Training Authority",
-              desc: "Regulates and accredits technical and vocational institutions and programs to ensure quality standard compliance."
-            }
-          ].map((body) => (
-            <div key={body.abbr} className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all flex flex-col justify-between">
-              <div className="space-y-4">
-                <span className="inline-block px-3 py-1 bg-[#0000FE]/10 text-[#0000FE] text-xs font-black rounded-lg">
-                  {body.abbr}
-                </span>
-                <h3 className="text-lg font-black text-slate-900 tracking-tight">{body.name}</h3>
-                <p className="text-slate-500 text-xs md:text-sm font-medium leading-relaxed">{body.desc}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </section>
 
       {/* FAQ Section */}
-      <section className="py-20 bg-slate-100 border-t border-slate-200">
+      <section className="py-24 bg-slate-50 border-t border-slate-200" id="faq">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
           <div className="text-center space-y-3">
             <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">FAQ</span>
@@ -878,7 +851,7 @@ const Landing = () => {
             {[
               {
                 q: "What is a Portfolio of Evidence (PoE) and how does it work?",
-                a: "A Portfolio of Evidence (PoE) is a cumulative compile of all your academic assignments, lab reports, and assessments showing your competencies. Rather than depending on a single terminal exam, instructors evaluate your learning milestones continuously through the portal."
+                a: "A Portfolio of Evidence (PoE) is a cumulative collection of all your academic assignments, lab reports, and assessments showing your competencies. Rather than depending on a single terminal exam, instructors evaluate your learning milestones continuously through the portal."
               },
               {
                 q: "Are Headway College courses accredited by TVETA and CDACC?",
@@ -920,147 +893,129 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Teachers / Description Section */}
-      <section 
-        className="py-24 relative bg-cover bg-center text-white"
-        style={{ 
-          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.8)), url(https://headwaycollege.ac.ke/uploads/frontend/home_page/featured-parallax1.jpg)`
-        }}
-      >
-        <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-          <span className="text-xs font-black uppercase tracking-widest text-[#EF1B1B]">Expert Faculty</span>
-          <h2 className="text-3xl md:text-4xl font-black tracking-tight">
-            Experienced Teaching Team
-          </h2>
-          <p className="text-slate-300 text-sm md:text-base leading-relaxed font-medium text-justify md:text-center">
-            At Headway College of Professional Studies, we take pride in our team of dedicated and highly skilled educators who bring a wealth of knowledge and expertise to every class. Our faculty members hold advanced degrees and certifications in their respective fields, ensuring top-notch education for our students. With years of experience in both academia and industry, our teachers blend theory with practical insights, making learning relevant and engaging. They employ modern teaching methods, including interactive learning, case studies, and hands-on training, to make concepts come alive.
-          </p>
-        </div>
-      </section>
-
-
-
       {/* CTA Application Banner */}
       <section className="bg-[#EF1B1B] text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-8 text-center lg:text-left">
-          <div className="space-y-2">
-            <h3 className="text-xl md:text-2xl font-black">Call/Make an Online Course Application</h3>
-            <p className="text-red-100 font-medium text-sm flex items-center justify-center lg:justify-start gap-2">
-              <Phone size={18} /> Connect with Admissions directly at +254 742 425343
-            </p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-left space-y-2">
+            <h3 className="text-2xl font-black tracking-tight">Ready to start your professional journey?</h3>
+            <p className="text-red-100 font-semibold text-xs md:text-sm">Apply online today and reserve your spot for the upcoming intake.</p>
           </div>
-          <button 
-            onClick={() => window.open('https://headwaycollege.ac.ke/home/admission', '_blank')}
-            className="px-8 py-4 bg-white hover:bg-slate-900 text-[#EF1B1B] hover:text-white font-black text-base rounded-2xl shadow-lg transition-all duration-300 hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 cursor-pointer"
+          <a 
+            href="https://headwaycollege.ac.ke/home/admission" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="w-full md:w-auto px-8 py-4 bg-white hover:bg-slate-100 text-[#EF1B1B] text-center text-sm font-black uppercase tracking-widest rounded-2xl shadow-lg transition-transform duration-300 hover:-translate-y-0.5 active:translate-y-0"
           >
-            Join Us Now <ExternalLink size={18} />
-          </button>
+            Apply Online Now
+          </a>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-[#0000FE] text-white pt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* Logo & Description */}
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center text-[#0000FE] font-black text-xl shadow-lg">
-                H
-              </div>
-              <span className="text-lg font-black text-white tracking-tight">HEADWAY COLLEGE</span>
-            </div>
-            <p className="text-blue-100 text-xs md:text-sm leading-relaxed font-medium text-justify">
-              Headway is a premier professional College located at Embakasi South Constituency at Airport View Plaza, Eastern Bypass Opposite Even Business Park (Kobil) Cabanas.
+      {/* Unified Footer */}
+      <footer className="bg-slate-950 text-slate-400 py-16 border-t border-slate-900" id="contact">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12 text-left">
+          {/* Logo & Intro */}
+          <div className="space-y-4 md:col-span-1">
+            <img 
+              src="/logo.png" 
+              alt="Headway College Logo" 
+              className="h-16 w-auto object-contain brightness-0 invert" 
+            />
+            <p className="text-xs font-semibold leading-relaxed text-slate-500">
+              Where Excellence Meets Opportunity. Embakasi Campus, Nairobi.
             </p>
-          </div>
-
-          {/* Address */}
-          <div className="space-y-4">
-            <h4 className="text-lg font-black tracking-tight border-b border-white/20 pb-2">Address & Contacts</h4>
-            <ul className="space-y-3 text-blue-100 text-xs md:text-sm font-medium">
-              <li className="flex items-start gap-2">
-                <MapPin size={16} className="text-white shrink-0 mt-0.5" />
-                <span>PO BOX 27147-00100 Nairobi, Kenya</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone size={16} className="text-white shrink-0" />
-                <span>+254 742 425343</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Mail size={16} className="text-white shrink-0" />
-                <a href="mailto:info@headwaycollege.ac.ke" className="hover:underline">info@headwaycollege.ac.ke</a>
-              </li>
-            </ul>
           </div>
 
           {/* Quick Links */}
           <div className="space-y-4">
-            <h4 className="text-lg font-black tracking-tight border-b border-white/20 pb-2">Quick Navigation</h4>
-            <ul className="grid grid-cols-2 gap-2 text-blue-100 text-xs md:text-sm font-medium">
+            <h4 className="text-white font-black text-xs uppercase tracking-wider">Quick Links</h4>
+            <ul className="space-y-2 text-xs">
               {menuItems.map((item) => (
                 <li key={item.label}>
                   <a 
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item.href)}
-                    className="hover:text-white hover:underline flex items-center gap-1"
+                    className="hover:text-white transition-colors"
                   >
-                    <ArrowRight size={12} /> {item.label}
+                    {item.label}
                   </a>
                 </li>
               ))}
-              <li>
-                <button 
-                  onClick={() => navigate(isAuthenticated ? '/dashboard' : '/login')}
-                  className="hover:text-white hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <ArrowRight size={12} /> Student Portal
-                </button>
+            </ul>
+          </div>
+
+          {/* Certifications */}
+          <div className="space-y-4">
+            <h4 className="text-white font-black text-xs uppercase tracking-wider">Programs</h4>
+            <ul className="space-y-2 text-xs">
+              <li>IT & Computer Science</li>
+              <li>Business & Accounting</li>
+              <li>Vocational Programs</li>
+              <li>Cosmetology & Beauty</li>
+            </ul>
+          </div>
+
+          {/* Contact Details */}
+          <div className="space-y-4">
+            <h4 className="text-white font-black text-xs uppercase tracking-wider">Contact Info</h4>
+            <ul className="space-y-3 text-xs">
+              <li className="flex items-start gap-2.5">
+                <MapPin size={16} className="text-[#EF1B1B] shrink-0 mt-0.5" />
+                <span>Airport View Plaza, 3rd Floor, Eastern Bypass, Embakasi, Nairobi</span>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Phone size={16} className="text-[#EF1B1B] shrink-0" />
+                <a href="tel:+254709230000" className="hover:text-white transition-colors">+254 709 230 000</a>
+              </li>
+              <li className="flex items-center gap-2.5">
+                <Mail size={16} className="text-[#EF1B1B] shrink-0" />
+                <a href="mailto:info@headwaycollege.ac.ke" className="hover:text-white transition-colors">info@headwaycollege.ac.ke</a>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Copyright */}
-        <div className="bg-slate-900/25 border-t border-white/10 py-6 text-center text-xs text-blue-200">
-          <div className="max-w-7xl mx-auto px-4">
-            Copyright © {new Date().getFullYear()} Headway College of Professional Studies - Powered by Jisoft Systems
+        {/* Legal bar */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-12 border-t border-slate-900/60 text-center text-[10px] font-bold text-slate-600 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p>© 2026 Headway College of Professional Studies. All rights reserved.</p>
+          <div className="flex gap-6">
+            <a href="https://headwaycollege.ac.ke/home/privacy_policy" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="https://headwaycollege.ac.ke/home/terms_conditions" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Terms of Service</a>
           </div>
         </div>
       </footer>
 
       {/* Floating WhatsApp chat widget */}
-      <div className="fixed bottom-6 right-6 z-50">
+      <div className="fixed bottom-6 right-6 z-40 space-y-3">
         {whatsappOpen && (
-          <div className="mb-4 w-80 bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-300">
-            <div className="bg-emerald-600 p-4 text-white flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center font-bold">G</div>
-              <div>
-                <h4 className="text-sm font-black">Gloriah - Receptionist</h4>
-                <p className="text-[10px] text-emerald-100 font-semibold flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-ping" /> Online & Available
+          <div className="bg-white rounded-3xl p-5 shadow-2xl border border-slate-100 max-w-[280px] text-left animate-slide-up text-slate-800">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold font-sans shrink-0">
+                H
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-xs font-black text-slate-900 leading-none">Headway Admissions</h4>
+                <span className="inline-block px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[8px] font-black uppercase rounded-sm">Online</span>
+                <p className="text-[10px] text-slate-500 font-semibold leading-relaxed mt-2">
+                  Hello! How can we assist you with admissions, course selection, or portal access today?
                 </p>
               </div>
             </div>
-            <div className="p-4 space-y-3 bg-slate-50">
-              <p className="text-xs text-slate-600 leading-relaxed font-medium">
-                Welcome to Headway College of Professional Studies. Click below to start chatting with our customer care representative.
-              </p>
-              <a 
-                href="https://wa.me/254742425343" 
-                target="_blank" 
-                rel="noreferrer"
-                className="block w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-center rounded-xl text-xs shadow-md transition-colors"
-              >
-                Send WhatsApp Message
-              </a>
-            </div>
+            <a 
+              href="https://wa.me/254709230000" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="mt-4 w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-black uppercase tracking-wider rounded-xl shadow-md flex items-center justify-center gap-1.5 text-decoration-none"
+            >
+              Start Chat <ArrowRight size={14} />
+            </a>
           </div>
         )}
-        <button
+        <button 
           onClick={() => setWhatsappOpen(!whatsappOpen)}
-          className="p-4 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer"
+          className="w-14 h-14 bg-emerald-500 hover:bg-emerald-600 text-white rounded-full flex items-center justify-center shadow-2xl hover:scale-105 active:scale-95 transition-all cursor-pointer border-none ml-auto"
         >
-          {whatsappOpen ? <X size={24} /> : <MessageSquare size={24} />}
+          <MessageSquare size={24} />
         </button>
       </div>
     </div>
