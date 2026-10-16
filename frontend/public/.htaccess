@@ -1,23 +1,24 @@
-# DO NOT EDIT. passenger_wsgi config rules
-PassengerAppRoot "/home1/headwayc/poe_backend"
-PassengerBaseURI "/api"
-PassengerPython "/home1/headwayc/virtualenv/poe_backend/3.10/bin/python"
-# END passenger_wsgi config rules
-
-Options +FollowSymLinks
-
-# Serve index.html when accessing the root directory
+Options +FollowSymLinks -Indexes
 DirectoryIndex index.html
 
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
 
-  # Specifically serve index.html for the root path
+  # 1. Route /api and /api/... to the PHP backend
+  RewriteRule ^api/(.*)$ backend_php/public/index.php [QSA,L]
+  RewriteRule ^api$ backend_php/public/index.php [QSA,L]
+
+  # 2. Allow direct access to backend_php files if requested
+  RewriteCond %{REQUEST_URI} ^/backend_php/ [NC]
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # 3. Specifically serve index.html for root path
   RewriteRule ^$ /index.html [L]
 
-  # For any other route, if it's not an API call and the file/dir doesn't exist, serve index.html
-  RewriteCond %{REQUEST_URI} !^/api/ [NC]
+  # 4. React Single Page App fallback for all other routes
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteRule . /index.html [L]
