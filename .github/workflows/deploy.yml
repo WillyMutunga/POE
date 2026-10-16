@@ -25,26 +25,26 @@ jobs:
           npm ci
           npm run build
 
-      - name: 🚀 Deploy Frontend → /poe/
+      - name: 🚀 Deploy Frontend → poe root
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER || 'ftp.headwaycollege.ac.ke' }}
           username: ${{ contains(secrets.FTP_USERNAME, '@') && secrets.FTP_USERNAME || (secrets.FTP_USERNAME == 'poe.headwaycollege.ac.ke' && 'poe@headwaycollege.ac.ke' || secrets.FTP_USERNAME) }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./frontend/dist/
-          server-dir: ./poe/
+          server-dir: ./
           exclude: |
             **/.git*
             **/.env
 
-      - name: 🚀 Deploy PHP Backend → /poe/backend_php/
+      - name: 🚀 Deploy PHP Backend → poe/backend_php/
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER || 'ftp.headwaycollege.ac.ke' }}
           username: ${{ contains(secrets.FTP_USERNAME, '@') && secrets.FTP_USERNAME || (secrets.FTP_USERNAME == 'poe.headwaycollege.ac.ke' && 'poe@headwaycollege.ac.ke' || secrets.FTP_USERNAME) }}
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: ./backend_php/
-          server-dir: ./poe/backend_php/
+          server-dir: ./backend_php/
           exclude: |
             **/.env
             **/.git*
