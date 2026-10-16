@@ -86,12 +86,16 @@ switch (true) {
         break;
 
     // PoE Evidence & Portfolio Routes
-    case $uri === '/poe/portfolios' && $method === 'GET':
+    case ($uri === '/poe/portfolios' || $uri === '/poe/portfolios/') && $method === 'GET':
         \App\Controllers\PoeController::listPortfolios();
         break;
 
-    case $uri === '/poe/evidence' && $method === 'POST':
+    case ($uri === '/poe/evidence' || $uri === '/poe/evidence/') && $method === 'POST':
         \App\Controllers\PoeController::createEvidence();
+        break;
+
+    case ($uri === '/poe/poe-management-analytics' || $uri === '/poe/poe-management-analytics/') && $method === 'GET':
+        \App\Controllers\PoeController::getManagementAnalytics();
         break;
 
     // Online Exam Routes
