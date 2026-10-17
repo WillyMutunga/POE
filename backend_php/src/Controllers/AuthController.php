@@ -327,4 +327,118 @@ class AuthController {
             echo json_encode(['detail' => 'Error fetching students: ' . $e->getMessage()]);
         }
     }
+
+    public static function updateProfile(): void {
+        try {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Authentication credentials were not provided.']);
+                return;
+            }
+            $payload = JwtService::decode($matches[1]);
+            if (!$payload) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Invalid token.']);
+                return;
+            }
+
+            $db = Database::getConnection();
+            $uid = (int)($payload['user_id'] ?? 0);
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+
+            $fields = [];
+            $params = [];
+            if (isset($input['first_name'])) { $fields[] = 'first_name = ?'; $params[] = trim($input['first_name']); }
+            if (isset($input['last_name'])) { $fields[] = 'last_name = ?'; $params[] = trim($input['last_name']); }
+            if (isset($input['phone_number'])) { $fields[] = 'phone_number = ?'; $params[] = trim($input['phone_number']); }
+            if (isset($input['email'])) { $fields[] = 'email = ?'; $params[] = trim($input['email']); }
+            if (!empty($input['password'])) {
+                $fields[] = 'password = ?';
+                $params[] = \App\Auth\DjangoPasswordHasher::make($input['password']);
+            }
+
+            if (!empty($fields)) {
+                $params[] = $uid;
+                $sql = 'UPDATE users_user SET ' . implode(', ', $fields) . ' WHERE id = ?';
+                $stmt = $db->prepare($sql);
+                $stmt->execute($params);
+            }
+
+            self::profile();
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['detail' => 'Error updating profile: ' . $e->getMessage()]);
+        }
+    }
+
+    public static function exportStudentsPdf(): void {
+        try {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                $token = $_GET['token'] ?? '';
+                if ($token) {
+                    $payload = JwtService::decode($token);
+                }
+            } else {
+                $payload = JwtService::decode($matches[1]);
+            }
+
+            $db = Database::getConnection();
+            $stmt = $db->query("SELECT u.registration_number, u.username, u.first_name, u.last_name, c.name as course_name 
+                                FROM users_user u 
+                                LEFT JOIN academic_course c ON u.course_id = c.id 
+                                WHERE u.role = 'STUDENT' 
+                                ORDER BY u.registration_number ASC");
+            $rows = [];
+            while ($r = $stmt->fetch()) {
+                $name = trim(($r['first_name'] ?? '') . ' ' . ($r['last_name'] ?? '')) ?: $r['username'];
+                $rows[] = [$r['registration_number'] ?: '-', $name, $r['course_name'] ?: 'General'];
+            }
+
+            $pdfBytes = \App\Utils\Pdf::table('Student Enrolment Register', 'Headway College PoE System', ['Reg Number', 'Full Name', 'Programme'], $rows);
+            \App\Http\App::sendFile($pdfBytes, 'student_register.pdf', 'application/pdf');
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['detail' => 'Error exporting PDF: ' . $e->getMessage()]);
+        }
+    }
+
+    public static function createUser(): void {
+        try {
+            $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+            $username = trim($input['username'] ?? '');
+            $regNo = trim($input['registration_number'] ?? '');
+            $password = $input['password'] ?? 'Student@123';
+            $role = $input['role'] ?? 'STUDENT';
+            $courseId = !empty($input['course']) ? (int)$input['course'] : (!empty($input['course_id']) ? (int)$input['course_id'] : null);
+            $email = trim($input['email'] ?? ($username ? "{$username}@headwaycollege.ac.ke" : ''));
+            $firstName = trim($input['first_name'] ?? '');
+            $lastName = trim($input['last_name'] ?? '');
+
+            if (!$username && !$regNo) {
+                http_response_code(400);
+                echo json_encode(['detail' => 'Username or registration number is required.']);
+                return;
+            }
+
+            if (!$username) $username = $regNo;
+            if (!$regNo) $regNo = $username;
+
+            $db = Database::getConnection();
+            $hash = \App\Auth\DjangoPasswordHasher::make($password);
+
+            $stmt = $db->prepare('INSERT INTO users_user (username, registration_number, email, password, role, course_id, first_name, last_name, is_active, is_staff, is_superuser, date_joined) 
+                                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 0, NOW())');
+            $stmt->execute([$username, $regNo, $email, $hash, $role, $courseId, $firstName, $lastName]);
+            $newId = (int)$db->lastInsertId();
+
+            http_response_code(201);
+            echo json_encode(['id' => $newId, 'username' => $username, 'registration_number' => $regNo, 'role' => $role]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['detail' => 'Error creating user: ' . $e->getMessage()]);
+        }
+    }
 }
+

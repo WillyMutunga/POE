@@ -59,12 +59,12 @@ switch (true) {
         ]);
         break;
 
-    // Authentication Routes
+    // Authentication & User Routes
     case $uri === '/users/login' && $method === 'POST':
         \App\Controllers\AuthController::login();
         break;
 
-    case ($uri === '/users/token/refresh' || $uri === '/users/token/refresh/' || $uri === '/token/refresh' || $uri === '/token/refresh/') && $method === 'POST':
+    case ($uri === '/users/token/refresh' || $uri === '/token/refresh') && $method === 'POST':
         \App\Controllers\AuthController::refreshToken();
         break;
 
@@ -72,21 +72,29 @@ switch (true) {
         \App\Controllers\AuthController::profile();
         break;
 
-    case ($uri === '/users/list-all' || $uri === '/users/list-all/' || $uri === '/users' || $uri === '/users/') && $method === 'GET':
+    case $uri === '/users/profile' && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\AuthController::updateProfile();
+        break;
+
+    case ($uri === '/users/list-all' || $uri === '/users') && $method === 'GET':
         \App\Controllers\AuthController::listAll();
         break;
 
-    case ($uri === '/users/my-students' || $uri === '/users/my-students/') && $method === 'GET':
+    case $uri === '/users/my-students' && $method === 'GET':
         \App\Controllers\AuthController::myStudents();
         break;
 
-    // Academic Routes
-    case ($uri === '/academic/units/my_units' || $uri === '/academic/units/my_units/') && $method === 'GET':
-        \App\Controllers\AcademicController::myUnits();
+    case $uri === '/users/create' && $method === 'POST':
+        \App\Controllers\AuthController::createUser();
         break;
 
-    case $uri === '/academic/units' && $method === 'GET':
-        \App\Controllers\AcademicController::listUnits();
+    case $uri === '/users/export-students-pdf' && $method === 'GET':
+        \App\Controllers\AuthController::exportStudentsPdf();
+        break;
+
+    // Academic Routes - Schools, Courses, Semesters
+    case $uri === '/academic/schools' && $method === 'GET':
+        \App\Controllers\AcademicController::listSchools();
         break;
 
     case $uri === '/academic/courses' && $method === 'GET':
@@ -97,25 +105,160 @@ switch (true) {
         \App\Controllers\AcademicController::listSemesters();
         break;
 
+    // Academic Routes - Units
+    case $uri === '/academic/units/my_units' && $method === 'GET':
+        \App\Controllers\AcademicController::myUnits();
+        break;
+
+    case $uri === '/academic/units/registration_list' && $method === 'GET':
+        \App\Controllers\AcademicController::registrationList();
+        break;
+
+    case $uri === '/academic/units/student_units_for_assignment' && $method === 'GET':
+        \App\Controllers\AcademicController::studentUnitsForAssignment();
+        break;
+
+    case $uri === '/academic/units' && $method === 'GET':
+        \App\Controllers\AcademicController::listUnits();
+        break;
+
+    case $uri === '/academic/units' && $method === 'POST':
+        \App\Controllers\AcademicController::createUnit();
+        break;
+
+    case preg_match('#^/academic/units/(\d+)$#', $uri, $m) && $method === 'GET':
+        \App\Controllers\AcademicController::getUnit((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)/get_components$#', $uri, $m) && $method === 'GET':
+        \App\Controllers\AcademicController::getComponents((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)/enroll_students$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::enrollStudents((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)/remove_student$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::removeStudent((int)$m[1]);
+        break;
+
+    case $uri === '/academic/elements' && $method === 'POST':
+        \App\Controllers\AcademicController::createElement();
+        break;
+
+    // Academic Routes - Registrations
     case $uri === '/academic/registrations' && $method === 'GET':
         \App\Controllers\AcademicController::listRegistrations();
         break;
 
+    case $uri === '/academic/registrations/bulk_register' && $method === 'POST':
+        \App\Controllers\AcademicController::bulkRegister();
+        break;
+
+    case $uri === '/academic/registrations/direct_assign' && $method === 'POST':
+        \App\Controllers\AcademicController::directAssign();
+        break;
+
+    case $uri === '/academic/registrations/bulk_approve' && $method === 'POST':
+        \App\Controllers\AcademicController::bulkApprove();
+        break;
+
+    case $uri === '/academic/registrations/bulk_reject' && $method === 'POST':
+        \App\Controllers\AcademicController::bulkReject();
+        break;
+
+    case preg_match('#^/academic/registrations/(\d+)/approve$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::approveRegistration((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/registrations/(\d+)/reject$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::rejectRegistration((int)$m[1]);
+        break;
+
+    // Academic Routes - Exams & Grading
+    case $uri === '/academic/exams' && $method === 'GET':
+        \App\Controllers\AcademicController::listExams();
+        break;
+
+    case preg_match('#^/academic/exams/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteExam((int)$m[1]);
+        break;
+
+    case ($uri === '/academic/grading-systems' || $uri === '/academic/grading') && $method === 'GET':
+        \App\Controllers\AcademicController::listGradingSystems();
+        break;
+
+    case $uri === '/academic/rubrics' && $method === 'GET':
+        \App\Controllers\AcademicController::listRubrics();
+        break;
+
+    case $uri === '/academic/student-marks' && $method === 'GET':
+        \App\Controllers\AcademicController::listStudentMarks();
+        break;
+
+    case $uri === '/academic/student-marks/enter_marks' && $method === 'POST':
+        \App\Controllers\AcademicController::enterMarks();
+        break;
+
     // PoE Evidence & Portfolio Routes
-    case ($uri === '/poe/portfolios' || $uri === '/poe/portfolios/') && $method === 'GET':
+    case $uri === '/poe/portfolios' && $method === 'GET':
         \App\Controllers\PoeController::listPortfolios();
         break;
 
-    case ($uri === '/poe/evidence' || $uri === '/poe/evidence/') && $method === 'POST':
+    case $uri === '/poe/portfolios' && $method === 'POST':
+        \App\Controllers\PoeController::createPortfolio();
+        break;
+
+    case preg_match('#^/poe/portfolios/(\d+)$#', $uri, $m) && $method === 'GET':
+        \App\Controllers\PoeController::getPortfolio((int)$m[1]);
+        break;
+
+    case preg_match('#^/poe/portfolios/(\d+)$#', $uri, $m) && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\PoeController::updatePortfolio((int)$m[1]);
+        break;
+
+    case preg_match('#^/poe/portfolios/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\PoeController::deletePortfolio((int)$m[1]);
+        break;
+
+    case preg_match('#^/poe/portfolios/(\d+)/verify$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\PoeController::verifyPortfolio((int)$m[1]);
+        break;
+
+    case preg_match('#^/poe/portfolios/(\d+)/download_pdf$#', $uri, $m) && $method === 'GET':
+        \App\Controllers\PoeController::downloadPdf((int)$m[1]);
+        break;
+
+    case $uri === '/poe/evidence' && $method === 'POST':
         \App\Controllers\PoeController::createEvidence();
         break;
 
-    case ($uri === '/poe/poe-management-analytics' || $uri === '/poe/poe-management-analytics/') && $method === 'GET':
+    case preg_match('#^/poe/evidence/(\d+)$#', $uri, $m) && $method === 'PATCH':
+        \App\Controllers\PoeController::updateEvidence((int)$m[1]);
+        break;
+
+    case preg_match('#^/poe/evidence/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\PoeController::deleteEvidence((int)$m[1]);
+        break;
+
+    case $uri === '/poe/assessments' && $method === 'POST':
+        \App\Controllers\PoeController::createAssessment();
+        break;
+
+    case $uri === '/poe/comments' && $method === 'POST':
+        \App\Controllers\PoeController::createComment();
+        break;
+
+    case $uri === '/poe/poe-management-analytics' && $method === 'GET':
         \App\Controllers\PoeController::getManagementAnalytics();
         break;
 
+    case $uri === '/poe/reports-analytics' && $method === 'GET':
+        \App\Controllers\PoeController::getReportsAnalytics();
+        break;
+
     // Online Exam Routes
-    case ($uri === '/academic/online-exams/my-pending' || $uri === '/academic/online-exams/my-pending/') && $method === 'GET':
+    case $uri === '/academic/online-exams/my-pending' && $method === 'GET':
         \App\Controllers\ExamController::myPending();
         break;
 
@@ -132,15 +275,15 @@ switch (true) {
         break;
 
     // Notifications Routes
-    case ($uri === '/notifications' || $uri === '/notifications/') && $method === 'GET':
+    case $uri === '/notifications' && $method === 'GET':
         \App\Controllers\NotificationController::list();
         break;
 
-    case ($uri === '/notifications/mark_all_as_read' || $uri === '/notifications/mark_all_as_read/') && $method === 'POST':
+    case $uri === '/notifications/mark_all_as_read' && $method === 'POST':
         \App\Controllers\NotificationController::markAllRead();
         break;
 
-    case preg_match('#^/notifications/(\d+)/mark_as_read/?$#', $uri, $m) && $method === 'POST':
+    case preg_match('#^/notifications/(\d+)/mark_as_read$#', $uri, $m) && $method === 'POST':
         \App\Controllers\NotificationController::markRead((int)$m[1]);
         break;
 
