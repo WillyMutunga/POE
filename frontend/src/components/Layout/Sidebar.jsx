@@ -245,7 +245,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
           </>
         ) : ['ADMIN', 'MANAGER', 'DIRECTOR'].includes(user.role) ? (
           <>
-            {/* PoE Management */}
+            {/* Admin Dashboard */}
             <NavLink
               to="/dashboard"
               className={({ isActive }) => 
@@ -257,10 +257,10 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               }
             >
               <LayoutDashboard size={22} />
-              <span>PoE Management</span>
+              <span>Admin Dashboard</span>
             </NavLink>
 
-            {/* Trainees (Expandable) */}
+            {/* User Management (Expandable) */}
             <div className="space-y-1">
               <button
                 type="button"
@@ -269,7 +269,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               >
                 <div className="flex items-center gap-4">
                   <Users size={22} />
-                  <span>All Students</span>
+                  <span>User Management</span>
                 </div>
                 {academicsOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
@@ -319,7 +319,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               )}
             </div>
 
-            {/* Units of Competence */}
+            {/* Academic Structure (Schools, Courses, Semesters, Units) */}
             <NavLink
               to="/admin/academic"
               className={({ isActive }) => 
@@ -331,10 +331,25 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               }
             >
               <BookOpen size={22} />
-              <span>Units of Competence</span>
+              <span>Academic Structure</span>
             </NavLink>
 
-            {/* Curriculums */}
+            {/* Portfolios List */}
+            <NavLink
+              to="/admin/portfolios"
+              className={({ isActive }) => 
+                `flex items-center gap-4 px-4 py-4 rounded-2xl font-bold transition-all ${
+                  isActive 
+                  ? 'bg-[#0000FE] text-white shadow-lg shadow-blue-100' 
+                  : 'text-slate-500 hover:bg-slate-50 hover:text-[#0000FE]'
+                }`
+              }
+            >
+              <FileText size={22} />
+              <span>All Portfolios</span>
+            </NavLink>
+
+            {/* Academic Tools & Curriculums */}
             <div className="space-y-1">
               <button
                 type="button"
@@ -343,7 +358,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
               >
                 <div className="flex items-center gap-4">
                   <ClipboardList size={22} />
-                  <span>Curriculums</span>
+                  <span>Curriculum & Tools</span>
                 </div>
                 {courseMgmtOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>

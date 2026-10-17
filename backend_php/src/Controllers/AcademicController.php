@@ -18,10 +18,109 @@ class AcademicController {
 
     public static function listSchools(): void {
         $db = Database::getConnection();
-        $stmt = $db->query('SELECT s.*, (SELECT COUNT(*) FROM academic_course WHERE school_id = s.id) as course_count 
-                            FROM academic_school s 
-                            ORDER BY s.name ASC');
-        echo json_encode($stmt->fetchAll() ?: []);
+
+        // 1. Fetch all schools
+        $schools = $db->query('SELECT * FROM academic_school ORDER BY name ASC')->fetchAll() ?: [];
+
+        // 2. Fetch all courses
+        $courses = $db->query('SELECT c.*, s.name as school_name FROM academic_course c LEFT JOIN academic_school s ON c.school_id = s.id ORDER BY c.name ASC')->fetchAll() ?: [];
+
+        // 3. Fetch all semesters
+        $semesters = $db->query('SELECT * FROM academic_semester ORDER BY id ASC')->fetchAll() ?: [];
+
+        // 4. Fetch all units
+        $units = $db->query('SELECT * FROM academic_unit ORDER BY code ASC')->fetchAll() ?: [];
+
+        // 5. Fetch all elements
+        $elements = $db->query('SELECT * FROM academic_element ORDER BY id ASC')->fetchAll() ?: [];
+
+        // Group elements by unit_id
+        $elementsByUnit = [];
+        foreach ($elements as $el) {
+            $elementsByUnit[(int)$el['unit_id']][] = [
+                'id' => (int)$el['id'],
+                'name' => $el['name'],
+                'unit' => (int)$el['unit_id']
+            ];
+        }
+
+        // Attach elements to units
+        $unitsByCourseAndSemester = [];
+        $unassignedUnitsByCourse = [];
+        foreach ($units as $u) {
+            $uId = (int)$u['id'];
+            $cId = (int)($u['course_id'] ?? 0);
+            $sId = !empty($u['semester_id']) ? (int)$u['semester_id'] : null;
+            $unitData = [
+                'id' => $uId,
+                'name' => $u['name'],
+                'code' => $u['code'],
+                'course' => $cId,
+                'semester' => $sId,
+                'credit_hours' => (int)($u['credit_hours'] ?? 45),
+                'is_approved' => (bool)($u['is_approved'] ?? true),
+                'elements' => $elementsByUnit[$uId] ?? [],
+            ];
+            if ($sId) {
+                $unitsByCourseAndSemester[$cId][$sId][] = $unitData;
+            } else {
+                $unassignedUnitsByCourse[$cId][] = $unitData;
+            }
+        }
+
+        // Group semesters by course_id
+        $semestersByCourse = [];
+        foreach ($semesters as $sem) {
+            $semId = (int)$sem['id'];
+            $cId = (int)$sem['course_id'];
+            $semestersByCourse[$cId][] = [
+                'id' => $semId,
+                'name' => $sem['name'],
+                'course' => $cId,
+                'units' => $unitsByCourseAndSemester[$cId][$semId] ?? []
+            ];
+        }
+
+        $levelDisplayMap = [
+            'GRADE_I' => 'Grade I',
+            'GRADE_II' => 'Grade II',
+            'GRADE_III' => 'Grade III',
+            'LEVEL_3' => 'Level 3',
+            'LEVEL_4' => 'Level 4',
+            'LEVEL_5' => 'Level 5',
+            'LEVEL_6' => 'Level 6',
+            'HEADWAY' => 'Headway Certificate',
+        ];
+
+        // Group courses by school_id
+        $coursesBySchool = [];
+        foreach ($courses as $c) {
+            $cId = (int)$c['id'];
+            $schoolId = (int)($c['school_id'] ?? 0);
+            $coursesBySchool[$schoolId][] = [
+                'id' => $cId,
+                'name' => $c['name'],
+                'school' => $schoolId,
+                'school_name' => $c['school_name'] ?? null,
+                'level' => $c['level'] ?? 'LEVEL_6',
+                'level_display' => $levelDisplayMap[$c['level'] ?? ''] ?? ($c['level'] ?? 'Level 6'),
+                'semesters' => $semestersByCourse[$cId] ?? [],
+                'unassigned_units' => $unassignedUnitsByCourse[$cId] ?? []
+            ];
+        }
+
+        // Assemble final response
+        $result = [];
+        foreach ($schools as $s) {
+            $sId = (int)$s['id'];
+            $result[] = [
+                'id' => $sId,
+                'name' => $s['name'],
+                'courses' => $coursesBySchool[$sId] ?? []
+            ];
+        }
+
+        echo json_encode($result);
     }
 
     public static function listCourses(): void {
@@ -609,5 +708,213 @@ class AcademicController {
             $db->prepare('DELETE FROM academic_examrepository WHERE id = ?')->execute([$id]);
         }
         echo json_encode(['detail' => 'Exam deleted successfully.']);
+    }
+
+    public static function createSchool(): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        if (!$name) {
+            http_response_code(400);
+            echo json_encode(['detail' => 'School name is required.']);
+            return;
+        }
+        $db = Database::getConnection();
+        $stmt = $db->prepare('INSERT INTO academic_school (name) VALUES (?)');
+        $stmt->execute([$name]);
+        $newId = (int)$db->lastInsertId();
+        http_response_code(201);
+        echo json_encode(['id' => $newId, 'name' => $name, 'courses' => []]);
+    }
+
+    public static function updateSchool(int $id): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        $db = Database::getConnection();
+        $stmt = $db->prepare('UPDATE academic_school SET name = ? WHERE id = ?');
+        $stmt->execute([$name, $id]);
+        echo json_encode(['id' => $id, 'name' => $name]);
+    }
+
+    public static function deleteSchool(int $id): void {
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_school WHERE id = ?')->execute([$id]);
+        echo json_encode(['detail' => 'School deleted.']);
+    }
+
+    public static function createCourse(): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        $schoolId = (int)($input['school'] ?? $input['school_id'] ?? 0);
+        $level = $input['level'] ?? 'LEVEL_6';
+        $instructorId = !empty($input['instructor']) ? (int)$input['instructor'] : null;
+
+        if (!$name || !$schoolId) {
+            http_response_code(400);
+            echo json_encode(['detail' => 'Course name and school are required.']);
+            return;
+        }
+
+        $db = Database::getConnection();
+        $stmt = $db->prepare('INSERT INTO academic_course (name, school_id, level, instructor_id) VALUES (?, ?, ?, ?)');
+        $stmt->execute([$name, $schoolId, $level, $instructorId]);
+        $newId = (int)$db->lastInsertId();
+        http_response_code(201);
+        echo json_encode(['id' => $newId, 'name' => $name, 'school' => $schoolId, 'level' => $level, 'semesters' => [], 'unassigned_units' => []]);
+    }
+
+    public static function updateCourse(int $id): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $db = Database::getConnection();
+        $fields = [];
+        $params = [];
+        if (isset($input['name'])) { $fields[] = 'name = ?'; $params[] = trim($input['name']); }
+        if (isset($input['school'])) { $fields[] = 'school_id = ?'; $params[] = (int)$input['school']; }
+        if (isset($input['level'])) { $fields[] = 'level = ?'; $params[] = $input['level']; }
+        if (isset($input['instructor'])) { $fields[] = 'instructor_id = ?'; $params[] = !empty($input['instructor']) ? (int)$input['instructor'] : null; }
+        if (!empty($fields)) {
+            $params[] = $id;
+            $db->prepare('UPDATE academic_course SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
+        }
+        $c = $db->query("SELECT * FROM academic_course WHERE id = {$id}")->fetch();
+        echo json_encode($c ?: ['id' => $id]);
+    }
+
+    public static function deleteCourse(int $id): void {
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_course WHERE id = ?')->execute([$id]);
+        echo json_encode(['detail' => 'Course deleted.']);
+    }
+
+    public static function createSemester(): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        $courseId = (int)($input['course'] ?? $input['course_id'] ?? 0);
+        if (!$name || !$courseId) {
+            http_response_code(400);
+            echo json_encode(['detail' => 'Semester name and course are required.']);
+            return;
+        }
+        $db = Database::getConnection();
+        $stmt = $db->prepare('INSERT INTO academic_semester (name, course_id) VALUES (?, ?)');
+        $stmt->execute([$name, $courseId]);
+        $newId = (int)$db->lastInsertId();
+        http_response_code(201);
+        echo json_encode(['id' => $newId, 'name' => $name, 'course' => $courseId, 'units' => []]);
+    }
+
+    public static function updateSemester(int $id): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        $db = Database::getConnection();
+        $db->prepare('UPDATE academic_semester SET name = ? WHERE id = ?')->execute([$name, $id]);
+        echo json_encode(['id' => $id, 'name' => $name]);
+    }
+
+    public static function deleteSemester(int $id): void {
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_semester WHERE id = ?')->execute([$id]);
+        echo json_encode(['detail' => 'Semester deleted.']);
+    }
+
+    public static function updateUnit(int $id): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $db = Database::getConnection();
+        $fields = [];
+        $params = [];
+        if (isset($input['name'])) { $fields[] = 'name = ?'; $params[] = trim($input['name']); }
+        if (isset($input['code'])) { $fields[] = 'code = ?'; $params[] = trim($input['code']); }
+        if (array_key_exists('semester', $input)) { $fields[] = 'semester_id = ?'; $params[] = !empty($input['semester']) ? (int)$input['semester'] : null; }
+        if (isset($input['credit_hours'])) { $fields[] = 'credit_hours = ?'; $params[] = (int)$input['credit_hours']; }
+        if (isset($input['is_approved'])) { $fields[] = 'is_approved = ?'; $params[] = !empty($input['is_approved']) ? 1 : 0; }
+        if (!empty($fields)) {
+            $params[] = $id;
+            $db->prepare('UPDATE academic_unit SET ' . implode(', ', $fields) . ' WHERE id = ?')->execute($params);
+        }
+        $u = $db->query("SELECT * FROM academic_unit WHERE id = {$id}")->fetch();
+        echo json_encode($u ?: ['id' => $id]);
+    }
+
+    public static function deleteUnit(int $id): void {
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_unit WHERE id = ?')->execute([$id]);
+        echo json_encode(['detail' => 'Unit deleted.']);
+    }
+
+    public static function deleteElement(int $id): void {
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_element WHERE id = ?')->execute([$id]);
+        echo json_encode(['detail' => 'Element deleted.']);
+    }
+
+    public static function saveComponents(int $unitId): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $components = $input['components'] ?? [];
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_unitmarkcomponent WHERE unit_id = ?')->execute([$unitId]);
+        $ins = $db->prepare('INSERT INTO academic_unitmarkcomponent (unit_id, name, weight) VALUES (?, ?, ?)');
+        foreach ($components as $c) {
+            $name = trim($c['name'] ?? '');
+            $weight = (int)($c['weight'] ?? 0);
+            if ($name) {
+                $ins->execute([$unitId, $name, $weight]);
+            }
+        }
+        echo json_encode(['status' => 'success', 'message' => 'Components saved.']);
+    }
+
+    public static function assignSemester(int $unitId): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $semesterId = !empty($input['semester_id']) ? (int)$input['semester_id'] : null;
+        $db = Database::getConnection();
+        $db->prepare('UPDATE academic_unit SET semester_id = ? WHERE id = ?')->execute([$semesterId, $unitId]);
+        echo json_encode(['status' => 'success', 'message' => 'Semester assigned.']);
+    }
+
+    public static function bulkCreateUnits(): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $courseId = (int)($input['course'] ?? 0);
+        $units = $input['units'] ?? [];
+        $db = Database::getConnection();
+        $ins = $db->prepare('INSERT INTO academic_unit (name, code, course_id, credit_hours, is_approved) VALUES (?, ?, ?, 45, 1)');
+        foreach ($units as $u) {
+            $code = trim($u['code'] ?? '');
+            $name = trim($u['name'] ?? '');
+            if ($code && $name && $courseId) {
+                $ins->execute([$name, $code, $courseId]);
+            }
+        }
+        echo json_encode(['status' => 'success', 'message' => 'Units uploaded successfully.']);
+    }
+
+    public static function createGradingSystem(): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $name = trim($input['name'] ?? '');
+        $courseId = (int)($input['course'] ?? 0);
+        $db = Database::getConnection();
+        $stmt = $db->prepare('INSERT INTO academic_gradingsystem (name, course_id) VALUES (?, ?)');
+        $stmt->execute([$name, $courseId]);
+        $newId = (int)$db->lastInsertId();
+        http_response_code(201);
+        echo json_encode(['id' => $newId, 'name' => $name, 'course' => $courseId, 'ranges' => []]);
+    }
+
+    public static function addGradeRange(int $systemId): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $min = (int)($input['min_score'] ?? 0);
+        $max = (int)($input['max_score'] ?? 100);
+        $grade = trim($input['grade'] ?? '');
+        $desc = trim($input['description'] ?? '');
+        $db = Database::getConnection();
+        $stmt = $db->prepare('INSERT INTO academic_graderange (grading_system_id, min_score, max_score, grade, description) VALUES (?, ?, ?, ?, ?)');
+        $stmt->execute([$systemId, $min, $max, $grade, $desc]);
+        echo json_encode(['status' => 'success']);
+    }
+
+    public static function deleteGradeRange(int $systemId): void {
+        $input = json_decode(file_get_contents('php://input'), true) ?: $_POST;
+        $rangeId = (int)($input['range_id'] ?? 0);
+        $db = Database::getConnection();
+        $db->prepare('DELETE FROM academic_graderange WHERE id = ? AND grading_system_id = ?')->execute([$rangeId, $systemId]);
+        echo json_encode(['status' => 'success']);
     }
 }

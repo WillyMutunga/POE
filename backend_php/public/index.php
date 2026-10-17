@@ -97,12 +97,48 @@ switch (true) {
         \App\Controllers\AcademicController::listSchools();
         break;
 
+    case $uri === '/academic/schools' && $method === 'POST':
+        \App\Controllers\AcademicController::createSchool();
+        break;
+
+    case preg_match('#^/academic/schools/(\d+)$#', $uri, $m) && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\AcademicController::updateSchool((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/schools/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteSchool((int)$m[1]);
+        break;
+
     case $uri === '/academic/courses' && $method === 'GET':
         \App\Controllers\AcademicController::listCourses();
         break;
 
+    case $uri === '/academic/courses' && $method === 'POST':
+        \App\Controllers\AcademicController::createCourse();
+        break;
+
+    case preg_match('#^/academic/courses/(\d+)$#', $uri, $m) && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\AcademicController::updateCourse((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/courses/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteCourse((int)$m[1]);
+        break;
+
     case $uri === '/academic/semesters' && $method === 'GET':
         \App\Controllers\AcademicController::listSemesters();
+        break;
+
+    case $uri === '/academic/semesters' && $method === 'POST':
+        \App\Controllers\AcademicController::createSemester();
+        break;
+
+    case preg_match('#^/academic/semesters/(\d+)$#', $uri, $m) && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\AcademicController::updateSemester((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/semesters/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteSemester((int)$m[1]);
         break;
 
     // Academic Routes - Units
@@ -118,6 +154,10 @@ switch (true) {
         \App\Controllers\AcademicController::studentUnitsForAssignment();
         break;
 
+    case $uri === '/academic/units/bulk_create' && $method === 'POST':
+        \App\Controllers\AcademicController::bulkCreateUnits();
+        break;
+
     case $uri === '/academic/units' && $method === 'GET':
         \App\Controllers\AcademicController::listUnits();
         break;
@@ -130,8 +170,24 @@ switch (true) {
         \App\Controllers\AcademicController::getUnit((int)$m[1]);
         break;
 
+    case preg_match('#^/academic/units/(\d+)$#', $uri, $m) && ($method === 'PATCH' || $method === 'PUT'):
+        \App\Controllers\AcademicController::updateUnit((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteUnit((int)$m[1]);
+        break;
+
     case preg_match('#^/academic/units/(\d+)/get_components$#', $uri, $m) && $method === 'GET':
         \App\Controllers\AcademicController::getComponents((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)/save_components$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::saveComponents((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/units/(\d+)/assign_semester$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::assignSemester((int)$m[1]);
         break;
 
     case preg_match('#^/academic/units/(\d+)/enroll_students$#', $uri, $m) && $method === 'POST':
@@ -144,6 +200,10 @@ switch (true) {
 
     case $uri === '/academic/elements' && $method === 'POST':
         \App\Controllers\AcademicController::createElement();
+        break;
+
+    case preg_match('#^/academic/elements/(\d+)$#', $uri, $m) && $method === 'DELETE':
+        \App\Controllers\AcademicController::deleteElement((int)$m[1]);
         break;
 
     // Academic Routes - Registrations
@@ -186,6 +246,18 @@ switch (true) {
 
     case ($uri === '/academic/grading-systems' || $uri === '/academic/grading') && $method === 'GET':
         \App\Controllers\AcademicController::listGradingSystems();
+        break;
+
+    case ($uri === '/academic/grading-systems' || $uri === '/academic/grading') && $method === 'POST':
+        \App\Controllers\AcademicController::createGradingSystem();
+        break;
+
+    case preg_match('#^/academic/grading-systems/(\d+)/add_range$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::addGradeRange((int)$m[1]);
+        break;
+
+    case preg_match('#^/academic/grading-systems/(\d+)/delete_range$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\AcademicController::deleteGradeRange((int)$m[1]);
         break;
 
     case $uri === '/academic/rubrics' && $method === 'GET':
