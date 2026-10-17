@@ -64,6 +64,10 @@ switch (true) {
         \App\Controllers\AuthController::login();
         break;
 
+    case ($uri === '/users/token/refresh' || $uri === '/users/token/refresh/' || $uri === '/token/refresh' || $uri === '/token/refresh/') && $method === 'POST':
+        \App\Controllers\AuthController::refreshToken();
+        break;
+
     case $uri === '/users/profile' && $method === 'GET':
         \App\Controllers\AuthController::profile();
         break;

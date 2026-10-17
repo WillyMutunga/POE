@@ -324,6 +324,7 @@ class PoeController {
             'stats' => [
                 'total_students' => $totalTrainees,
                 'total_trainees' => $totalTrainees,
+                'total_portfolios' => $totalPortfolios,
                 'poe_submitted' => $poeSubmitted,
                 'poe_submitted_pct' => $poeSubmittedPct,
                 'poe_approved' => $poeApproved,
