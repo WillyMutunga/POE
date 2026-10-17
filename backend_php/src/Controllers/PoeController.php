@@ -46,6 +46,8 @@ class PoeController {
                                    FROM poe_core_evidence WHERE portfolio_id = ? ORDER BY id ASC');
             $eStmt->execute([$p['id']]);
             $p['evidence'] = $eStmt->fetchAll();
+            $p['learner_display'] = trim(($p['first_name'] ?? '') . ' ' . ($p['last_name'] ?? '')) ?: $p['learner_username'];
+            $p['unit_display'] = trim(($p['unit_code'] ?? '') . ' - ' . ($p['unit_name'] ?? ''));
         }
 
         echo json_encode($portfolios);

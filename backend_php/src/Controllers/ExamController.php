@@ -21,6 +21,20 @@ class ExamController {
         echo json_encode($stmt->fetchAll());
     }
 
+    public static function myPending(): void {
+        $user = self::getAuthenticatedUser();
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['detail' => 'Authentication credentials were not provided.']);
+            return;
+        }
+
+        $db = Database::getConnection();
+        $stmt = $db->query('SELECT id, title, class_name, duration_minutes, is_active, created_at 
+                            FROM academic_onlineexam WHERE is_active = 1 ORDER BY id DESC');
+        echo json_encode($stmt->fetchAll() ?: []);
+    }
+
     public static function getExamDetails(int $id): void {
         $db = Database::getConnection();
         $stmt = $db->prepare('SELECT * FROM academic_onlineexam WHERE id = ? LIMIT 1');

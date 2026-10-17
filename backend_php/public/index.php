@@ -76,7 +76,15 @@ switch (true) {
         \App\Controllers\AuthController::listAll();
         break;
 
+    case ($uri === '/users/my-students' || $uri === '/users/my-students/') && $method === 'GET':
+        \App\Controllers\AuthController::myStudents();
+        break;
+
     // Academic Routes
+    case ($uri === '/academic/units/my_units' || $uri === '/academic/units/my_units/') && $method === 'GET':
+        \App\Controllers\AcademicController::myUnits();
+        break;
+
     case $uri === '/academic/units' && $method === 'GET':
         \App\Controllers\AcademicController::listUnits();
         break;
@@ -107,6 +115,10 @@ switch (true) {
         break;
 
     // Online Exam Routes
+    case ($uri === '/academic/online-exams/my-pending' || $uri === '/academic/online-exams/my-pending/') && $method === 'GET':
+        \App\Controllers\ExamController::myPending();
+        break;
+
     case $uri === '/academic/online-exams' && $method === 'GET':
         \App\Controllers\ExamController::listOnlineExams();
         break;
@@ -117,6 +129,19 @@ switch (true) {
 
     case preg_match('#^/academic/online-exams/(\d+)/submit$#', $uri, $m) && $method === 'POST':
         \App\Controllers\ExamController::submitExam((int)$m[1]);
+        break;
+
+    // Notifications Routes
+    case ($uri === '/notifications' || $uri === '/notifications/') && $method === 'GET':
+        \App\Controllers\NotificationController::list();
+        break;
+
+    case ($uri === '/notifications/mark_all_as_read' || $uri === '/notifications/mark_all_as_read/') && $method === 'POST':
+        \App\Controllers\NotificationController::markAllRead();
+        break;
+
+    case preg_match('#^/notifications/(\d+)/mark_as_read/?$#', $uri, $m) && $method === 'POST':
+        \App\Controllers\NotificationController::markRead((int)$m[1]);
         break;
 
     // Certificate Routes

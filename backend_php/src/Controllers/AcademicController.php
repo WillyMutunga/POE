@@ -50,6 +50,59 @@ class AcademicController {
         echo json_encode($units);
     }
 
+    public static function myUnits(): void {
+        $user = self::getAuthenticatedUser();
+        if (!$user) {
+            http_response_code(401);
+            echo json_encode(['detail' => 'Authentication credentials were not provided.']);
+            return;
+        }
+
+        $db = Database::getConnection();
+        $uid = (int)($user['user_id'] ?? 0);
+
+        // Fetch full user record to check role and course_id
+        $uStmt = $db->prepare('SELECT * FROM users_user WHERE id = ?');
+        $uStmt->execute([$uid]);
+        $fullUser = $uStmt->fetch();
+        $role = $fullUser['role'] ?? ($user['role'] ?? 'STUDENT');
+        $courseId = $fullUser['course_id'] ?? null;
+
+        $sql = 'SELECT u.*, c.name as course_name, s.name as semester_name 
+                FROM academic_unit u 
+                LEFT JOIN academic_course c ON u.course_id = c.id 
+                LEFT JOIN academic_semester s ON u.semester_id = s.id 
+                WHERE 1=1';
+        $params = [];
+
+        if ($role === 'INSTRUCTOR') {
+            if ($courseId) {
+                $sql .= ' AND (u.course_id = ? OR u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?))';
+                $params[] = $courseId;
+                $params[] = $uid;
+            } else {
+                $sql .= ' AND u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)';
+                $params[] = $uid;
+            }
+        } elseif ($role === 'STUDENT') {
+            if ($courseId) {
+                $sql .= ' AND (u.course_id = ? OR u.id IN (SELECT unit_id FROM academic_unitregistration WHERE student_id = ?))';
+                $params[] = $courseId;
+                $params[] = $uid;
+            } else {
+                $sql .= ' AND u.id IN (SELECT unit_id FROM academic_unitregistration WHERE student_id = ?)';
+                $params[] = $uid;
+            }
+        }
+
+        $sql .= ' ORDER BY u.code ASC';
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+        $units = $stmt->fetchAll();
+
+        echo json_encode($units ?: []);
+    }
+
     public static function listCourses(): void {
         $db = Database::getConnection();
         $stmt = $db->query('SELECT c.*, s.name as school_name 

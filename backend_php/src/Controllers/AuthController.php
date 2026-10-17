@@ -250,4 +250,81 @@ class AuthController {
             echo json_encode(['detail' => 'Error listing users: ' . $e->getMessage()]);
         }
     }
+
+    public static function myStudents(): void {
+        try {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Authentication credentials were not provided.']);
+                return;
+            }
+
+            $payload = JwtService::decode($matches[1]);
+            if (!$payload) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Given token not valid for any token type']);
+                return;
+            }
+
+            $db = Database::getConnection();
+            $uid = (int)($payload['user_id'] ?? 0);
+            $uStmt = $db->prepare('SELECT * FROM users_user WHERE id = ?');
+            $uStmt->execute([$uid]);
+            $currentUser = $uStmt->fetch();
+            $courseId = $currentUser['course_id'] ?? null;
+            $role = $currentUser['role'] ?? 'INSTRUCTOR';
+
+            $sql = "SELECT u.*, c.name as course_name, s.name as semester_name 
+                    FROM users_user u 
+                    LEFT JOIN academic_course c ON u.course_id = c.id 
+                    LEFT JOIN academic_semester s ON u.semester_id = s.id 
+                    WHERE u.role = 'STUDENT'";
+            $params = [];
+
+            if ($role === 'INSTRUCTOR' && $courseId) {
+                $sql .= " AND (u.course_id = ? OR u.id IN (
+                    SELECT DISTINCT r.student_id FROM academic_unitregistration r 
+                    JOIN academic_unit un ON r.unit_id = un.id 
+                    WHERE un.course_id = ? OR un.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)
+                ))";
+                $params[] = $courseId;
+                $params[] = $courseId;
+                $params[] = $uid;
+            }
+
+            $sql .= " ORDER BY u.first_name, u.last_name, u.username";
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll();
+
+            $results = [];
+            foreach ($rows as $u) {
+                $results[] = [
+                    'id' => (int)$u['id'],
+                    'registration_number' => $u['registration_number'],
+                    'cdacc_registration_number' => $u['cdacc_registration_number'] ?? null,
+                    'username' => $u['username'],
+                    'email' => $u['email'],
+                    'role' => $u['role'],
+                    'first_name' => $u['first_name'],
+                    'last_name' => $u['last_name'],
+                    'full_name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')) ?: $u['username'],
+                    'phone_number' => $u['phone_number'] ?? null,
+                    'course' => $u['course_id'] ? (int)$u['course_id'] : null,
+                    'semester' => $u['semester_id'] ? (int)$u['semester_id'] : null,
+                    'intake' => $u['intake'],
+                    'course_display' => $u['course_name'] ?? 'Unassigned',
+                    'semester_display' => $u['semester_name'] ?? 'Unassigned',
+                    'course_name' => $u['course_name'] ?? null,
+                    'is_active' => (bool)$u['is_active'],
+                ];
+            }
+
+            echo json_encode($results);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['detail' => 'Error fetching students: ' . $e->getMessage()]);
+        }
+    }
 }
