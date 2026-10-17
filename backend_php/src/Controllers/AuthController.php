@@ -20,9 +20,9 @@ class AuthController {
             }
 
             $db = Database::getConnection();
-            // Support login by username or registration_number
-            $stmt = $db->prepare('SELECT * FROM users_user WHERE LOWER(username) = LOWER(:u1) OR LOWER(registration_number) = LOWER(:u2) LIMIT 1');
-            $stmt->execute([':u1' => $username, ':u2' => $username]);
+            // Support login by username, registration_number, or email (case-insensitive)
+            $stmt = $db->prepare('SELECT * FROM users_user WHERE LOWER(username) = LOWER(:u1) OR LOWER(registration_number) = LOWER(:u2) OR LOWER(email) = LOWER(:u3) LIMIT 1');
+            $stmt->execute([':u1' => $username, ':u2' => $username, ':u3' => $username]);
             $user = $stmt->fetch();
 
             if (!$user) {
@@ -45,12 +45,20 @@ class AuthController {
 
             $tokens = JwtService::createTokens($user);
 
-            // Fetch course and semester if student
+            // Fetch course if assigned
             $courseData = null;
             if (!empty($user['course_id'])) {
                 $cStmt = $db->prepare('SELECT id, name, level, school_id FROM academic_course WHERE id = ?');
                 $cStmt->execute([$user['course_id']]);
                 $courseData = $cStmt->fetch() ?: null;
+            }
+
+            // Fetch semester if assigned
+            $semesterData = null;
+            if (!empty($user['semester_id'])) {
+                $sStmt = $db->prepare('SELECT id, name FROM academic_semester WHERE id = ?');
+                $sStmt->execute([$user['semester_id']]);
+                $semesterData = $sStmt->fetch() ?: null;
             }
 
             // Return exact JSON schema that AuthContext.jsx expects
@@ -72,6 +80,9 @@ class AuthController {
                     'course_display' => $courseData['name'] ?? null,
                     'course_level_display' => $courseData['level'] ?? null,
                     'course_data' => $courseData,
+                    'semester' => $user['semester_id'] ? (int)$user['semester_id'] : null,
+                    'semester_name' => $semesterData['name'] ?? null,
+                    'semester_display' => $semesterData['name'] ?? null,
                     'intake' => $user['intake'],
                     'is_staff' => (bool)$user['is_staff'],
                     'is_superuser' => (bool)$user['is_superuser'],
@@ -117,6 +128,13 @@ class AuthController {
                 $courseData = $cStmt->fetch() ?: null;
             }
 
+            $semesterData = null;
+            if (!empty($user['semester_id'])) {
+                $sStmt = $db->prepare('SELECT id, name FROM academic_semester WHERE id = ?');
+                $sStmt->execute([$user['semester_id']]);
+                $semesterData = $sStmt->fetch() ?: null;
+            }
+
             echo json_encode([
                 'id' => (int)$user['id'],
                 'username' => $user['username'],
@@ -132,6 +150,9 @@ class AuthController {
                 'course_display' => $courseData['name'] ?? null,
                 'course_level_display' => $courseData['level'] ?? null,
                 'course_data' => $courseData,
+                'semester' => $user['semester_id'] ? (int)$user['semester_id'] : null,
+                'semester_name' => $semesterData['name'] ?? null,
+                'semester_display' => $semesterData['name'] ?? null,
                 'intake' => $user['intake']
             ]);
         } catch (\Throwable $e) {
@@ -164,5 +185,69 @@ class AuthController {
 
         $tokens = JwtService::createTokens($user);
         echo json_encode(['access' => $tokens['access']]);
+    }
+
+    public static function listAll(): void {
+        try {
+            $authHeader = $_SERVER['HTTP_AUTHORIZATION'] ?? '';
+            if (!preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Authentication credentials were not provided.']);
+                return;
+            }
+
+            $payload = JwtService::decode($matches[1]);
+            if (!$payload) {
+                http_response_code(401);
+                echo json_encode(['detail' => 'Given token not valid for any token type']);
+                return;
+            }
+
+            $db = Database::getConnection();
+            $stmt = $db->query('SELECT * FROM users_user ORDER BY first_name, last_name, username');
+            $users = $stmt->fetchAll();
+
+            $results = [];
+            foreach ($users as $u) {
+                $c = null;
+                if (!empty($u['course_id'])) {
+                    $cStmt = $db->prepare('SELECT id, name, level, school_id FROM academic_course WHERE id = ?');
+                    $cStmt->execute([$u['course_id']]);
+                    $c = $cStmt->fetch() ?: null;
+                }
+                $s = null;
+                if (!empty($u['semester_id'])) {
+                    $sStmt = $db->prepare('SELECT id, name FROM academic_semester WHERE id = ?');
+                    $sStmt->execute([$u['semester_id']]);
+                    $s = $sStmt->fetch() ?: null;
+                }
+                $results[] = [
+                    'id' => (int)$u['id'],
+                    'registration_number' => $u['registration_number'],
+                    'cdacc_registration_number' => $u['cdacc_registration_number'] ?? null,
+                    'username' => $u['username'],
+                    'email' => $u['email'],
+                    'role' => $u['role'],
+                    'first_name' => $u['first_name'],
+                    'last_name' => $u['last_name'],
+                    'phone_number' => $u['phone_number'] ?? null,
+                    'course' => $u['course_id'] ? (int)$u['course_id'] : null,
+                    'semester' => $u['semester_id'] ? (int)$u['semester_id'] : null,
+                    'intake' => $u['intake'],
+                    'course_display' => $c['name'] ?? null,
+                    'semester_display' => $s['name'] ?? null,
+                    'course_name' => $c['name'] ?? null,
+                    'course_level' => $c['level'] ?? null,
+                    'is_active' => (bool)$u['is_active'],
+                    'is_staff' => (bool)$u['is_staff'],
+                    'is_superuser' => (bool)$u['is_superuser'],
+                ];
+            }
+
+            echo json_encode($results);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['detail' => 'Error listing users: ' . $e->getMessage()]);
+        }
     }
 }

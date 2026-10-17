@@ -72,6 +72,10 @@ switch (true) {
         \App\Controllers\AuthController::profile();
         break;
 
+    case ($uri === '/users/list-all' || $uri === '/users/list-all/' || $uri === '/users' || $uri === '/users/') && $method === 'GET':
+        \App\Controllers\AuthController::listAll();
+        break;
+
     // Academic Routes
     case $uri === '/academic/units' && $method === 'GET':
         \App\Controllers\AcademicController::listUnits();

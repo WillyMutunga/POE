@@ -30,6 +30,8 @@ class JwtService {
             'user_id'    => (int)$user['id'],
             'username'   => $user['username'],
             'role'       => $user['role'],
+            'registration_number' => $user['registration_number'] ?? null,
+            'email'      => $user['email'] ?? null,
         ];
 
         // 7 Days Refresh Token
