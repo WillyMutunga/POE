@@ -27,6 +27,8 @@ const InstructorDashboard = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedStudent, setExpandedStudent] = useState(null);
 
+  const [submissionFilter, setSubmissionFilter] = useState('PENDING'); // 'PENDING' | 'EVALUATED' | 'ALL'
+
   const fetchData = async () => {
     try {
       const [portfoliosRes, unitsRes, registrationsRes, studentsRes] = await Promise.all([
@@ -51,15 +53,23 @@ const InstructorDashboard = () => {
   }, []);
 
   const pendingEvaluations = portfolios.filter(p => p.status === 'SUBMITTED');
-  const evaluatedCount = portfolios.filter(p => p.status === 'EVALUATED').length;
+  const evaluatedPortfolios = portfolios.filter(p => p.status === 'EVALUATED');
+  const evaluatedCount = evaluatedPortfolios.length;
   
   // Get total student count from distinct student list
   const totalStudents = studentsCount;
 
-  const filteredPending = pendingEvaluations.filter(p => 
-    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.learner_display.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.unit_display.toLowerCase().includes(searchTerm.toLowerCase())
+  const currentList = submissionFilter === 'PENDING'
+    ? pendingEvaluations
+    : submissionFilter === 'EVALUATED'
+    ? evaluatedPortfolios
+    : portfolios;
+
+  const filteredSubmissions = currentList.filter(p => 
+    p.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.learner_display?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.learner_registration_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.unit_display?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) return (
@@ -113,15 +123,40 @@ const InstructorDashboard = () => {
           <p className="text-3xl font-black text-slate-800">{totalStudents}</p>
         </Link>
 
-        <Link to="/units-assigned" className="p-8 bg-white rounded-[32px] shadow-sm border border-slate-100 hover:shadow-xl hover:shadow-blue-500/5 hover:-translate-y-1 hover:border-green-100 transition-all duration-300 group block">
+        <button 
+          type="button"
+          onClick={() => {
+            setSubmissionFilter('EVALUATED');
+            const el = document.getElementById('recent-submissions');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className={`p-8 bg-white rounded-[32px] shadow-sm border text-left transition-all duration-300 group block cursor-pointer ${
+            submissionFilter === 'EVALUATED' 
+              ? 'border-emerald-400 ring-4 ring-emerald-50 shadow-lg' 
+              : 'border-slate-100 hover:shadow-xl hover:shadow-emerald-500/5 hover:-translate-y-1 hover:border-emerald-100'
+          }`}
+        >
           <div className="w-12 h-12 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-6 group-hover:scale-110 transition-transform">
             <CheckCircle2 size={24} />
           </div>
           <p className="text-slate-400 text-xs font-black uppercase tracking-widest mb-1">Evaluations Done</p>
-          <p className="text-3xl font-black text-slate-800">{evaluatedCount}</p>
-        </Link>
+          <div className="flex items-end gap-2">
+            <p className="text-3xl font-black text-slate-800">{evaluatedCount}</p>
+            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest mb-1 bg-emerald-50 px-2 py-0.5 rounded-full">
+              View All
+            </span>
+          </div>
+        </button>
 
-        <a href="#recent-submissions" className="p-8 bg-[#0000FE] rounded-[32px] shadow-xl shadow-blue-500/20 text-white hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 group cursor-pointer overflow-hidden relative block">
+        <button 
+          type="button"
+          onClick={() => {
+            setSubmissionFilter('PENDING');
+            const el = document.getElementById('recent-submissions');
+            if (el) el.scrollIntoView({ behavior: 'smooth' });
+          }}
+          className="p-8 bg-[#0000FE] rounded-[32px] shadow-xl shadow-blue-500/20 text-white hover:scale-[1.02] hover:-translate-y-1 transition-all duration-300 group cursor-pointer overflow-hidden relative block text-left"
+        >
           <div className="relative z-10">
             <div className="w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center text-white mb-6 group-hover:rotate-12 transition-transform">
               <Clock size={24} />
@@ -133,18 +168,25 @@ const InstructorDashboard = () => {
             <ArrowRight size={24} className="text-white" />
           </div>
           <div className="absolute top-[-50%] right-[-50%] w-full h-full bg-white/10 rounded-full blur-2xl"></div>
-        </a>
+        </button>
       </div>
 
       {/* Main Content Area */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         {/* Pending Evaluations List */}
         <div id="recent-submissions" className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
-              <FileText className="text-[#0000FE]" size={28} />
-              Recent Submissions
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2">
+            <div>
+              <h2 className="text-2xl font-black text-slate-800 flex items-center gap-3">
+                <FileText className="text-[#0000FE]" size={28} />
+                Student Portfolios
+              </h2>
+              <p className="text-xs text-slate-400 font-bold mt-0.5">
+                {submissionFilter === 'EVALUATED' ? 'All portfolios evaluated by you' :
+                 submissionFilter === 'PENDING' ? 'Submissions waiting for your grading and feedback' :
+                 'All student portfolio records for your units'}
+              </p>
+            </div>
             
             <div className="relative w-64">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
@@ -158,23 +200,87 @@ const InstructorDashboard = () => {
             </div>
           </div>
 
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-2 px-2 overflow-x-auto pb-1">
+            <button
+              type="button"
+              onClick={() => setSubmissionFilter('PENDING')}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                submissionFilter === 'PENDING'
+                  ? 'bg-[#0000FE] text-white shadow-md shadow-blue-500/20'
+                  : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-100'
+              }`}
+            >
+              <span>Pending Review</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                submissionFilter === 'PENDING' ? 'bg-white/20 text-white' : 'bg-blue-50 text-[#0000FE]'
+              }`}>
+                {pendingEvaluations.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubmissionFilter('EVALUATED')}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                submissionFilter === 'EVALUATED'
+                  ? 'bg-emerald-600 text-white shadow-md shadow-emerald-500/20'
+                  : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-100'
+              }`}
+            >
+              <span>Evaluated Portfolios</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                submissionFilter === 'EVALUATED' ? 'bg-white/20 text-white' : 'bg-emerald-50 text-emerald-600'
+              }`}>
+                {evaluatedCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSubmissionFilter('ALL')}
+              className={`px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all flex items-center gap-2 cursor-pointer ${
+                submissionFilter === 'ALL'
+                  ? 'bg-slate-800 text-white shadow-md'
+                  : 'bg-white text-slate-500 hover:bg-slate-50 border border-slate-100'
+              }`}
+            >
+              <span>All Submissions</span>
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+                submissionFilter === 'ALL' ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {portfolios.length}
+              </span>
+            </button>
+          </div>
+
           <div className="space-y-4">
-            {filteredPending.length === 0 ? (
+            {filteredSubmissions.length === 0 ? (
               <div className="p-16 text-center bg-white rounded-[40px] border-2 border-dashed border-slate-100">
-                <div className="w-16 h-16 bg-green-50 rounded-full flex items-center justify-center text-green-500 mx-auto mb-4">
+                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center text-[#0000FE] mx-auto mb-4">
                   <CheckCircle2 size={32} />
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">All caught up!</h3>
-                <p className="text-slate-400 mt-2 font-medium">No pending portfolios are currently waiting for your evaluation.</p>
+                <h3 className="text-xl font-bold text-slate-800">No portfolios found</h3>
+                <p className="text-slate-400 mt-2 font-medium">
+                  {submissionFilter === 'EVALUATED' 
+                    ? 'No evaluated portfolios found matching your search.' 
+                    : submissionFilter === 'PENDING'
+                    ? 'No pending portfolios are currently waiting for your evaluation.'
+                    : 'No portfolios submitted yet for your assigned units.'}
+                </p>
               </div>
             ) : (
-              filteredPending.slice(0, 5).map((portfolio) => (
+              filteredSubmissions.map((portfolio) => (
                 <div 
                   key={portfolio.id} 
-                  className="group flex items-center justify-between p-6 bg-white rounded-[32px] shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300"
+                  className="group flex flex-col sm:flex-row sm:items-center justify-between p-6 bg-white rounded-[32px] shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 gap-4"
                 >
                   <div className="flex items-center gap-5">
-                    <div className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:bg-blue-50 group-hover:text-[#0000FE] transition-colors">
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-colors ${
+                      portfolio.status === 'EVALUATED'
+                        ? 'bg-emerald-50 text-emerald-600 group-hover:bg-emerald-100'
+                        : 'bg-slate-50 text-slate-400 group-hover:bg-blue-50 group-hover:text-[#0000FE]'
+                    }`}>
                       <FileText size={24} />
                     </div>
                     <div>
@@ -184,28 +290,54 @@ const InstructorDashboard = () => {
                         </p>
                       )}
                       <h3 className="text-lg font-bold text-slate-800 group-hover:text-[#0000FE] transition-colors line-clamp-1">{portfolio.title}</h3>
-                      <div className="flex items-center gap-3 mt-0.5">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
                         <p className="text-[10px] font-black text-primary-600 uppercase tracking-[0.1em]">{portfolio.unit_display}</p>
                         <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
-                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">{portfolio.learner_display}</p>
+                        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.1em]">
+                          {portfolio.learner_display} {portfolio.learner_registration_number ? `(${portfolio.learner_registration_number})` : ''}
+                        </p>
+                        <span className="w-1 h-1 bg-slate-200 rounded-full"></span>
+                        <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                          portfolio.status === 'EVALUATED' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' :
+                          portfolio.status === 'SUBMITTED' ? 'bg-amber-50 text-amber-700 border border-amber-100' :
+                          'bg-slate-100 text-slate-600'
+                        }`}>
+                          {portfolio.status}
+                        </span>
                       </div>
                     </div>
                   </div>
 
-                  <Link 
-                    to={`/evaluation/${portfolio.id}`}
-                    className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:bg-[#0000FE] hover:text-white transition-all shadow-sm group-hover:translate-x-1"
-                  >
-                    <ChevronRight size={20} />
-                  </Link>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    {portfolio.status === 'SUBMITTED' ? (
+                      <Link 
+                        to={`/evaluation/${portfolio.id}`}
+                        className="px-4 py-2.5 bg-[#0000FE] text-white text-xs font-black rounded-xl hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm"
+                      >
+                        Evaluate
+                        <ChevronRight size={16} />
+                      </Link>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Link 
+                          to={`/evaluation/${portfolio.id}`}
+                          className="px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-100 text-xs font-black rounded-xl hover:bg-emerald-100 transition-all flex items-center gap-2"
+                        >
+                          View Evaluation
+                          <ChevronRight size={16} />
+                        </Link>
+                        <Link 
+                          to={`/portfolios/${portfolio.id}`}
+                          className="p-2.5 bg-slate-50 text-slate-400 hover:text-[#0000FE] rounded-xl hover:bg-blue-50 transition-all"
+                          title="View Portfolio Details"
+                        >
+                          <ChevronRight size={18} />
+                        </Link>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))
-            )}
-            
-            {filteredPending.length > 5 && (
-              <button className="w-full py-4 text-center text-xs font-black text-slate-400 uppercase tracking-[0.2em] hover:text-[#0000FE] transition-colors">
-                View All Pending Submissions ({filteredPending.length})
-              </button>
             )}
           </div>
 

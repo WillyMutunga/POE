@@ -73,10 +73,10 @@ const UserManagement = () => {
   const [roleFilter, setRoleFilter] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const selectedCourseObj = courses.find(c => c.id.toString() === newUser.course?.toString());
+  const selectedCourseObj = courses.find(c => (c.id || '').toString() === (newUser.course || '').toString());
   const isLevel5Or6 = selectedCourseObj?.level === 'LEVEL_5' || selectedCourseObj?.level === 'LEVEL_6';
 
-  const editingUserCourseObj = courses.find(c => c.id.toString() === editingUser?.course?.toString());
+  const editingUserCourseObj = courses.find(c => (c.id || '').toString() === (editingUser?.course || '').toString());
   const editingUserIsLevel5Or6 = editingUserCourseObj?.level === 'LEVEL_5' || editingUserCourseObj?.level === 'LEVEL_6';
 
   useEffect(() => {
@@ -95,8 +95,10 @@ const UserManagement = () => {
 
     const matchesSearch = username.includes(search) || email.includes(search) || regNo.includes(search);
     const matchesRole = roleFilter === '' || u.role === roleFilter;
-    const matchesSchool = listSchoolFilter === '' || (u.school && u.school.toString() === listSchoolFilter.toString());
-    const matchesCourse = listCourseFilter === '' || (u.course && u.course.toString() === listCourseFilter.toString());
+    const userSchoolId = (u.school ?? u.school_id ?? '')?.toString();
+    const matchesSchool = listSchoolFilter === '' || (userSchoolId === listSchoolFilter.toString());
+    const userCourseId = (u.course ?? u.course_id ?? '')?.toString();
+    const matchesCourse = listCourseFilter === '' || (userCourseId === listCourseFilter.toString());
     const matchesIntake = listIntakeFilter === '' || u.intake === listIntakeFilter;
     
     return matchesSearch && matchesRole && matchesSchool && matchesCourse && matchesIntake;
@@ -645,7 +647,7 @@ const UserManagement = () => {
                       >
                         <option value="">Select Course</option>
                         {courses
-                          .filter(c => !filterSchool || c.school.toString() === filterSchool.toString())
+                          .filter(c => !filterSchool || ((c.school ?? c.school_id ?? '')).toString() === filterSchool.toString())
                           .map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
@@ -660,7 +662,7 @@ const UserManagement = () => {
                         className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl focus:ring-2 focus:ring-primary-500/20 outline-none font-bold"
                       >
                         <option value="">Select Semester</option>
-                        {semesters.filter(s => s.course.toString() === newUser.course.toString()).map(s => (
+                        {semesters.filter(s => ((s.course ?? s.course_id ?? '')).toString() === (newUser.course || '').toString()).map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
@@ -693,7 +695,7 @@ const UserManagement = () => {
                       >
                         <option value="">Select Course</option>
                         {courses
-                          .filter(c => !filterSchool || c.school.toString() === filterSchool.toString())
+                          .filter(c => !filterSchool || ((c.school ?? c.school_id ?? '')).toString() === filterSchool.toString())
                           .map(c => (
                             <option key={c.id} value={c.id}>{c.name}</option>
                           ))}
@@ -1084,7 +1086,7 @@ const UserManagement = () => {
             >
               <option value="">All Courses</option>
               {courses
-                .filter(c => !listSchoolFilter || c.school.toString() === listSchoolFilter.toString())
+                .filter(c => !listSchoolFilter || ((c.school ?? c.school_id ?? '')).toString() === listSchoolFilter.toString())
                 .map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -1231,7 +1233,7 @@ const UserManagement = () => {
                 >
                   <option value="">-- Select Semester --</option>
                   {semesters
-                    .filter(s => s.course?.toString() === selectedTranscriptStudent.course?.toString())
+                    .filter(s => ((s.course ?? s.course_id ?? '')).toString() === (selectedTranscriptStudent.course || '').toString())
                     .map(s => (
                       <option key={s.id} value={s.id}>{s.name}</option>
                     ))

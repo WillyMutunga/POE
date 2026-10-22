@@ -42,7 +42,19 @@ class PoeController {
 
         if ($user['role'] === 'STUDENT') {
             $sql .= ' AND p.learner_id = ?';
-            $params[] = $user['id'];
+            $params[] = (int)$user['id'];
+        } elseif ($user['role'] === 'INSTRUCTOR') {
+            $uid = (int)$user['id'];
+            $sql .= ' AND p.unit_id IN (
+                SELECT u.id FROM academic_unit u
+                LEFT JOIN academic_course c ON u.course_id = c.id
+                WHERE u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)
+                   OR c.instructor_id = ?
+                   OR (c.id = (SELECT course_id FROM users_user WHERE id = ? AND course_id IS NOT NULL))
+            )';
+            $params[] = $uid;
+            $params[] = $uid;
+            $params[] = $uid;
         } elseif (!empty($_GET['learner'])) {
             $sql .= ' AND p.learner_id = ?';
             $params[] = (int)$_GET['learner'];
@@ -51,6 +63,11 @@ class PoeController {
         if (!empty($_GET['unit'])) {
             $sql .= ' AND p.unit_id = ?';
             $params[] = (int)$_GET['unit'];
+        }
+
+        if (!empty($_GET['status'])) {
+            $sql .= ' AND p.status = ?';
+            $params[] = trim($_GET['status']);
         }
 
         $sql .= ' ORDER BY p.updated_at DESC';

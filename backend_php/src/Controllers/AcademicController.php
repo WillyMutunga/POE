@@ -126,7 +126,7 @@ class AcademicController {
     public static function listCourses(): void {
         $db = Database::getConnection();
         $schoolId = $_GET['school'] ?? null;
-        $sql = 'SELECT c.*, s.name as school_name 
+        $sql = 'SELECT c.*, c.school_id as school, s.name as school_name 
                 FROM academic_course c 
                 LEFT JOIN academic_school s ON c.school_id = s.id 
                 WHERE 1=1';
@@ -138,19 +138,37 @@ class AcademicController {
         $sql .= ' ORDER BY c.name ASC';
         $stmt = $db->prepare($sql);
         $stmt->execute($params);
-        echo json_encode($stmt->fetchAll() ?: []);
+        $courses = $stmt->fetchAll() ?: [];
+
+        $semStmt = $db->query('SELECT s.*, s.course_id as course FROM academic_semester s ORDER BY s.id ASC');
+        $allSems = $semStmt->fetchAll() ?: [];
+        $semsByCourse = [];
+        foreach ($allSems as $sem) {
+            $semsByCourse[(int)$sem['course_id']][] = $sem;
+        }
+
+        foreach ($courses as &$c) {
+            $c['school'] = (int)($c['school_id'] ?? 0);
+            $c['semesters'] = $semsByCourse[(int)$c['id']] ?? [];
+        }
+
+        echo json_encode($courses);
     }
 
     public static function listSemesters(): void {
         $db = Database::getConnection();
         $courseId = $_GET['course'] ?? null;
         if ($courseId) {
-            $stmt = $db->prepare('SELECT * FROM academic_semester WHERE course_id = ? ORDER BY id ASC');
+            $stmt = $db->prepare('SELECT s.*, s.course_id as course FROM academic_semester s WHERE s.course_id = ? ORDER BY s.id ASC');
             $stmt->execute([(int)$courseId]);
         } else {
-            $stmt = $db->query('SELECT * FROM academic_semester ORDER BY id ASC');
+            $stmt = $db->query('SELECT s.*, s.course_id as course FROM academic_semester s ORDER BY s.id ASC');
         }
-        echo json_encode($stmt->fetchAll() ?: []);
+        $sems = $stmt->fetchAll() ?: [];
+        foreach ($sems as &$sem) {
+            $sem['course'] = (int)($sem['course_id'] ?? 0);
+        }
+        echo json_encode($sems);
     }
 
     public static function listUnits(): void {
@@ -188,6 +206,8 @@ class AcademicController {
 
         // Attach elements to each unit
         foreach ($units as &$u) {
+            $u['course'] = (int)($u['course_id'] ?? 0);
+            $u['semester'] = (int)($u['semester_id'] ?? 0);
             $u['is_approved'] = (bool)($u['is_approved'] ?? true);
             $elStmt = $db->prepare('SELECT id, name, unit_id FROM academic_element WHERE unit_id = ? ORDER BY id ASC');
             $elStmt->execute([$u['id']]);
@@ -206,7 +226,7 @@ class AcademicController {
         }
 
         $db = Database::getConnection();
-        $uid = (int)($user['user_id'] ?? 0);
+        $uid = (int)($user['user_id'] ?? $user['id'] ?? 0);
 
         $uStmt = $db->prepare('SELECT * FROM users_user WHERE id = ?');
         $uStmt->execute([$uid]);
@@ -222,14 +242,14 @@ class AcademicController {
         $params = [];
 
         if ($role === 'INSTRUCTOR') {
-            if ($courseId) {
-                $sql .= ' AND (u.course_id = ? OR u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?))';
-                $params[] = (int)$courseId;
-                $params[] = $uid;
-            } else {
-                $sql .= ' AND u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)';
-                $params[] = $uid;
-            }
+            $sql .= ' AND (
+                u.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)
+                OR u.course_id IN (SELECT id FROM academic_course WHERE instructor_id = ?)
+                OR (u.course_id = (SELECT course_id FROM users_user WHERE id = ? AND course_id IS NOT NULL))
+            )';
+            $params[] = $uid;
+            $params[] = $uid;
+            $params[] = $uid;
         } elseif ($role === 'STUDENT') {
             if ($courseId) {
                 $sql .= ' AND (u.course_id = ? OR u.id IN (SELECT unit_id FROM academic_unitregistration WHERE student_id = ?))';
@@ -247,10 +267,23 @@ class AcademicController {
         $units = $stmt->fetchAll();
 
         foreach ($units as &$u) {
+            $u['course'] = (int)($u['course_id'] ?? 0);
+            $u['semester'] = (int)($u['semester_id'] ?? 0);
             $u['is_approved'] = (bool)($u['is_approved'] ?? true);
             $elStmt = $db->prepare('SELECT id, name, unit_id FROM academic_element WHERE unit_id = ? ORDER BY id ASC');
             $elStmt->execute([$u['id']]);
             $u['elements'] = $elStmt->fetchAll() ?: [];
+
+            // Compute student_count for this unit
+            $cntStmt = $db->prepare('SELECT COUNT(DISTINCT u.id) 
+                                     FROM users_user u 
+                                     WHERE u.role = "STUDENT" 
+                                       AND (
+                                         u.id IN (SELECT student_id FROM academic_unitregistration WHERE unit_id = ? AND status = "APPROVED")
+                                         OR u.course_id = ?
+                                       )');
+            $cntStmt->execute([(int)$u['id'], (int)($u['course_id'] ?? 0)]);
+            $u['student_count'] = (int)$cntStmt->fetchColumn();
         }
 
         echo json_encode($units ?: []);
@@ -272,6 +305,9 @@ class AcademicController {
             return;
         }
 
+        $unit['course'] = (int)($unit['course_id'] ?? 0);
+        $unit['semester'] = (int)($unit['semester_id'] ?? 0);
+
         // Attach elements
         $elStmt = $db->prepare('SELECT id, name, unit_id FROM academic_element WHERE unit_id = ? ORDER BY id ASC');
         $elStmt->execute([$id]);
@@ -280,11 +316,18 @@ class AcademicController {
         // Attach enrolled students
         $stStmt = $db->prepare('SELECT u.id, u.username, u.first_name, u.last_name, u.registration_number, u.role, u.email 
                                 FROM users_user u 
-                                JOIN academic_unitregistration r ON r.student_id = u.id 
-                                WHERE r.unit_id = ? AND r.status = "APPROVED"');
-        $stStmt->execute([$id]);
-        $unit['students_detail'] = $stStmt->fetchAll() ?: [];
-        $unit['student_count'] = count($unit['students_detail']);
+                                WHERE u.role = "STUDENT" 
+                                  AND (
+                                    u.id IN (SELECT r.student_id FROM academic_unitregistration r WHERE r.unit_id = ? AND r.status = "APPROVED")
+                                    OR u.course_id = ?
+                                  )
+                                GROUP BY u.id
+                                ORDER BY u.first_name, u.last_name, u.username');
+        $stStmt->execute([$id, (int)($unit['course_id'] ?? 0)]);
+        $studentsDetail = $stStmt->fetchAll() ?: [];
+        $unit['students_detail'] = $studentsDetail;
+        $unit['students'] = array_map(function($s) { return (int)$s['id']; }, $studentsDetail);
+        $unit['student_count'] = count($studentsDetail);
 
         echo json_encode($unit);
     }

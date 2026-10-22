@@ -204,23 +204,28 @@ class AuthController {
             }
 
             $db = Database::getConnection();
-            $stmt = $db->query('SELECT * FROM users_user ORDER BY first_name, last_name, username');
-            $users = $stmt->fetchAll();
+            $sql = 'SELECT u.*, 
+                           c.name as course_name, c.level as course_level, c.school_id, 
+                           s.name as semester_name, 
+                           sch.name as school_name 
+                    FROM users_user u 
+                    LEFT JOIN academic_course c ON u.course_id = c.id 
+                    LEFT JOIN academic_school sch ON c.school_id = sch.id 
+                    LEFT JOIN academic_semester s ON u.semester_id = s.id 
+                    ORDER BY u.first_name, u.last_name, u.username';
+            $users = $db->query($sql)->fetchAll() ?: [];
+
+            // Pre-fetch assigned units for instructors
+            $assignedUnitsByUser = [];
+            try {
+                $auRows = $db->query('SELECT user_id, unit_id FROM academic_unit_instructors')->fetchAll() ?: [];
+                foreach ($auRows as $row) {
+                    $assignedUnitsByUser[(int)$row['user_id']][] = (int)$row['unit_id'];
+                }
+            } catch (\Throwable $e) {}
 
             $results = [];
             foreach ($users as $u) {
-                $c = null;
-                if (!empty($u['course_id'])) {
-                    $cStmt = $db->prepare('SELECT id, name, level, school_id FROM academic_course WHERE id = ?');
-                    $cStmt->execute([$u['course_id']]);
-                    $c = $cStmt->fetch() ?: null;
-                }
-                $s = null;
-                if (!empty($u['semester_id'])) {
-                    $sStmt = $db->prepare('SELECT id, name FROM academic_semester WHERE id = ?');
-                    $sStmt->execute([$u['semester_id']]);
-                    $s = $sStmt->fetch() ?: null;
-                }
                 $results[] = [
                     'id' => (int)$u['id'],
                     'registration_number' => $u['registration_number'],
@@ -230,14 +235,22 @@ class AuthController {
                     'role' => $u['role'],
                     'first_name' => $u['first_name'],
                     'last_name' => $u['last_name'],
+                    'full_name' => trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? '')) ?: $u['username'],
                     'phone_number' => $u['phone_number'] ?? null,
                     'course' => $u['course_id'] ? (int)$u['course_id'] : null,
+                    'course_id' => $u['course_id'] ? (int)$u['course_id'] : null,
+                    'school' => $u['school_id'] ? (int)$u['school_id'] : null,
+                    'school_id' => $u['school_id'] ? (int)$u['school_id'] : null,
+                    'school_name' => $u['school_name'] ?? null,
                     'semester' => $u['semester_id'] ? (int)$u['semester_id'] : null,
+                    'semester_id' => $u['semester_id'] ? (int)$u['semester_id'] : null,
                     'intake' => $u['intake'],
-                    'course_display' => $c['name'] ?? null,
-                    'semester_display' => $s['name'] ?? null,
-                    'course_name' => $c['name'] ?? null,
-                    'course_level' => $c['level'] ?? null,
+                    'course_display' => $u['course_name'] ?? null,
+                    'semester_display' => $u['semester_name'] ?? null,
+                    'course_name' => $u['course_name'] ?? null,
+                    'course_level' => $u['course_level'] ?? null,
+                    'assigned_units' => $assignedUnitsByUser[(int)$u['id']] ?? [],
+                    'assigned_courses' => $u['course_id'] ? [(int)$u['course_id']] : [],
                     'is_active' => (bool)$u['is_active'],
                     'is_staff' => (bool)$u['is_staff'],
                     'is_superuser' => (bool)$u['is_superuser'],
@@ -282,15 +295,24 @@ class AuthController {
                     WHERE u.role = 'STUDENT'";
             $params = [];
 
-            if ($role === 'INSTRUCTOR' && $courseId) {
-                $sql .= " AND (u.course_id = ? OR u.id IN (
-                    SELECT DISTINCT r.student_id FROM academic_unitregistration r 
-                    JOIN academic_unit un ON r.unit_id = un.id 
-                    WHERE un.course_id = ? OR un.id IN (SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?)
-                ))";
-                $params[] = $courseId;
-                $params[] = $courseId;
-                $params[] = $uid;
+            if ($role === 'INSTRUCTOR') {
+                $sql .= " AND (
+                    u.course_id IN (
+                        SELECT id FROM academic_course WHERE instructor_id = ?
+                        UNION SELECT course_id FROM users_user WHERE id = ? AND course_id IS NOT NULL
+                    )
+                    OR u.id IN (
+                        SELECT DISTINCT r.student_id FROM academic_unitregistration r 
+                        WHERE r.unit_id IN (
+                            SELECT unit_id FROM academic_unit_instructors WHERE user_id = ?
+                            UNION SELECT id FROM academic_unit WHERE course_id IN (
+                                SELECT id FROM academic_course WHERE instructor_id = ?
+                                UNION SELECT course_id FROM users_user WHERE id = ? AND course_id IS NOT NULL
+                            )
+                        )
+                    )
+                )";
+                $params = [$uid, $uid, $uid, $uid, $uid];
             }
 
             $sql .= " ORDER BY u.first_name, u.last_name, u.username";
